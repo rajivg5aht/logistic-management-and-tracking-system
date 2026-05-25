@@ -7,10 +7,10 @@ export default function LoginPage() {
 				<section className="rounded-3xl border border-slate-200/70 bg-white/70 p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.6)] backdrop-blur">
 					<div className="mb-8">
 						<p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-							Logistics Platform
+							CargoNep Platform
 						</p>
 						<h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">
-							Welcome back to FleetPulse
+							Welcome back to CargoNep
 						</h1>
 						<p className="mt-3 text-slate-600">
 							Track shipments, coordinate teams, and keep every delivery on time.
