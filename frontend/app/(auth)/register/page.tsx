@@ -125,8 +125,12 @@ export default function RegisterPage() {
 							type="submit"
 							className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
 						>
-							Create Account
+							Create new Account
 						</button>
+
+
+
+
 					</form>
 
 					<p className="mt-6 text-sm text-slate-600">
