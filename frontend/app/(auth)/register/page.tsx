@@ -11,7 +11,7 @@ export default function RegisterPage() {
 							<h2 className="mt-3 text-2xl font-semibold">Create a control tower</h2>
 							<p className="mt-4 text-sm text-slate-200">
 								Give your logistics team a unified space to monitor routes, manage
-								warehouses, and coordinate partners.
+								warehouses, and coordinate partner.
 							</p>
 						</div>
 
