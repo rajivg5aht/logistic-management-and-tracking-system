@@ -59,6 +59,12 @@ export default async function DashboardPage() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
+              href="/dashboard/profile"
+              className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Edit Profile
+            </Link>
+            <Link
               href="/"
               className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
