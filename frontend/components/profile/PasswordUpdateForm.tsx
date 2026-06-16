@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updatePasswordAction, AuthFormState } from "@/actions/auth.actions";
 
 const initialState: AuthFormState = {
@@ -8,7 +8,7 @@ const initialState: AuthFormState = {
 };
 
 export default function PasswordUpdateForm() {
-  const [state, formAction] = useFormState(updatePasswordAction, initialState);
+  const [state, formAction] = useActionState(updatePasswordAction, initialState);
 
   return (
     <form action={formAction} className="space-y-6">

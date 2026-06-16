@@ -1,10 +1,9 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateProfileAction, AuthFormState } from "@/actions/auth.actions";
 import { AuthUser } from "@/api/auth.api";
 import { useState, useRef } from "react";
-import Image from "next/image";
 
 const initialState: AuthFormState = {
   success: false,
@@ -15,9 +14,9 @@ interface ProfileUpdateFormProps {
 }
 
 export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
-  const [state, formAction] = useFormState(updateProfileAction, initialState);
+  const [state, formAction] = useActionState(updateProfileAction, initialState);
   const [previewImage, setPreviewImage] = useState<string | null>(
-    user.profileImage ? `http://localhost:5000${user.profileImage}` : null,
+    user.profileImage ? `http://localhost:4000${user.profileImage}` : null,
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,11 +49,10 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
       <div className="flex flex-col items-center space-y-4">
         <div className="relative h-32 w-32">
           {previewImage ? (
-            <Image
+            <img
               src={previewImage}
               alt="Profile"
-              fill
-              className="rounded-full object-cover"
+              className="absolute inset-0 h-full w-full rounded-full object-cover"
             />
           ) : (
             <div className="flex h-32 w-32 items-center justify-center rounded-full bg-slate-200 text-4xl font-semibold text-slate-600">

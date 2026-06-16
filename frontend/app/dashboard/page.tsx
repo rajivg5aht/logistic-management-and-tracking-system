@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/api/auth.api";
+import { logoutAction } from "@/actions/auth.actions";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -70,6 +71,14 @@ export default async function DashboardPage() {
             >
               Back to home
             </Link>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+              >
+                Logout
+              </button>
+            </form>
           </div>
         </div>
       </div>

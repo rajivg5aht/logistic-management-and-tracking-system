@@ -226,3 +226,10 @@ export async function getUserFromCookie() {
     return null;
   }
 }
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete("token");
+  cookieStore.delete("user");
+  redirect("/login");
+}

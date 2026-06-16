@@ -22,19 +22,21 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
+
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
 
-  // Only add Content-Type if not already set (for FormData uploads)
-  if (!options.headers || !("Content-Type" in options.headers)) {
+  // Don't set Content-Type for FormData — browser sets it with multipart boundary
+  if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: "include", // Include cookies for authentication
+    credentials: "include",
   });
 
   const payload = (await response.json()) as ApiResponse<T>;
@@ -51,13 +53,15 @@ export async function authenticatedRequest<T>(
   token: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const isFormData = options.body instanceof FormData;
+
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     ...(options.headers as Record<string, string>),
   };
 
-  // Only add Content-Type if not already set (for FormData uploads)
-  if (!options.headers || !("Content-Type" in options.headers)) {
+  // Don't set Content-Type for FormData — browser sets it with multipart boundary
+  if (!isFormData) {
     headers["Content-Type"] = "application/json";
   }
 

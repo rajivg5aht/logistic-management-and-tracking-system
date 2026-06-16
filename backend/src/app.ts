@@ -7,10 +7,15 @@ const app: Application = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:4000", "http://127.0.0.1:4000"],
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:4000",
+      "http://127.0.0.1:4000",
+    ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
-  }),
+  }),   
 );
 
 app.use(express.json());

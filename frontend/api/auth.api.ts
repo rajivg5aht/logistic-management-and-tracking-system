@@ -69,7 +69,6 @@ export async function updateProfile(
   return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
     method: "PATCH",
     body: formData,
-    headers: {}, // Let browser set Content-Type for FormData
   });
 }
 
