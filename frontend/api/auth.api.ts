@@ -1,10 +1,11 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiRequest, authenticatedRequest } from "@/lib/api-client";
 
 export type AuthUser = {
   id: string;
   fullName: string;
   email: string;
   phoneNumber: string;
+  profileImage: string | null;
   role: "admin" | "user";
 };
 
@@ -37,6 +38,51 @@ export async function registerUser(
 export async function loginUser(payload: LoginPayload): Promise<LoginResponse> {
   return apiRequest<LoginResponse>("/api/v1/auth/login", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getWhoami(token: string): Promise<AuthUser> {
+  return authenticatedRequest<AuthUser>("/api/v1/auth/whoami", token, {
+    method: "GET",
+  });
+}
+
+export type UpdateProfilePayload = {
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  profileImage?: File;
+};
+
+export async function updateProfile(
+  token: string,
+  payload: UpdateProfilePayload,
+): Promise<AuthUser> {
+  const formData = new FormData();
+
+  if (payload.fullName) formData.append("fullName", payload.fullName);
+  if (payload.email) formData.append("email", payload.email);
+  if (payload.phoneNumber) formData.append("phoneNumber", payload.phoneNumber);
+  if (payload.profileImage) formData.append("profileImage", payload.profileImage);
+
+  return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
+    method: "PATCH",
+    body: formData,
+    headers: {}, // Let browser set Content-Type for FormData
+  });
+}
+
+export type UpdatePasswordPayload = {
+  password: string;
+};
+
+export async function updatePassword(
+  token: string,
+  payload: UpdatePasswordPayload,
+): Promise<AuthUser> {
+  return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }
