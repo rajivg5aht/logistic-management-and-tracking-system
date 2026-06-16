@@ -65,12 +65,6 @@ export default async function DashboardPage() {
             >
               Edit Profile
             </Link>
-            <Link
-              href="/"
-              className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to home
-            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
