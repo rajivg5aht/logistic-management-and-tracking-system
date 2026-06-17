@@ -1,0 +1,215 @@
+/* ============================================
+   LogiFlow Landing Page — Animations & Styles
+   ============================================ */
+
+/* Float Animation for Hero Card */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* Pulse glow for map connections */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Bar chart grow animation */
+@keyframes bar-grow-1 {
+  0% { height: 0; }
+  100% { height: 20px; }
+}
+@keyframes bar-grow-2 {
+  0% { height: 0; }
+  100% { height: 32px; }
+}
+@keyframes bar-grow-3 {
+  0% { height: 0; }
+  100% { height: 16px; }
+}
+@keyframes bar-grow-4 {
+  0% { height: 0; }
+  100% { height: 28px; }
+}
+@keyframes bar-grow-5 {
+  0% { height: 0; }
+  100% { height: 24px; }
+}
+
+/* Subtle entrance animation */
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Hero card floating */
+.hero-card-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Map connection pulse */
+.map-pulse {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Fade-up entrance */
+.fade-up {
+  animation: fade-up 0.8s ease-out forwards;
+  opacity: 0;
+}
+.fade-up-delay-1 { animation-delay: 0.1s; }
+.fade-up-delay-2 { animation-delay: 0.2s; }
+.fade-up-delay-3 { animation-delay: 0.3s; }
+.fade-up-delay-4 { animation-delay: 0.4s; }
+
+/* Bar chart bars */
+.bar-chart .bar {
+  animation-duration: 1s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  animation-delay: 0.5s;
+  height: 0;
+}
+.bar-chart .bar:nth-child(1) { animation-name: bar-grow-1; }
+.bar-chart .bar:nth-child(2) { animation-name: bar-grow-2; }
+.bar-chart .bar:nth-child(3) { animation-name: bar-grow-3; }
+.bar-chart .bar:nth-child(4) { animation-name: bar-grow-4; }
+.bar-chart .bar:nth-child(5) { animation-name: bar-grow-5; }
+
+/* Nav link hover underline */
+.nav-link {
+  position: relative;
+  transition: color 0.3s ease;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #55A1A7;
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Feature card hover */
+.feature-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(18, 26, 45, 0.12);
+}
+
+/* Testimonial card hover */
+.testimonial-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.testimonial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(18, 26, 45, 0.1);
+}
+
+/* Button hover effects */
+.btn-primary {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(226, 194, 117, 0.35);
+}
+
+.btn-secondary {
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  border-color: #A0A2A5;
+  background: rgba(18, 26, 45, 0.03);
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  0% { width: 0; }
+  100% { width: 24%; }
+}
+.progress-bar-fill {
+  animation: progress-fill 1.5s ease-out forwards;
+  animation-delay: 0.3s;
+  width: 0;
+}
+
+/* Map texture overlay */
+.map-texture {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(85, 161, 167, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 60%, rgba(226, 194, 117, 0.1) 0%, transparent 40%),
+    linear-gradient(135deg, #121A2D 0%, #0C1220 100%);
+}
+
+/* Header blur */
+.header-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+  .hero-card-float {
+    margin: 0 auto;
+  }
+  .hero-buttons {
+    justify-content: center !important;
+  }
+  .features-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .testimonials-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-buttons {
+    flex-direction: column;
+  }
+  .hero-buttons a,
+  .hero-buttons button {
+    width: 100%;
+    text-align: center;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .nav-links-desktop {
+    display: none !important;
+  }
+  .nav-actions-desktop {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+}
