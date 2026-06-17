@@ -9,10 +9,7 @@ const initialState: AuthFormState = {
   success: false,
 };
 
-const inputClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
-
-export function LoginForm() {
+export function LoginForm({ role = "Admin" }: { role?: string }) {
   const [state, formAction, isPending] = useActionState(
     loginAction,
     initialState,
@@ -21,8 +18,16 @@ export function LoginForm() {
   return (
     <>
       <form action={formAction} className="space-y-5">
+        {/* Hidden role field */}
+        <input type="hidden" name="role" value={role} />
+
+        {/* Email */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700" htmlFor="email">
+          <label
+            className="block text-sm font-medium"
+            htmlFor="email"
+            style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '8px' }}
+          >
             Work Email
           </label>
           <input
@@ -31,14 +36,19 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-            className={inputClassName}
+            className="login-input"
             required
           />
           <FieldError errors={state.fieldErrors?.email} />
         </div>
 
+        {/* Password */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700" htmlFor="password">
+          <label
+            className="block text-sm font-medium"
+            htmlFor="password"
+            style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '8px' }}
+          >
             Password
           </label>
           <input
@@ -47,34 +57,61 @@ export function LoginForm() {
             type="password"
             autoComplete="current-password"
             placeholder="Enter your password"
-            className={inputClassName}
+            className="login-input"
             required
           />
           <FieldError errors={state.fieldErrors?.password} />
         </div>
 
+        {/* Remember Me + Forgot Password */}
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="login-checkbox" />
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+              Remember me
+            </span>
+          </label>
+          <a
+            href="#"
+            style={{
+              color: '#E2C275',
+              fontSize: '14px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+            onMouseEnter={(e) => { (e.target as HTMLElement).style.textDecoration = 'underline'; }}
+            onMouseLeave={(e) => { (e.target as HTMLElement).style.textDecoration = 'none'; }}
+          >
+            Forgot Password?
+          </a>
+        </div>
+
+        {/* Error message */}
         {state.message ? (
-          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="login-error">
             {state.message}
           </p>
         ) : null}
 
+        {/* Sign In Button */}
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+          className="login-btn"
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-600">
+      {/* Create Account Link */}
+      <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
         Don&apos;t have an account?{" "}
         <Link
-          className="font-semibold text-slate-900 hover:underline"
+          className="font-semibold hover:underline"
           href="/register"
+          style={{ color: '#E2C275' }}
         >
-          Register
+          Create Account
         </Link>
       </p>
     </>
