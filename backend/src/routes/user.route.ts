@@ -12,7 +12,7 @@ userRouter.post("/login", userController.loginUser);
 
 // Protected routes
 userRouter.get("/whoami", authMiddleware, userController.whoami);
-userRouter.patch(
+userRouter.put(
   "/update",
   authMiddleware,
   upload.single("profileImage"),
