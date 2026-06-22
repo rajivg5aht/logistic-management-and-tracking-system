@@ -33,5 +33,38 @@ class UserController {
             return apihelper_util_1.ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
         }
     }
+    async whoami(req, res) {
+        try {
+            if (!req.user) {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Unauthorized", 401);
+            }
+            const user = await userService.getUserById(req.user.id);
+            return apihelper_util_1.ApiResponseHelper.success(res, user, "User retrieved successfully");
+        }
+        catch (error) {
+            return apihelper_util_1.ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
+        }
+    }
+    async updateUser(req, res) {
+        try {
+            if (!req.user) {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Unauthorized", 401);
+            }
+            const updateData = { ...req.body };
+            // If file was uploaded, add the file path
+            if (req.file) {
+                updateData.profileImage = `/uploads/profiles/${req.file.filename}`;
+            }
+            const parsedData = user_dto_1.UpdateUserDTO.safeParse(updateData);
+            if (!parsedData.success) {
+                return apihelper_util_1.ApiResponseHelper.error(res, zod_1.z.prettifyError(parsedData.error), 400);
+            }
+            const updatedUser = await userService.updateUser(req.user.id, parsedData.data);
+            return apihelper_util_1.ApiResponseHelper.success(res, updatedUser, "User updated successfully");
+        }
+        catch (error) {
+            return apihelper_util_1.ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
+        }
+    }
 }
 exports.UserController = UserController;

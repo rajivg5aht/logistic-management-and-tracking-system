@@ -34,6 +34,11 @@ const UserMongoSchema: Schema<IUser> = new Schema(
       required: true,
     },
 
+    profileImage: {
+      type: String,
+      default: null,
+    },
+
     role: {
       type: String,
       enum: ["admin", "user"],

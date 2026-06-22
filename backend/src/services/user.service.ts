@@ -1,5 +1,5 @@
 import { UserMongoRepository } from "../repositories/user.repository";
-import { CreateUserDTO, LoginUserDTO } from "../dtos/user.dto";
+import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import { IUser } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
@@ -13,6 +13,7 @@ export type SafeUser = {
   fullName: string;
   email: string;
   phoneNumber: string;
+  profileImage: string | null;
   role: IUser["role"];
 };
 
@@ -23,6 +24,7 @@ export class UserService {
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
+      profileImage: user.profileImage || null,
       role: user.role,
     };
   }
@@ -112,5 +114,50 @@ export class UserService {
       user: this.sanitizeUser(user),
       token,
     };
+  }
+
+  async getUserById(userId: string): Promise<SafeUser> {
+    const user = await userRepository.getUserById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    return this.sanitizeUser(user);
+  }
+
+  async updateUser(
+    userId: string,
+    updateData: UpdateUserDTO,
+  ): Promise<SafeUser> {
+    const user = await userRepository.getUserById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    // If email is being updated, check if it's already taken
+    if (updateData.email && updateData.email !== user.email) {
+      const existingEmail = await userRepository.getUserByEmail(
+        updateData.email,
+      );
+
+      if (existingEmail) {
+        throw new HttpException(400, "Email already exists");
+      }
+    }
+
+    // Hash password if it's being updated
+    if (updateData.password) {
+      updateData.password = await bcryptjs.hash(updateData.password, 10);
+    }
+
+    const updatedUser = await userRepository.update(userId, updateData);
+
+    if (!updatedUser) {
+      throw new HttpException(500, "Failed to update user");
+    }
+
+    return this.sanitizeUser(updatedUser);
   }
 }
