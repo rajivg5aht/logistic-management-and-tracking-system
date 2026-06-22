@@ -2,60 +2,16 @@
 
 import { useState } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import "./login.css";
 
-/* ─── Ship Silhouette SVG ─── */
-function ShipSVG() {
+/* ─── Tilted Rocket Icon ─── */
+function RocketIcon() {
   return (
-    <svg viewBox="0 0 800 500" className="w-full h-full" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.15 }}>
-      {/* Water line */}
-      <path d="M0,400 Q200,380 400,390 Q600,400 800,385" fill="none" stroke="rgba(85,161,167,0.3)" strokeWidth="1" />
-      <path d="M0,420 Q200,400 400,410 Q600,420 800,405" fill="none" stroke="rgba(85,161,167,0.15)" strokeWidth="0.5" />
-
-      {/* Ship hull */}
-      <path
-        d="M150,350 L200,380 L600,380 L650,350 L630,300 L580,280 L550,250 L520,240 L500,245 L480,240 L350,240 L330,260 L200,280 L170,300 Z"
-        fill="none"
-        stroke="rgba(85,161,167,0.4)"
-        strokeWidth="1.5"
-      />
-
-      {/* Containers on deck */}
-      <rect x="250" y="250" width="60" height="30" fill="none" stroke="rgba(226,194,117,0.2)" strokeWidth="1" rx="2" />
-      <rect x="320" y="245" width="60" height="35" fill="none" stroke="rgba(85,161,167,0.25)" strokeWidth="1" rx="2" />
-      <rect x="390" y="248" width="60" height="32" fill="none" stroke="rgba(226,194,117,0.15)" strokeWidth="1" rx="2" />
-      <rect x="460" y="250" width="50" height="30" fill="none" stroke="rgba(85,161,167,0.2)" strokeWidth="1" rx="2" />
-
-      {/* Bridge */}
-      <rect x="530" y="220" width="50" height="30" fill="none" stroke="rgba(85,161,167,0.3)" strokeWidth="1" rx="3" />
-      <rect x="535" y="210" width="40" height="15" fill="none" stroke="rgba(226,194,117,0.2)" strokeWidth="1" rx="2" />
-
-      {/* Mast / antenna */}
-      <line x1="555" y1="210" x2="555" y2="170" stroke="rgba(85,161,167,0.3)" strokeWidth="1" />
-      <circle cx="555" cy="168" r="3" fill="rgba(226,194,117,0.3)" />
-
-      {/* Crane arms */}
-      <line x1="300" y1="250" x2="280" y2="190" stroke="rgba(85,161,167,0.2)" strokeWidth="1" />
-      <line x1="420" y1="248" x2="440" y2="185" stroke="rgba(85,161,167,0.2)" strokeWidth="1" />
-    </svg>
-  );
-}
-
-/* ─── Logo / Rocket Icon ─── */
-function LogoIcon() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M24 4L28 16L40 20L28 24L24 36L20 24L8 20L20 16L24 4Z"
-        fill="#E2C275"
-        filter="url(#iconGlow)"
-      />
-      <defs>
-        <filter id="iconGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
-          <feComposite in="SourceGraphic" />
-        </filter>
-      </defs>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" className="text-[#00F0FF]">
+      <path d="M21 3s-3.5-.5-7.5 3.5c-3.2 3.2-4.5 7.2-4.5 7.2L10.3 15s4-1.3 7.2-4.5C21.5 6.5 21 3 21 3z" />
+      <path d="M9.1 13.7L5.5 15.5l-3 6 6-3 1.8-3.6-1.2-1.2z" />
+      <path d="M14.5 10.3l3.6-1.8 3-6-6 3-1.8 3.6 1.2 1.2z" />
+      <path d="M3.7 18.8c-.8.8-1.2 2-1.2 2s1.2-.4 2-1.2l.6-.6-1.4-1.4v1.2z" />
+      <circle cx="16" cy="8" r="1.5" fill="#0D0E12" />
     </svg>
   );
 }
@@ -78,129 +34,89 @@ export default function LoginPage() {
   const [activeRole, setActiveRole] = useState<string>("Admin");
 
   return (
-    <div className="login-page">
-      {/* ═══ LEFT HERO ═══ */}
-      <div className="login-hero">
-        {/* Background glows */}
-        <div className="login-hero-glow" />
-        <div className="login-hero-gold-glow" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#050816] overflow-hidden relative p-4 md:p-8 font-sans">
+      {/* ═══ BACKGROUND LAYERS ═══ */}
+      {/* Blurred Cargo Ship Background */}
+      <div 
+        className="absolute inset-0 bg-[url('/cargo_ship_neon.png')] bg-cover bg-center opacity-25 filter blur-[3px] scale-105 pointer-events-none"
+        aria-hidden="true"
+      />
+      {/* Dark Ambient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-[#050816] via-[#050816]/95 to-[#00E5FF]/10 pointer-events-none" />
+      
+      {/* Radial Glow Orbs */}
+      <div className="absolute -top-[200px] -left-[200px] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.06)_0%,transparent_70%)] blur-[80px] pointer-events-none" />
+      <div className="absolute -bottom-[200px] -right-[200px] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.04)_0%,transparent_70%)] blur-[80px] pointer-events-none" />
 
-        {/* Ship silhouette */}
-        <div className="login-ship-container">
-          <ShipSVG />
-        </div>
+      {/* ═══ CENTERED CARD CONTAINER ═══ */}
+      <div className="relative z-10 w-full max-w-[460px] bg-[#0B1220]/50 backdrop-blur-2xl border border-white/[0.07] rounded-[32px] p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.6)] overflow-hidden group">
+        {/* Top Edge Gradient Line */}
+        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#00E5FF]/30 to-transparent pointer-events-none" />
+        
+        {/* Glow overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#00E5FF]/[0.02] via-transparent to-transparent rounded-[32px] opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none" />
 
-        {/* Gradient overlay */}
-        <div className="login-ship-overlay" />
-
-        {/* Divider fade to right section */}
-        <div className="login-divider-fade" />
-
-        {/* Hero Content */}
-        <div className="login-hero-content">
-          {/* Logo */}
-          <div className="flex items-center gap-4 mb-8">
-            <LogoIcon />
-            <span
-              className="text-white"
-              style={{ fontSize: '52px', fontWeight: 700, letterSpacing: '-1px' }}
-            >
-              Logi<span style={{ color: '#55A1A7' }}>Flow</span>
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex items-center gap-2.5 mb-3.5 group-hover:scale-105 transition-transform duration-300">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-[#00E5FF]/20 to-transparent border border-[#00E5FF]/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+              <RocketIcon />
+            </div>
+            <span className="text-white text-3xl font-extrabold tracking-tight">
+              CargoNep
             </span>
           </div>
-
-          {/* Headline */}
-          <h1
-            style={{
-              fontSize: '28px',
-              fontWeight: 500,
-              lineHeight: 1.4,
-              color: '#DDF9FF',
-              maxWidth: '500px',
-            }}
-          >
-            High-Tech <span style={{ color: '#E2C275' }}>Orchestration</span> for
-            Global Supply Chains.
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+            Welcome Back
           </h1>
-
-          {/* Description */}
-          <p
-            className="mt-6"
-            style={{
-              fontSize: '18px',
-              lineHeight: 1.8,
-              color: 'rgba(255,255,255,0.72)',
-              maxWidth: '550px',
-            }}
-          >
-            Experience the next generation of logistics management with real-time
-            tracking, AI-driven routing, and seamless fleet coordination.
-          </p>
-        </div>
-      </div>
-
-      {/* ═══ RIGHT LOGIN SECTION ═══ */}
-      <div className="login-form-section">
-        {/* Floating orb */}
-        <div className="login-orb" />
-
-        {/* Glass glow */}
-        <div className="login-form-glow" />
-
-        {/* Form Wrapper */}
-        <div className="login-form-wrapper">
-          {/* Heading */}
-          <h1
-            style={{
-              fontSize: '64px',
-              fontWeight: 700,
-              color: 'white',
-              marginBottom: '10px',
-              lineHeight: 1.1,
-            }}
-          >
-            Sign In
-          </h1>
-          <p
-            style={{
-              fontSize: '18px',
-              color: 'rgba(255,255,255,0.65)',
-              marginBottom: '32px',
-            }}
-          >
+          <p className="text-sm text-white/50 max-w-[280px]">
             Enter your credentials to access the command center.
           </p>
-
-          {/* Role Selector Tabs */}
-          <div className="role-tabs mb-8">
-            {roles.map((role) => (
-              <button
-                key={role}
-                type="button"
-                className={`role-tab ${activeRole === role ? 'active' : ''}`}
-                onClick={() => setActiveRole(role)}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
-
-          {/* Login Form Component */}
-          <LoginForm role={activeRole} />
-
-          {/* Divider */}
-          <div className="login-divider mt-6 mb-6">
-            <div className="login-divider-line" />
-            <span className="login-divider-text">OR CONTINUE WITH</span>
-            <div className="login-divider-line" />
-          </div>
-
-          {/* Google Button */}
-          <button type="button" className="google-btn">
-            <GoogleIcon />
-            Continue with Google
-          </button>
         </div>
+
+        {/* Role Selector Tabs */}
+        <div 
+          className="h-11 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center p-[3px] gap-[2px] mb-6.5"
+          suppressHydrationWarning
+        >
+          {roles.map((role) => (
+            <button
+              key={role}
+              type="button"
+              className={`flex-1 h-full flex items-center justify-center rounded-full text-[13px] font-semibold transition-all duration-300 border border-transparent cursor-pointer ${
+                activeRole === role
+                  ? "bg-[#00E5FF]/10 border-[#00E5FF]/20 text-[#00E5FF] shadow-[0_2px_10px_rgba(0,229,255,0.08)]"
+                  : "text-white/45 hover:text-white/80"
+              }`}
+              onClick={() => setActiveRole(role)}
+              suppressHydrationWarning
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
+        {/* Login Form Component */}
+        <LoginForm role={activeRole} />
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 mt-8 mb-6">
+          <div className="flex-1 h-px bg-white/[0.06]" />
+          <span className="text-white/25 text-[10px] tracking-[1.5px] font-bold uppercase whitespace-nowrap">
+            OR CONTINUE WITH
+          </span>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+        </div>
+
+        {/* Google Button */}
+        <button 
+          type="button" 
+          className="w-full h-12 rounded-xl bg-white/[0.02] border border-white/[0.08] text-white font-medium text-sm flex items-center justify-center gap-2.5 transition-all duration-350 hover:border-white/20 hover:bg-white/5 cursor-pointer"
+          suppressHydrationWarning
+        >
+          <GoogleIcon />
+          Google
+        </button>
       </div>
     </div>
   );

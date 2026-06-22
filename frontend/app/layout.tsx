@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "LogiFlow — Smart Logistics Platform",
+  title: "CargoNep — Smart Logistics Platform",
   description:
     "AI-driven route optimization, real-time fleet tracking, and predictive analytics for modern logistics operations.",
 };
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

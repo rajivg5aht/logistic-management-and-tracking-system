@@ -1,4 +1,4 @@
-import { apiRequest, authenticatedRequest } from "@/lib/api-client";
+import { apiRequest, authenticatedRequest } from "@/lib/api/api-client";
 
 export type AuthUser = {
   id: string;
@@ -67,7 +67,7 @@ export async function updateProfile(
   if (payload.profileImage) formData.append("profileImage", payload.profileImage);
 
   return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
-    method: "PATCH",
+    method: "PUT",
     body: formData,
   });
 }
@@ -81,7 +81,7 @@ export async function updatePassword(
   payload: UpdatePasswordPayload,
 ): Promise<AuthUser> {
   return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
-    method: "PATCH",
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }

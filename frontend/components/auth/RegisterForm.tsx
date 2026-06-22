@@ -11,9 +11,6 @@ const initialState: AuthFormState = {
   success: false,
 };
 
-const inputClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
-
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState(
     registerAction,
@@ -25,7 +22,7 @@ export function RegisterForm() {
       <form action={formAction} className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700" htmlFor="fullName">
+            <label className="form-label" htmlFor="fullName">
               Full Name
             </label>
             <input
@@ -34,17 +31,14 @@ export function RegisterForm() {
               type="text"
               autoComplete="name"
               placeholder="Jordan Lee"
-              className={inputClassName}
+              className="form-input h-[52px]"
               required
             />
             <FieldError errors={state.fieldErrors?.fullName} />
           </div>
 
           <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-slate-700"
-              htmlFor="phoneNumber"
-            >
+            <label className="form-label" htmlFor="phoneNumber">
               Phone Number
             </label>
             <input
@@ -53,7 +47,7 @@ export function RegisterForm() {
               type="tel"
               autoComplete="tel"
               placeholder="9800000000"
-              className={inputClassName}
+              className="form-input h-[52px]"
               required
             />
             <FieldError errors={state.fieldErrors?.phoneNumber} />
@@ -61,7 +55,7 @@ export function RegisterForm() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700" htmlFor="email">
+          <label className="form-label" htmlFor="email">
             Work Email
           </label>
           <input
@@ -70,7 +64,7 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-            className={inputClassName}
+            className="form-input h-[52px]"
             required
           />
           <FieldError errors={state.fieldErrors?.email} />
@@ -78,7 +72,7 @@ export function RegisterForm() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700" htmlFor="password">
+            <label className="form-label" htmlFor="password">
               Password
             </label>
             <input
@@ -87,17 +81,14 @@ export function RegisterForm() {
               type="password"
               autoComplete="new-password"
               placeholder="Create a password"
-              className={inputClassName}
+              className="form-input h-[52px]"
               required
             />
             <FieldError errors={state.fieldErrors?.password} />
           </div>
 
           <div className="space-y-2">
-            <label
-              className="text-sm font-medium text-slate-700"
-              htmlFor="confirmPassword"
-            >
+            <label className="form-label" htmlFor="confirmPassword">
               Confirm Password
             </label>
             <input
@@ -106,7 +97,7 @@ export function RegisterForm() {
               type="password"
               autoComplete="new-password"
               placeholder="Re-enter password"
-              className={inputClassName}
+              className="form-input h-[52px]"
               required
             />
             <FieldError errors={state.fieldErrors?.confirmPassword} />
@@ -114,7 +105,7 @@ export function RegisterForm() {
         </div>
 
         {state.message ? (
-          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="form-error">
             {state.message}
           </p>
         ) : null}
@@ -122,15 +113,15 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+          className="w-full h-[52px] border-none rounded-xl bg-[#00E5FF] text-[#050816] text-base font-bold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-300 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
         >
-          {isPending ? "Creating account..." : "Create new Account"}
+          {isPending ? "Creating account..." : "Create Account"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-600">
+      <p className="mt-6 text-sm text-center text-white/50">
         Already have an account?{" "}
-        <Link className="font-semibold text-slate-900 hover:underline" href="/login">
+        <Link className="font-semibold text-[#00E5FF] hover:underline" href="/login">
           Sign In
         </Link>
       </p>
