@@ -28,18 +28,17 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <Section id="how-it-works" className="scroll-mt-20">
-      <div className="glow-orb glow-orb-lg" style={{ top: '33%', right: 0 }} />
+    <Section id="how-it-works">
       <div className="section-header">
-        <div className="section-tag">How It Works</div>
+        <div className="section-tag"><span className="section-tag-dot" />How It Works</div>
         <h2 className="heading-lg">From setup to scale in<br />four simple steps</h2>
         <p className="mt-4 body-text">Get your logistics operation up and running on CargoNep with minimal friction and immediate value.</p>
       </div>
 
       {/* 2-column wide grid */}
-      <div className="grid sm:grid-cols-2 gap-7">
+      <div className="grid sm:grid-cols-2 gap-6">
         {steps.map((s) => (
-          <Card key={s.step} padding="p-10" hover={true} glow={false} className="flex flex-col min-w-[280px]">
+          <Card key={s.step} padding="p-8" hover={true} glow={false} className="flex flex-col">
             <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center mb-6">
               <span className="text-[#00E5FF] text-lg font-bold">{s.step}</span>
             </div>

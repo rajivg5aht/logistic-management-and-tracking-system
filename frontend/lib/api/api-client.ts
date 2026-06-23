@@ -1,5 +1,9 @@
+// Use relative URLs on the client (browser → Next.js proxy → backend)
+// Use absolute URL on the server (server actions call backend directly)
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  typeof window !== "undefined"
+    ? ""
+    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type ApiResponse<T> = {
   status: number;

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: var(--font-inter), "Inter", sans-serif;
   --color-bg: #050816;
   --color-surface: #0B1220;
   --color-primary: #00E5FF;
@@ -31,19 +31,28 @@
   box-sizing: border-box;
 }
 
+:focus-visible {
+  outline: 2px solid #00E5FF;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.form-input:focus-visible {
+  outline: none;
+}
+
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 88px;
 }
 
 body {
-  font-family: "Inter", "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #050816;
   color: #ffffff;
   overflow-x: hidden;
-  /* Fixed navbar offset — keeps hero from rendering at y=0 under fixed header */
-  padding-top: 80px;
 }
 
 /* Scrollbar styling */
@@ -81,12 +90,11 @@ body {
 
 /* ========== CONTAINER SYSTEM ========== */
 .container-max {
-  width: 92vw;
-  max-width: 1600px;
+  width: 100%;
+  max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: clamp(24px, 3vw, 48px);
-  padding-right: clamp(24px, 3vw, 48px);
+  padding: 40px clamp(20px, 4vw, 40px);
 }
 
 /* Full-width section container */
@@ -152,6 +160,21 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-tag-dot {
+    animation: none;
+  }
+  .btn-primary:hover,
+  .btn-primary-lg:hover,
+  .btn-secondary:hover,
+  .btn-secondary-lg:hover {
+    transform: none;
+  }
+  .card:hover {
+    transform: none;
+  }
 }
 
 /* ========== TYPOGRAPHY SYSTEM ========== */
@@ -226,7 +249,7 @@ body {
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
   text-decoration: none;
   white-space: nowrap;
@@ -261,7 +284,7 @@ body {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
   background: transparent;
   text-decoration: none;
   white-space: nowrap;
@@ -295,7 +318,7 @@ body {
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
   box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
   text-decoration: none;
   white-space: nowrap;
@@ -319,7 +342,7 @@ body {
   font-size: 17px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
   background: transparent;
   text-decoration: none;
   white-space: nowrap;
@@ -342,7 +365,7 @@ body {
   font-size: 14px;
   color: #ffffff;
   outline: none;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
 }
 
 .form-input::placeholder {
@@ -365,11 +388,11 @@ body {
 
 .form-error {
   border-radius: 12px;
-  border: 1px solid rgba(255, 0, 0, 0.2);
-  background: rgba(255, 0, 0, 0.05);
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  background: rgba(255, 0, 0, 0.07);
   padding: 12px 20px;
   font-size: 13px;
-  color: rgba(255, 100, 100, 0.9);
+  color: rgba(255, 110, 110, 0.95);
 }
 
 /* ========== CARD BASE ========== */
@@ -378,9 +401,7 @@ body {
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
-  /* Systemic padding: 32px horizontal, 28px vertical */
-  padding: 28px 32px;
-  transition: all 0.5s ease;
+  transition: border-color 0.5s ease, transform 0.5s ease, box-shadow 0.5s ease;
 }
 
 .card:hover {
@@ -388,36 +409,10 @@ body {
   transform: translateY(-3px);
 }
 
-/* Card padding variants */
-.card-padding-sm {
-  padding: 24px 28px;
-}
-
-.card-padding-lg {
-  padding: 40px;
-}
-
 /* ========== CARD GRID GAP SYSTEM ========== */
 .card-grid {
   display: grid;
   gap: 28px;
-}
-
-/* Minimum card widths to prevent compression */
-.card-min-width-feature {
-  min-width: 360px;
-}
-
-.card-min-width-category {
-  min-width: 280px;
-}
-
-.card-min-width-product {
-  min-width: 280px;
-}
-
-.card-min-width-testimonial {
-  min-width: 320px;
 }
 
 /* ========== SECTION DIVIDER ========== */

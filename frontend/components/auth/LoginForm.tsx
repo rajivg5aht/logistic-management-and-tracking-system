@@ -101,7 +101,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="name@cargonep.com"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
-              className="form-input pl-12 h-[52px]"
+              className="form-input pl-12 h-12"
               required
             />
           </div>
@@ -131,7 +131,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="••••••••"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
-              className="form-input pl-12 pr-12 h-[52px]"
+              className="form-input pl-12 pr-12 h-12"
               required
             />
             <button
@@ -145,19 +145,6 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
           <FieldError errors={state.fieldErrors?.password} />
         </div>
 
-        {/* Remember Me */}
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2.5 cursor-pointer select-none">
-            <input 
-              type="checkbox" 
-              className="w-[18px] h-[18px] border border-white/15 rounded bg-white/[0.01] cursor-pointer appearance-none relative checked:bg-[#00E5FF] checked:border-[#00E5FF] checked:after:content-['✓'] checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2 checked:after:text-black checked:after:text-[10px] checked:after:font-bold transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/50" 
-            />
-            <span className="text-white/50 text-sm hover:text-white/80 transition-colors">
-              Remember for 30 days
-            </span>
-          </label>
-        </div>
-
         {/* Error message */}
         {state.message ? (
           <p className="form-error">
@@ -169,7 +156,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-[52px] border-none rounded-xl bg-[#00E5FF] text-[#050816] text-base font-bold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-300 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
+          className="w-full h-12 border-none rounded-xl bg-[#00E5FF] text-[#050816] text-base font-bold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-300 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>

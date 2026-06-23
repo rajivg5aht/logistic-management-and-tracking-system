@@ -76,7 +76,7 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-5">
               {user.profileImage ? (
                 <img
-                  src={`http://localhost:4000${user.profileImage}`}
+                  src={user.profileImage}
                   alt="Profile"
                   className="h-16 w-16 flex-shrink-0 rounded-2xl object-cover border border-[#00E5FF]/20 shadow-[0_0_10px_rgba(0,229,255,0.15)]"
                 />
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
                 <h1 className="text-2xl font-bold text-white md:text-3xl">
                   Welcome back, {user.fullName}
                 </h1>
-                <p className="mt-1 text-white/40">
+                <p className="mt-1 text-white/30">
                   You are signed in to the logistics management workspace.
                 </p>
               </div>
@@ -98,9 +98,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Info Cards Grid */}
-        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
           <div className="card p-8">
-            <div className="relative">
+            <div className="relative min-w-0">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
                 <Mail size={20} />
               </div>
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="card p-8">
-            <div className="relative">
+            <div className="relative min-w-0">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
                 <Phone size={20} />
               </div>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="card p-8">
-            <div className="relative">
+            <div className="relative min-w-0">
               <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
                 <Shield size={20} />
               </div>
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-7 sm:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-3">
           {[
             { icon: <Package size={20} />, label: "Active Shipments", value: "—" },
             { icon: <Truck size={20} />, label: "Fleet Vehicles", value: "—" },
@@ -158,10 +158,10 @@ export default async function DashboardPage() {
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/25">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/30">
                     {stat.label}
                   </p>
-                  <p className="mt-1 text-xl font-bold text-white/40">
+                  <p className="mt-1 text-xl font-bold text-white/30">
                     {stat.value}
                   </p>
                 </div>

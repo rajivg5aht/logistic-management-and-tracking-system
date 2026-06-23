@@ -51,7 +51,7 @@ function FeaturedCategories() {
         <p className="mt-4 body-text">Procure industrial grade IoT tracking hardware and software automation tools tailored for your supply chain requirements.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {categories.map((cat, idx) => (
           <Card key={idx} padding="p-10" className="flex flex-col justify-between min-w-[280px]" hover={true} glow={true}>
             <div>
@@ -149,7 +149,7 @@ function PopularProducts() {
         <p className="mt-4 body-text">Premium products selected by industry leaders to unlock complete visibility and cut operational overhead.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((prod, idx) => (
           <Card key={idx} padding="p-8 lg:p-10" className="flex flex-col justify-between min-w-[280px]" hover={true} glow={true}>
             <div className="bg-[#050816]/75 border border-white/[0.03] rounded-xl overflow-hidden aspect-[1.5] mb-5 flex items-center justify-center relative group-hover:border-[#00E5FF]/10 transition-colors">

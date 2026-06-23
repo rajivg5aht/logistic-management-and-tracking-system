@@ -333,7 +333,7 @@ export async function loginAction(
   });
 
   cookieStore.set("user", JSON.stringify(user), {
-    httpOnly: true,
+    httpOnly: false, // Allow client-side JS to read via AuthContext
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: AUTH_COOKIE_MAX_AGE,
@@ -378,7 +378,7 @@ export async function updateProfileAction(
     const updatedUser = await updateProfile(token, payload);
 
     cookieStore.set("user", JSON.stringify(updatedUser), {
-      httpOnly: true,
+      httpOnly: false, // Allow client-side JS to read via AuthContext
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: AUTH_COOKIE_MAX_AGE,

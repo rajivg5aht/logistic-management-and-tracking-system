@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Bell, Settings } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
   { label: "Home", id: "hero", href: "#" },
@@ -37,9 +37,18 @@ export default function Navbar() {
         }
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   return (
@@ -52,7 +61,7 @@ export default function Navbar() {
     >
       <div className="container-max h-full flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
+        <Link href="/" aria-label="CargoNep home" className="flex items-center gap-3 flex-shrink-0 group">
           <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#00E5FF]/20 to-transparent border border-[#00E5FF]/30 group-hover:border-[#00E5FF]/60 transition-colors">
             <svg
               className="w-5 h-5 text-[#00E5FF] animate-pulse"
@@ -97,31 +106,23 @@ export default function Navbar() {
           </ul>
         </nav>
 
-        {/* Right Actions — no "Global View" button */}
+        {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {/* Bell Icon */}
-          <button className="relative w-10 h-10 flex items-center justify-center text-white/60 hover:text-[#00E5FF] transition-colors cursor-pointer rounded-xl hover:bg-white/[0.03]">
-            <Bell size={18} />
-            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-[#00E5FF] rounded-full" />
-          </button>
-
-          {/* Settings Icon */}
-          <button className="w-10 h-10 flex items-center justify-center text-white/60 hover:text-[#00E5FF] transition-colors cursor-pointer rounded-xl hover:bg-white/[0.03]">
-            <Settings size={18} />
-          </button>
-
-          {/* Secure Endpoint Button */}
-          <Link 
-            href="/login" 
+          {/* Get Started Button */}
+          <Link
+            href="/login"
             className="btn-primary btn-sm hidden sm:inline-flex"
           >
-            Secure Endpoint
+            Get Started
           </Link>
 
           {/* Mobile Menu Button */}
           <button
+            type="button"
             className="md:hidden w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-white/[0.03]"
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
             aria-label="Menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -131,7 +132,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-[#050816]/95 backdrop-blur-xl border-b border-white/[0.05]">
+        <div id="mobile-nav" className="md:hidden bg-[#050816]/95 backdrop-blur-xl border-b border-white/[0.05]">
           <div className="container-max py-8">
             <nav className="space-y-1">
               {navItems.map((item) => (
@@ -155,7 +156,7 @@ export default function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="w-full text-center px-5 py-3 rounded-xl text-sm font-bold bg-[#00E5FF] text-[#050816] hover:bg-[#00F0FF] no-underline block"
               >
-                Secure Endpoint
+                Get Started
               </Link>
             </div>
           </div>
