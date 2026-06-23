@@ -17,7 +17,7 @@ interface ProfileUpdateFormProps {
 export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
   const [state, formAction] = useActionState(updateProfileAction, initialState);
   const [previewImage, setPreviewImage] = useState<string | null>(
-    user.profileImage ? `http://localhost:4000${user.profileImage}` : null,
+    user.profileImage ? user.profileImage : null,
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,7 +76,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
         </div>
         <div>
           <h2 className="text-lg font-bold text-white">{user.fullName}</h2>
-          <p className="text-sm capitalize text-white/40">{user.role}</p>
+          <p className="text-sm capitalize text-white/30">{user.role}</p>
           <div className="mt-1 flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]" />
             <span className="text-xs text-green-400/80">Active</span>
@@ -109,7 +109,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="fullName"
             name="fullName"
             defaultValue={user.fullName}
-            className="w-full h-[52px] bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all duration-200 placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03] focus:shadow-[0_0_15px_rgba(0,229,255,0.12)]"
+            className="w-full h-12 bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03]"
             required
           />
           {state.fieldErrors?.fullName && (
@@ -132,7 +132,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="email"
             name="email"
             defaultValue={user.email}
-            className="w-full h-[52px] bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all duration-200 placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03] focus:shadow-[0_0_15px_rgba(0,229,255,0.12)]"
+            className="w-full h-12 bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03]"
             required
           />
           {state.fieldErrors?.email && (
@@ -155,7 +155,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="phoneNumber"
             name="phoneNumber"
             defaultValue={user.phoneNumber}
-            className="w-full h-[52px] bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all duration-200 placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03] focus:shadow-[0_0_15px_rgba(0,229,255,0.12)]"
+            className="w-full h-12 bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 text-sm text-white outline-none transition-all placeholder-white/20 focus:border-[#00E5FF] focus:bg-white/[0.03]"
             required
           />
           {state.fieldErrors?.phoneNumber && (
@@ -169,7 +169,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
       {/* Submit Button */}
       <button
         type="submit"
-        className="mt-8 w-full h-[52px] border-none rounded-xl bg-[#00E5FF] text-black text-base font-semibold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-200 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.3)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+        className="mt-8 w-full h-12 border-none rounded-xl bg-[#00E5FF] text-black text-base font-semibold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.3)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
       >
         Update Profile
       </button>

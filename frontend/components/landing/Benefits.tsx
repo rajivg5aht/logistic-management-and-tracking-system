@@ -39,18 +39,17 @@ const benefits = [
 
 export default function Benefits() {
   return (
-    <Section id="benefits" className="scroll-mt-20">
-      <div className="glow-orb glow-orb-xl" style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} />
+    <Section id="benefits">
       <div className="section-header">
-        <div className="section-tag">Why CargoNep</div>
+        <div className="section-tag"><span className="section-tag-dot" />Why CargoNep</div>
         <h2 className="heading-lg">Built for logistics teams<br />that demand more</h2>
         <p className="mt-4 body-text">Thousands of enterprises trust CargoNep to power their global supply chains with cutting-edge technology and enterprise-grade reliability.</p>
       </div>
 
       {/* 3-column wide grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {benefits.map((b) => (
-          <Card key={b.title} padding="p-10" className="flex flex-col min-w-[280px]">
+          <Card key={b.title} padding="p-8" className="flex flex-col">
             <div className="w-12 h-12 rounded-2xl bg-[#00E5FF]/10 flex items-center justify-center text-[#00E5FF] mb-5">
               {b.icon}
             </div>

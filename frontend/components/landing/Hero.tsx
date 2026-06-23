@@ -111,13 +111,13 @@ export default function Hero() {
 
           {/* Right Column - Visual */}
           <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-[#00E5FF]/10 via-transparent to-[#00B8FF]/5 rounded-[32px] blur-2xl opacity-70 pointer-events-none" />
-            <div className="relative bg-[#0B1220]/45 backdrop-blur-md border border-white/[0.05] rounded-[28px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden group">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-[#00E5FF]/10 via-transparent to-[#00B8FF]/5 rounded-2xl blur-2xl opacity-70 pointer-events-none" />
+            <div className="relative bg-[#0B1220]/45 backdrop-blur-md border border-white/[0.05] rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden group">
               <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[#00E5FF]/20 to-transparent" />
-              <div className="bg-[#050816]/75 border border-white/[0.02] rounded-[20px] overflow-hidden p-1.5 aspect-[1.6] flex items-center justify-center">
+              <div className="bg-[#050816]/75 border border-white/[0.02] rounded-2xl overflow-hidden p-1.5 aspect-[1.6] flex items-center justify-center">
                 <WorldMapVisualization />
               </div>
-              <div className="absolute bottom-7 left-7 right-7 bg-[#0B1220]/80 backdrop-blur-lg border border-[#00E5FF]/15 rounded-[16px] p-4 flex items-center justify-between shadow-[0_15px_35px_rgba(0,0,0,0.6)]">
+              <div className="absolute bottom-7 left-7 right-7 bg-[#0B1220]/80 backdrop-blur-lg border border-[#00E5FF]/15 rounded-xl p-4 flex items-center justify-between shadow-[0_15px_35px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] shadow-[0_0_15px_rgba(0,229,255,0.15)] flex-shrink-0">
                     <Rocket size={18} className="animate-pulse" />

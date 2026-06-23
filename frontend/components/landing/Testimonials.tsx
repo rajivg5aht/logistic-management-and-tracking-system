@@ -70,9 +70,29 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return result;
 }
 
+function TestimonialAvatar({ t }: { t: typeof testimonials[0] }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="w-10 h-10 rounded-full border border-[#00E5FF]/20 bg-gradient-to-br from-[#00E5FF]/20 to-[#00E5FF]/5 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+        {t.initials}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={t.avatar}
+      alt={t.name}
+      loading="lazy"
+      className="w-10 h-10 rounded-full border border-[#00E5FF]/20 object-cover flex-shrink-0"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function TestimonialCard({ t }: { t: typeof testimonials[0] }) {
   return (
-    <Card padding="p-8 lg:p-10" hover={true} glow={true} className="flex flex-col h-full min-w-[320px]">
+    <Card padding="p-8 lg:p-10" hover={true} glow={true} className="flex flex-col h-full">
       <div className="flex gap-1 mb-6">
         {Array.from({ length: t.rating }).map((_, i) => (
           <Star key={i} size={16} className="text-[#00E5FF] fill-[#00E5FF]" />
@@ -80,7 +100,7 @@ function TestimonialCard({ t }: { t: typeof testimonials[0] }) {
       </div>
       <p className="body-text italic mb-8 text-white/70 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
       <div className="flex items-center gap-3.5 pt-6 border-t border-white/[0.04] mt-auto">
-        <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full border border-[#00E5FF]/20 object-cover flex-shrink-0" />
+        <TestimonialAvatar t={t} />
         <div>
           <p className="text-sm font-bold text-white tracking-tight">{t.name}</p>
           <p className="text-xs text-white/40 mt-0.5">{t.role}, {t.company}</p>
@@ -102,6 +122,7 @@ export default function Testimonials() {
       if (w >= 1200) setCardsPerSlide(3);
       else if (w >= 768) setCardsPerSlide(2);
       else setCardsPerSlide(1);
+      setCurrent(0);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -135,7 +156,7 @@ export default function Testimonials() {
   }, [isPaused, totalSlides]);
 
   return (
-    <Section id="testimonials" className="scroll-mt-20 bg-[#050816]">
+    <Section id="testimonials" className="bg-[#050816]">
       <div className="glow-orb glow-orb-lg" style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">

@@ -50,17 +50,16 @@ function NightMapVisualization() {
 
 export default function Features() {
   return (
-    <Section id="features" className="scroll-mt-20 bg-[#050816]">
-      <div className="glow-orb glow-orb-xl" style={{ top: '33%', left: '50%', transform: 'translateX(-50%)' }} />
+    <Section id="features" className="bg-[#050816]">
       <div className="section-header">
         <div className="section-tag"><span className="section-tag-dot" />Platform Features</div>
         <h2 className="heading-lg">Precision Engineered Features</h2>
         <p className="mt-4 body-text">Our platform integrates directly with your existing infrastructure to provide a unified command center for all logistics operations.</p>
       </div>
 
-      {/* Top row — 2 large cards, min-height 320px, gap 28px */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 mb-7">
-        <Card padding="p-10" className="flex flex-col min-h-[320px] min-w-[360px]" hover={true} glow={true}>
+      {/* Top row — 2 large cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card padding="p-8" className="flex flex-col" hover={true} glow={true}>
           <div className="flex items-start gap-5">
             <div className="w-12 h-12 rounded-xl bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] flex-shrink-0">
               <Crosshair size={22} />
@@ -75,7 +74,7 @@ export default function Features() {
           </div>
         </Card>
 
-        <Card padding="p-10" className="flex flex-col min-h-[320px] min-w-[360px]" hover={true} glow={true}>
+        <Card padding="p-8" className="flex flex-col" hover={true} glow={true}>
           <div className="flex items-start gap-5">
             <div className="w-12 h-12 rounded-xl bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] flex-shrink-0">
               <Network size={22} />
@@ -97,10 +96,10 @@ export default function Features() {
         </Card>
       </div>
 
-      {/* Bottom row — 3 smaller cards, min-height 160px */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
+      {/* Bottom row — 3 smaller cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {bottomFeatures.map((f) => (
-          <Card key={f.title} padding="p-10" className="flex flex-col min-h-[160px] min-w-[360px]" hover={true} glow={true}>
+          <Card key={f.title} padding="p-8" className="flex flex-col" hover={true} glow={true}>
             <div className="w-11 h-11 rounded-xl bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center text-[#00E5FF] mb-5">
               {f.icon}
             </div>
