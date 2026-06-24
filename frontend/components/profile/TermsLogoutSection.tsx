@@ -13,34 +13,32 @@ export default function TermsLogoutSection() {
   };
 
   return (
-    <div className="bg-[#0B1220] border border-white/[0.06] rounded-2xl overflow-hidden">
-      {/* Terms of Service */}
+    <div className="card overflow-hidden">
       <button
         type="button"
-        className="w-full h-[65px] px-6 flex items-center justify-between border-b border-white/[0.05] transition-colors duration-150 hover:bg-white/[0.03]"
+        className="flex min-h-[68px] w-full items-center justify-between border-b border-[var(--border)] px-5 text-left transition-colors duration-150 hover:bg-[var(--surface-soft)] sm:px-6"
       >
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-white/[0.04] flex items-center justify-center">
-            <FileText size={18} className="text-white/30" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-soft)]">
+            <FileText size={18} className="text-[var(--text-muted)]" />
           </div>
-          <span className="text-sm font-medium text-white/80">
+          <span className="text-sm font-medium text-[var(--text-muted)]">
             Terms of Service
           </span>
         </div>
-        <ChevronRight size={18} className="text-white/30" />
+        <ChevronRight size={18} className="text-[var(--text-muted)]" />
       </button>
 
-      {/* Logout */}
       <button
         type="button"
         onClick={handleLogout}
-        className="w-full h-[65px] px-6 flex items-center justify-between transition-colors duration-150 hover:bg-red-500/[0.08]"
+        className="flex min-h-[68px] w-full items-center justify-between px-5 text-left transition-colors duration-150 hover:bg-[rgba(184,92,74,0.08)] sm:px-6"
       >
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-            <LogOut size={18} className="text-red-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgba(184,92,74,0.10)]">
+            <LogOut size={18} className="text-[var(--danger)]" />
           </div>
-          <span className="text-sm font-bold text-[#DC2626]">Logout</span>
+          <span className="text-sm font-bold text-[var(--danger)]">Logout</span>
         </div>
       </button>
     </div>

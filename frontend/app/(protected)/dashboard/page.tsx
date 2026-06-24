@@ -8,12 +8,12 @@ import {
   Mail,
   Phone,
   Shield,
-  UserCircle,
   LogOut,
   Settings,
   TrendingUp,
   Package,
   Truck,
+  MapPinned,
 } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -32,34 +32,48 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const infoCards = [
+    { icon: <Mail size={20} />, label: "Email", value: user.email },
+    { icon: <Phone size={20} />, label: "Phone", value: user.phoneNumber },
+    { icon: <Shield size={20} />, label: "Role", value: user.role },
+  ];
+
+  const stats = [
+    { icon: <Package size={20} />, label: "Active Shipments", value: "No active shipments" },
+    { icon: <Truck size={20} />, label: "Fleet Vehicles", value: "No vehicles assigned" },
+    { icon: <TrendingUp size={20} />, label: "On-Time Rate", value: "Awaiting shipment data" },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#050816] py-16 lg:py-20">
-      <div className="container-max">
-        {/* Header */}
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+    <main className="page-shell">
+      <div className="page-container">
+        <div className="page-header">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-[var(--accent)]">
               <LayoutDashboard size={20} />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#00E5FF]">
+              <p className="page-kicker">
                 Dashboard
               </p>
-              <p className="text-sm text-white/30">Command Center</p>
+              <h1 className="page-title">
+                Logistics Command Center
+              </h1>
+              <p className="page-subtitle">
+                Monitor account details, shipment readiness, and operational status from one consistent workspace.
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/profile"
-              className="btn-secondary btn-sm inline-flex items-center gap-2"
-            >
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link href="/profile" className="btn-secondary btn-sm">
               <Settings size={16} />
               Settings
             </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-2.5 text-sm font-semibold text-red-400 transition-all hover:border-red-500/30 hover:bg-red-500/10"
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-[rgba(184,92,74,0.28)] bg-[rgba(184,92,74,0.10)] px-4 text-sm font-semibold text-[var(--danger)] transition-colors hover:border-[rgba(184,92,74,0.42)] hover:bg-[rgba(184,92,74,0.14)] sm:w-auto"
               >
                 <LogOut size={16} />
                 Logout
@@ -68,107 +82,80 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Welcome Card */}
-        <div className="card p-8 md:p-10 mb-8 relative overflow-hidden">
-          <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.08)_0%,transparent_70%)] blur-3xl pointer-events-none" />
-
-          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-5">
+        <section className="card mb-6 overflow-hidden p-6 sm:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
               {user.profileImage ? (
                 <img
                   src={user.profileImage}
                   alt="Profile"
-                  className="h-16 w-16 flex-shrink-0 rounded-2xl object-cover border border-[#00E5FF]/20 shadow-[0_0_10px_rgba(0,229,255,0.15)]"
+                  className="h-16 w-16 shrink-0 rounded-2xl border border-[rgba(200,162,74,0.20)] object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#00E5FF]/25 to-[#00E5FF]/5 border border-[#00E5FF]/10 text-2xl font-bold text-white">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-2xl font-bold text-[var(--text)]">
                   {user.fullName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
-                <h1 className="text-2xl font-bold text-white md:text-3xl">
-                  Welcome back, {user.fullName}
-                </h1>
-                <p className="mt-1 text-white/30">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--accent)]">
+                  Welcome back
+                </p>
+                <h2 className="truncate text-2xl font-bold text-[var(--text)] md:text-3xl">
+                  {user.fullName}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
                   You are signed in to the logistics management workspace.
                 </p>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Info Cards Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <div className="card p-8">
-            <div className="relative min-w-0">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
-                <Mail size={20} />
+            <div className="empty-state text-left md:w-[260px]">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <MapPinned size={18} />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/30">
-                Email
-              </p>
-              <p className="mt-2 text-lg font-semibold text-white truncate">
-                {user.email}
+              <p className="text-sm font-semibold text-[var(--text)]">No live route selected</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                Shipment activity will appear here when tracking data is available.
               </p>
             </div>
           </div>
+        </section>
 
-          <div className="card p-8">
-            <div className="relative min-w-0">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
-                <Phone size={20} />
+        <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {infoCards.map((card) => (
+            <div className="card p-5 sm:p-6" key={card.label}>
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                {card.icon}
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/30">
-                Phone
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                {card.label}
               </p>
-              <p className="mt-2 text-lg font-semibold text-white">
-                {user.phoneNumber}
+              <p className="mt-2 truncate text-base font-semibold capitalize text-[var(--text)]">
+                {card.value}
               </p>
             </div>
-          </div>
+          ))}
+        </section>
 
-          <div className="card p-8">
-            <div className="relative min-w-0">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00E5FF]/10 text-[#00E5FF]">
-                <Shield size={20} />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/30">
-                Role
-              </p>
-              <p className="mt-2 text-lg font-semibold capitalize text-white">
-                {user.role}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid gap-6 sm:grid-cols-3">
-          {[
-            { icon: <Package size={20} />, label: "Active Shipments", value: "—" },
-            { icon: <Truck size={20} />, label: "Fleet Vehicles", value: "—" },
-            { icon: <TrendingUp size={20} />, label: "On-Time Rate", value: "—" },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="card p-8"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.03] text-white/30">
+        <section className="grid gap-4 sm:grid-cols-3">
+          {stats.map((stat) => (
+            <div key={stat.label} className="card p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-soft)] text-[var(--text-muted)]">
                   {stat.icon}
                 </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/30">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {stat.label}
                   </p>
-                  <p className="mt-1 text-xl font-bold text-white/30">
+                  <p className="mt-2 text-sm font-medium text-[var(--text-muted)]">
                     {stat.value}
                   </p>
                 </div>
               </div>
             </div>
           ))}
-        </div>
+        </section>
       </div>
     </main>
   );

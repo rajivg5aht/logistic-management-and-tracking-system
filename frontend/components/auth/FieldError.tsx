@@ -7,5 +7,5 @@ export function FieldError({ errors }: FieldErrorProps) {
     return null;
   }
 
-  return <p className="text-sm text-red-400">{errors[0]}</p>;
+  return <p className="text-sm text-[var(--danger)]">{errors[0]}</p>;
 }

@@ -31,7 +31,7 @@ export function RegisterForm() {
               type="text"
               autoComplete="name"
               placeholder="Jordan Lee"
-              className="form-input h-12"
+            className="form-input h-12"
               required
             />
             <FieldError errors={state.fieldErrors?.fullName} />
@@ -113,15 +113,15 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-12 border-none rounded-xl bg-[#00E5FF] text-[#050816] text-base font-bold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-300 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
+          className="btn-primary mt-2 w-full"
         >
           {isPending ? "Creating account..." : "Create Account"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-center text-white/60">
+      <p className="mt-6 text-sm text-center text-[var(--text-muted)]">
         Already have an account?{" "}
-        <Link className="font-semibold text-[#00E5FF] hover:underline" href="/login">
+        <Link className="font-semibold text-[var(--accent)] hover:underline" href="/login">
           Sign In
         </Link>
       </p>

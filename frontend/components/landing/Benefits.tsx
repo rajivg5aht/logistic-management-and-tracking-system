@@ -50,7 +50,7 @@ export default function Benefits() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {benefits.map((b) => (
           <Card key={b.title} padding="p-8" className="flex flex-col">
-            <div className="w-12 h-12 rounded-2xl bg-[#00E5FF]/10 flex items-center justify-center text-[#00E5FF] mb-5">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] mb-5">
               {b.icon}
             </div>
             <h3 className="heading-sm mb-2">{b.title}</h3>

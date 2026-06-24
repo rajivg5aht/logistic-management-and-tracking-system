@@ -18,7 +18,7 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
       height="20" 
       viewBox="0 0 24 24" 
       fill="none" 
-      stroke={focused ? "#00E5FF" : "rgba(255,255,255,0.4)"} 
+      stroke={focused ? "var(--accent)" : "var(--text-faint)"} 
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round"
@@ -38,7 +38,7 @@ function LockIcon({ focused }: { focused: boolean }) {
       height="20" 
       viewBox="0 0 24 24" 
       fill="none" 
-      stroke={focused ? "#00E5FF" : "rgba(255,255,255,0.4)"} 
+      stroke={focused ? "var(--accent)" : "var(--text-faint)"} 
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round"
@@ -52,7 +52,7 @@ function LockIcon({ focused }: { focused: boolean }) {
 /* ─── Eye Icon ─── */
 function EyeIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -62,7 +62,7 @@ function EyeIcon() {
 /* ─── Eye Off Icon ─── */
 function EyeOffIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
       <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
       <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
@@ -116,7 +116,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
             </label>
             <a
               href="#"
-              className="text-[#00E5FF] text-xs font-semibold no-underline hover:underline"
+              className="text-[var(--accent)] text-xs font-semibold no-underline hover:underline"
             >
               Forgot?
             </a>
@@ -128,7 +128,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="Enter your password"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
               className="form-input pl-12 pr-12 h-12"
@@ -136,7 +136,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
             />
             <button
               type="button"
-              className="absolute right-4 text-white/40 hover:text-white transition-colors cursor-pointer"
+              className="absolute right-4 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -156,16 +156,16 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-12 border-none rounded-xl bg-[#00E5FF] text-[#050816] text-base font-bold cursor-pointer shadow-[0_4px_20px_rgba(0,229,255,0.2)] transition-all duration-300 hover:bg-[#00F0FF] hover:-translate-y-[1px] hover:shadow-[0_6px_25px_rgba(0,229,255,0.35)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none mt-2"
+          className="btn-primary mt-2 w-full"
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
       {/* Create Account Link */}
-      <p className="text-sm text-center text-white/50 mt-6">
-        Don't have an account?{" "}
-        <Link className="font-semibold hover:underline text-[#00E5FF]" href="/register">
+      <p className="text-sm text-center text-[var(--text-muted)] mt-6">
+        Don&apos;t have an account?{" "}
+        <Link className="font-semibold hover:underline text-[var(--accent)]" href="/register">
           Create Account
         </Link>
       </p>
