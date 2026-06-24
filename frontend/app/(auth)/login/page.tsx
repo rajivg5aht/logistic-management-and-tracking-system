@@ -17,38 +17,38 @@ export default function LoginPage() {
       />
       <div className="absolute inset-0 bg-[image:var(--auth-overlay)]" />
 
-      <div className="card relative z-10 w-full max-w-[460px] overflow-hidden p-6 sm:p-8 md:p-10">
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.35)] to-transparent" />
+      <div className="card relative z-10 w-full max-w-[460px] overflow-hidden p-8 sm:p-10">
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.4)] to-transparent" />
 
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3.5 flex items-center gap-2.5">
-            <div className="rounded-xl border border-[rgba(200,162,74,0.25)] bg-[var(--accent-soft)] p-2">
+        <div className="mb-10 flex flex-col items-center text-center">
+          <div className="mb-4 flex items-center gap-2.5">
+            <div className="rounded-xl border border-[rgba(200,162,74,0.3)] bg-[var(--accent-soft)] p-2.5">
               <RocketIcon />
             </div>
-            <span className="text-3xl font-extrabold tracking-normal text-[var(--text)]">
+            <span className="text-4xl font-extrabold tracking-tight text-[var(--text)]">
               CargoNep
             </span>
           </div>
-          <h1 className="mb-2 text-3xl font-bold tracking-normal text-[var(--text)]">
+          <h1 className="mb-3 text-4xl font-extrabold tracking-tight text-[var(--text)]">
             Welcome Back
           </h1>
-          <p className="max-w-[280px] text-sm leading-6 text-[var(--text-muted)]">
+          <p className="max-w-[300px] text-sm leading-relaxed text-[var(--text-muted)]">
             Enter your credentials to access the command center.
           </p>
         </div>
 
         <div
-          className="mb-6 flex h-11 items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-1"
+          className="mb-7 flex h-12 items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-1"
           suppressHydrationWarning
         >
           {roles.map((role) => (
             <button
               key={role}
               type="button"
-              className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded-lg border border-transparent text-[13px] font-semibold transition-all duration-200 ${
+              className={`flex h-full flex-1 cursor-pointer items-center justify-center rounded-lg border border-transparent text-sm font-semibold transition-all duration-200 ${
                 activeRole === role
-                  ? "border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_2px_10px_rgba(200,162,74,0.08)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-muted)]"
+                  ? "border-[rgba(200,162,74,0.25)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_2px_12px_rgba(200,162,74,0.12)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-soft)]"
               }`}
               onClick={() => setActiveRole(role)}
               suppressHydrationWarning

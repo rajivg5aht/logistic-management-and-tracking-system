@@ -13,7 +13,7 @@ const initialState: AuthFormState = {
 function EnvelopeIcon({ focused }: { focused: boolean }) {
   return (
     <svg 
-      className="absolute left-4 pointer-events-none z-10 transition-colors duration-300" 
+      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300" 
       width="20" 
       height="20" 
       viewBox="0 0 24 24" 
@@ -33,7 +33,7 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
 function LockIcon({ focused }: { focused: boolean }) {
   return (
     <svg 
-      className="absolute left-4 pointer-events-none z-10 transition-colors duration-300" 
+      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300" 
       width="20" 
       height="20" 
       viewBox="0 0 24 24" 
@@ -82,16 +82,16 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
 
   return (
     <>
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} className="space-y-4">
         {/* Hidden role field */}
         <input type="hidden" name="role" value={role} />
 
         {/* Email */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="form-label" htmlFor="email">
             Email Address
           </label>
-          <div className="relative flex items-center">
+          <div className="relative">
             <EnvelopeIcon focused={emailFocused} />
             <input
               id="email"
@@ -101,7 +101,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="name@cargonep.com"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
-              className="form-input pl-12 h-12"
+              className="form-input pl-11 h-14 text-sm"
               required
             />
           </div>
@@ -109,19 +109,19 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
         </div>
 
         {/* Password */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="form-label" htmlFor="password">
               Password
             </label>
             <a
               href="#"
-              className="text-[var(--accent)] text-xs font-semibold no-underline hover:underline"
+              className="text-[var(--accent)] text-xs font-medium no-underline hover:underline transition-all duration-200"
             >
-              Forgot?
+              Forgot Password?
             </a>
           </div>
-          <div className="relative flex items-center">
+          <div className="relative">
             <LockIcon focused={passwordFocused} />
             <input
               id="password"
@@ -131,12 +131,12 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="Enter your password"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
-              className="form-input pl-12 pr-12 h-12"
+              className="form-input pl-11 pr-11 h-14 text-sm"
               required
             />
             <button
               type="button"
-              className="absolute right-4 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-200 cursor-pointer"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -156,16 +156,16 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="btn-primary mt-2 w-full"
+          className="btn-primary mt-3 w-full"
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
       {/* Create Account Link */}
-      <p className="text-sm text-center text-[var(--text-muted)] mt-6">
-        Don&apos;t have an account?{" "}
-        <Link className="font-semibold hover:underline text-[var(--accent)]" href="/register">
+      <p className="text-sm text-center text-[var(--text-muted)] mt-5">
+        Don't have an account?{" "}
+        <Link className="font-semibold hover:underline text-[var(--accent)] transition-colors duration-200" href="/register">
           Create Account
         </Link>
       </p>
