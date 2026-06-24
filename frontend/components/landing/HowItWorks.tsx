@@ -39,8 +39,8 @@ export default function HowItWorks() {
       <div className="grid sm:grid-cols-2 gap-6">
         {steps.map((s) => (
           <Card key={s.step} padding="p-8" hover={true} glow={false} className="flex flex-col">
-            <div className="w-14 h-14 rounded-full bg-[#00E5FF]/10 border border-[#00E5FF]/20 flex items-center justify-center mb-6">
-              <span className="text-[#00E5FF] text-lg font-bold">{s.step}</span>
+            <div className="w-14 h-14 rounded-full bg-[var(--accent-soft)] border border-[rgba(200,162,74,0.20)] flex items-center justify-center mb-6">
+              <span className="text-[var(--accent)] text-lg font-bold">{s.step}</span>
             </div>
             <h3 className="heading-sm mb-3">{s.title}</h3>
             <p className="body-text-sm">{s.desc}</p>

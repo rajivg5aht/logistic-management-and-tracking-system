@@ -15,40 +15,30 @@ const settingsItems = [
     id: "personal",
     label: "Personal Information",
     icon: User,
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-400",
     form: "profile" as const,
   },
   {
     id: "notifications",
     label: "Notification Preferences",
     icon: Bell,
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-400",
     form: null,
   },
   {
     id: "security",
     label: "Security & Privacy",
     icon: Shield,
-    iconBg: "bg-red-500/10",
-    iconColor: "text-red-400",
     form: "password" as const,
   },
   {
     id: "address",
     label: "Address Management",
     icon: MapPin,
-    iconBg: "bg-indigo-500/10",
-    iconColor: "text-indigo-400",
     form: null,
   },
   {
     id: "payment",
     label: "Payment Methods",
     icon: CreditCard,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-400",
     form: null,
   },
 ];
@@ -61,9 +51,9 @@ export default function SettingsList({ user }: SettingsListProps) {
   };
 
   return (
-    <div className="bg-[#0B1220] border border-white/[0.06] rounded-2xl overflow-hidden">
-      <div className="px-6 py-5 border-b border-white/[0.06]">
-        <p className="text-[14px] font-bold tracking-[2px] uppercase text-white/30">
+    <div className="card overflow-hidden">
+      <div className="border-b border-[var(--border)] px-5 py-4 sm:px-6">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           Account Settings
         </p>
       </div>
@@ -78,33 +68,30 @@ export default function SettingsList({ user }: SettingsListProps) {
             <button
               type="button"
               onClick={() => toggleExpand(item.id)}
-              className={`w-full h-[65px] px-6 flex items-center justify-between transition-colors duration-150 hover:bg-white/[0.03] ${
-                !isLast ? "border-b border-white/[0.04]" : ""
-              } ${isExpanded ? "bg-white/[0.02]" : ""}`}
+              className={`flex min-h-[68px] w-full items-center justify-between px-5 text-left transition-colors duration-150 hover:bg-[var(--surface-soft)] sm:px-6 ${
+                !isLast ? "border-b border-[var(--border)]" : ""
+              } ${isExpanded ? "bg-[var(--surface-soft)]" : ""}`}
             >
-              <div className="flex items-center gap-4">
-                <div
-                  className={`w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center`}
-                >
-                  <Icon size={18} className={item.iconColor} />
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                  <Icon size={18} />
                 </div>
-                <span className="text-sm font-medium text-white/80">
+                <span className="truncate text-sm font-medium text-[var(--text-muted)]">
                   {item.label}
                 </span>
               </div>
               <ChevronRight
                 size={18}
-                className={`text-white/30 transition-transform duration-200 ${
+                className={`text-[var(--text-muted)] transition-transform duration-200 ${
                   isExpanded ? "rotate-90" : ""
                 }`}
               />
             </button>
 
-            {/* Expandable section */}
             {isExpanded && (
               <div
-                className={`px-6 py-6 bg-[#050816]/50 ${
-                  !isLast ? "border-b border-white/[0.04]" : ""
+                className={`bg-[rgba(246,241,231,0.40)] px-5 py-6 sm:px-6 ${
+                  !isLast ? "border-b border-[var(--border)]" : ""
                 }`}
               >
                 {item.form === "profile" && (
@@ -112,9 +99,9 @@ export default function SettingsList({ user }: SettingsListProps) {
                 )}
                 {item.form === "password" && <PasswordUpdateForm />}
                 {item.form === null && (
-                  <p className="text-sm text-white/30 italic">
-                    Coming soon
-                  </p>
+                  <div className="empty-state text-sm">
+                    This setting is not available yet.
+                  </div>
                 )}
               </div>
             )}

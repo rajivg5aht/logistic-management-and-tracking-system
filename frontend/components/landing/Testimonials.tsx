@@ -17,7 +17,7 @@ const testimonials = [
   },
   {
     rating: 5,
-    quote: "The visibility we have now is unprecedented. Every driver, every container, every mile—it's all there in one beautiful dashboard.",
+    quote: "The visibility we have now is unprecedented. Every driver, every container, every mile - it's all there in one beautiful dashboard.",
     name: "Sarah Jenkins",
     role: "COO",
     company: "RapidState Fleet",
@@ -74,7 +74,7 @@ function TestimonialAvatar({ t }: { t: typeof testimonials[0] }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (
-      <div className="w-10 h-10 rounded-full border border-[#00E5FF]/20 bg-gradient-to-br from-[#00E5FF]/20 to-[#00E5FF]/5 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+      <div className="w-10 h-10 rounded-full border border-[rgba(200,162,74,0.20)] bg-gradient-to-br from-[rgba(200,162,74,0.20)] to-[rgba(200,162,74,0.05)] flex items-center justify-center text-sm font-bold text-[var(--text)] flex-shrink-0">
         {t.initials}
       </div>
     );
@@ -84,7 +84,7 @@ function TestimonialAvatar({ t }: { t: typeof testimonials[0] }) {
       src={t.avatar}
       alt={t.name}
       loading="lazy"
-      className="w-10 h-10 rounded-full border border-[#00E5FF]/20 object-cover flex-shrink-0"
+      className="w-10 h-10 rounded-full border border-[rgba(200,162,74,0.20)] object-cover flex-shrink-0"
       onError={() => setFailed(true)}
     />
   );
@@ -95,15 +95,15 @@ function TestimonialCard({ t }: { t: typeof testimonials[0] }) {
     <Card padding="p-8 lg:p-10" hover={true} glow={true} className="flex flex-col h-full">
       <div className="flex gap-1 mb-6">
         {Array.from({ length: t.rating }).map((_, i) => (
-          <Star key={i} size={16} className="text-[#00E5FF] fill-[#00E5FF]" />
+          <Star key={i} size={16} className="text-[var(--accent)] fill-[var(--accent)]" />
         ))}
       </div>
-      <p className="body-text italic mb-8 text-white/70 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
-      <div className="flex items-center gap-3.5 pt-6 border-t border-white/[0.04] mt-auto">
+      <p className="body-text italic mb-8 text-[var(--text-muted)] leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
+      <div className="flex items-center gap-3.5 pt-6 border-t border-[var(--border)] mt-auto">
         <TestimonialAvatar t={t} />
         <div>
-          <p className="text-sm font-bold text-white tracking-tight">{t.name}</p>
-          <p className="text-xs text-white/40 mt-0.5">{t.role}, {t.company}</p>
+          <p className="text-sm font-bold text-[var(--text)] tracking-tight">{t.name}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">{t.role}, {t.company}</p>
         </div>
       </div>
     </Card>
@@ -156,19 +156,17 @@ export default function Testimonials() {
   }, [isPaused, totalSlides]);
 
   return (
-    <Section id="testimonials" className="bg-[#050816]">
-      <div className="glow-orb glow-orb-lg" style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }} />
-
+    <Section id="testimonials" className="bg-[var(--app-bg)]">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <h2 className="heading-lg">Trusted by Industry Leaders</h2>
           <p className="mt-3 body-text">Join the 500+ global enterprises optimizing with CargoNep.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={prev} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/25 hover:bg-white/[0.02] transition-all cursor-pointer">
+          <button onClick={prev} className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--border)] hover:bg-[var(--surface-soft)] transition-all cursor-pointer">
             <ChevronLeft size={18} />
           </button>
-          <button onClick={next} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/25 hover:bg-white/[0.02] transition-all cursor-pointer">
+          <button onClick={next} className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--border)] hover:bg-[var(--surface-soft)] transition-all cursor-pointer">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -203,7 +201,7 @@ export default function Testimonials() {
               key={i}
               onClick={() => goTo(i)}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                i === current ? "bg-[#00E5FF] w-6" : "bg-white/20 hover:bg-white/40"
+                i === current ? "bg-[var(--accent)] w-6" : "bg-[var(--surface-soft)] hover:bg-[var(--surface-soft)]"
               }`}
             />
           ))}

@@ -5,18 +5,18 @@ import { ArrowRight } from "lucide-react";
 
 export default function ContactCta() {
   return (
-    <section id="contact" className="relative overflow-hidden bg-[#050816] pt-20 pb-0">
+    <section id="contact" className="relative overflow-hidden bg-[var(--app-bg)] pt-20 pb-0">
       <div className="w-full">
         <div className="container-max">
-          <div className="relative bg-gradient-to-br from-[#0B1220] via-[#0B1220] to-[#050816] border border-[#00E5FF]/10 text-center overflow-hidden rounded-2xl px-12 py-16 md:px-20 md:py-20 lg:px-24 lg:py-24">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(0,229,255,0.06)_0%,transparent_70%)] pointer-events-none" />
-            <div className="absolute top-0 left-20 right-20 h-px bg-gradient-to-r from-transparent via-[#00E5FF]/15 to-transparent" />
+          <div className="dark-panel relative text-center overflow-hidden px-8 py-14 md:px-16 md:py-18 lg:px-24 lg:py-24">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(200,162,74,0.06)_0%,transparent_70%)] pointer-events-none" />
+            <div className="absolute top-0 left-20 right-20 h-px bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.15)] to-transparent" />
 
             <div className="relative max-w-2xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-[-0.02em] text-white">
+              <h2 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-normal text-[var(--text-on-dark)]">
                 Ready to Optimize Your Fleet?
               </h2>
-              <p className="mt-4 body-text">
+              <p className="mt-4 text-base leading-7 text-[var(--text-on-dark-muted)]">
                 Schedule a personalized demo with our logistics experts and see how CargoNep can transform your operations in as little as 30 days.
               </p>
               <div className="mt-10 flex flex-wrap gap-4 justify-center">

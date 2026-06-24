@@ -24,8 +24,8 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050816] pt-10 pb-16">
-      <div className="container-max space-y-8">
+    <div className="page-shell">
+      <div className="page-container space-y-8">
         {/* Profile Header */}
         <ProfileHeader user={user} />
 
@@ -42,8 +42,8 @@ export default async function ProfilePage() {
         <TermsLogoutSection />
 
         {/* Footer */}
-        <div className="mt-10 pt-6 border-t border-white/[0.05] text-center">
-          <p className="text-xs text-white/20">
+        <div className="mt-8 border-t border-[var(--border)] pt-6 text-center">
+          <p className="text-xs text-[var(--text-muted)]">
             &copy; {new Date().getFullYear()} Logistic Management System. All rights reserved.
           </p>
         </div>
