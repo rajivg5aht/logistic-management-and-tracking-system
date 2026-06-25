@@ -8,7 +8,7 @@ export function ActiveShipmentCard() {
     <div className="app-card overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Left: Teal Map */}
-        <div className="relative flex min-h-[200px] items-center justify-center bg-[#0e7c7b] p-6">
+        <div className="relative flex min-h-[200px] items-center justify-center bg-[var(--surface-dark)] p-6">
           {/* World map placeholder - simplified geometric representation */}
           <svg
             className="absolute inset-0 h-full w-full opacity-20"

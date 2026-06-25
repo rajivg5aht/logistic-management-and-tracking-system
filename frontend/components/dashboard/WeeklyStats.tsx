@@ -17,7 +17,7 @@ export function WeeklyStats() {
         return (
           <div
             key={stat.label}
-            className={`app-card p-5 ${stat.dark ? "bg-[#191817] text-[#fff7e8]" : ""}`}
+            className={`app-card p-5 ${stat.dark ? "bg-[var(--surface-dark)] text-[var(--text-on-dark)]" : ""}`}
           >
             <div className="flex items-center gap-3">
               <div
@@ -32,14 +32,14 @@ export function WeeklyStats() {
               <div className="min-w-0">
                 <p
                   className={`text-xs font-bold uppercase tracking-[0.1em] ${
-                    stat.dark ? "text-[rgba(255,247,232,0.66)]" : "text-[var(--text-muted)]"
+                    stat.dark ? "text-[var(--text-on-dark-muted)]" : "text-[var(--text-muted)]"
                   }`}
                 >
                   {stat.label}
                 </p>
                 <p
                   className={`mt-1.5 text-2xl font-bold ${
-                    stat.dark ? "text-[#fff7e8]" : "text-[var(--text)]"
+                    stat.dark ? "text-[var(--text-on-dark)]" : "text-[var(--text)]"
                   }`}
                 >
                   {stat.value}

@@ -31,7 +31,7 @@ export function RegisterForm() {
               type="text"
               autoComplete="name"
               placeholder="Jordan Lee"
-            className="form-input h-12"
+            className="form-input"
               required
             />
             <FieldError errors={state.fieldErrors?.fullName} />
@@ -47,7 +47,7 @@ export function RegisterForm() {
               type="tel"
               autoComplete="tel"
               placeholder="9800000000"
-              className="form-input h-12"
+              className="form-input"
               required
             />
             <FieldError errors={state.fieldErrors?.phoneNumber} />
@@ -64,7 +64,7 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-              className="form-input h-12"
+              className="form-input"
             required
           />
           <FieldError errors={state.fieldErrors?.email} />
@@ -81,7 +81,7 @@ export function RegisterForm() {
               type="password"
               autoComplete="new-password"
               placeholder="Create a password"
-              className="form-input h-12"
+              className="form-input"
               required
             />
             <FieldError errors={state.fieldErrors?.password} />
@@ -97,7 +97,7 @@ export function RegisterForm() {
               type="password"
               autoComplete="new-password"
               placeholder="Re-enter password"
-              className="form-input h-12"
+              className="form-input"
               required
             />
             <FieldError errors={state.fieldErrors?.confirmPassword} />

@@ -201,7 +201,7 @@ export default function Testimonials() {
               key={i}
               onClick={() => goTo(i)}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                i === current ? "bg-[var(--accent)] w-6" : "bg-[var(--surface-soft)] hover:bg-[var(--surface-soft)]"
+                i === current ? "bg-[var(--accent)] w-6" : "bg-[var(--surface-soft)] hover:bg-[var(--accent)]"
               }`}
             />
           ))}

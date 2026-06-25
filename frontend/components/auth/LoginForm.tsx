@@ -12,15 +12,15 @@ const initialState: AuthFormState = {
 /* ─── Envelope Icon ─── */
 function EnvelopeIcon({ focused }: { focused: boolean }) {
   return (
-    <svg 
-      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300" 
-      width="20" 
-      height="20" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke={focused ? "var(--accent)" : "var(--text-faint)"} 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={focused ? "var(--accent)" : "var(--text-faint)"}
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
     >
       <rect width="20" height="16" x="2" y="4" rx="2" />
@@ -32,15 +32,15 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
 /* ─── Lock Icon ─── */
 function LockIcon({ focused }: { focused: boolean }) {
   return (
-    <svg 
-      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300" 
-      width="20" 
-      height="20" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke={focused ? "var(--accent)" : "var(--text-faint)"} 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10 transition-colors duration-300"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={focused ? "var(--accent)" : "var(--text-faint)"}
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
     >
       <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
@@ -101,8 +101,9 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="name@cargonep.com"
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
-              className="form-input pl-11 h-14 text-sm"
+              className="form-input pl-12 text-sm"
               required
+              suppressHydrationWarning
             />
           </div>
           <FieldError errors={state.fieldErrors?.email} />
@@ -131,13 +132,15 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
               placeholder="Enter your password"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
-              className="form-input pl-11 pr-11 h-14 text-sm"
+              className="form-input pl-12 pr-12 text-sm"
               required
+              suppressHydrationWarning
             />
             <button
               type="button"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-200 cursor-pointer"
               onClick={() => setShowPassword(!showPassword)}
+              suppressHydrationWarning
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -157,6 +160,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
           type="submit"
           disabled={isPending}
           className="btn-primary mt-3 w-full"
+          suppressHydrationWarning
         >
           {isPending ? "Signing in..." : "Sign In"}
         </button>

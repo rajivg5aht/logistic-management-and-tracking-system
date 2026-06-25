@@ -1,23 +1,33 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import Link from "next/link";
 
 export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[rgba(251,246,236,0.80)] backdrop-blur-md">
       <div className="flex items-center justify-between px-6 py-4 lg:px-8">
-        {/* Left: Greeting */}
-        <div>
-          <p className="text-sm font-medium text-[var(--text-muted)]">Welcome back,</p>
-          <h1 className="text-2xl font-bold text-[var(--text)] lg:text-3xl">Hello, Kushal!</h1>
+        {/* Left: Hamburger + Greeting */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="lg:hidden p-2 -ml-1.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors cursor-pointer"
+            onClick={() => window.dispatchEvent(new CustomEvent("toggle-sidebar"))}
+            aria-label="Open sidebar"
+          >
+            <Menu size={20} />
+          </button>
+          <div>
+            <p className="text-xs font-medium text-[var(--text-muted)] lg:text-sm">Welcome back,</p>
+            <h1 className="text-xl font-bold text-[var(--text)] lg:text-2xl">Hello, Kushal!</h1>
+          </div>
         </div>
 
         {/* Right: Notification + New Shipment */}
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="relative rounded-xl p-2.5 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors"
+            className="relative rounded-xl p-2.5 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors cursor-pointer"
             aria-label="Notifications"
           >
             <Bell size={20} />
