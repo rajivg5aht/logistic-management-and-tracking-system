@@ -93,7 +93,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="fullName"
             name="fullName"
             defaultValue={user.fullName}
-            className="form-input h-12"
+            className="form-input"
             required
           />
           {state.fieldErrors?.fullName && (
@@ -112,7 +112,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="email"
             name="email"
             defaultValue={user.email}
-            className="form-input h-12"
+            className="form-input"
             required
           />
           {state.fieldErrors?.email && (
@@ -131,7 +131,7 @@ export default function ProfileUpdateForm({ user }: ProfileUpdateFormProps) {
             id="phoneNumber"
             name="phoneNumber"
             defaultValue={user.phoneNumber}
-            className="form-input h-12"
+            className="form-input"
             required
           />
           {state.fieldErrors?.phoneNumber && (

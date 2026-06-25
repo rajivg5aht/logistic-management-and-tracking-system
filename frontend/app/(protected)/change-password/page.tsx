@@ -13,38 +13,34 @@ export default async function ChangePasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--app-bg)]">
-      <div className="container-max py-16 lg:py-20">
-        <div className="mx-auto max-w-2xl">
-          {/* Back Navigation */}
-          <div className="mb-6">
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-muted)] transition hover:text-[var(--text-muted)]"
-            >
-              <ArrowLeft size={16} />
-              Back to Profile
-            </Link>
-          </div>
-
-          {/* Main Card */}
-          <div className="card p-8">
-            <div className="mb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
-                Security
-              </p>
-              <h1 className="mt-3 heading-md">
-                Change Password
-              </h1>
-              <p className="mt-2 text-[var(--text-muted)]">
-                Update your password to keep your account secure
-              </p>
-            </div>
-
-            <PasswordUpdateForm />
-          </div>
-        </div>
+    <div className="mx-auto max-w-2xl">
+      {/* Back Navigation */}
+      <div className="mb-6">
+        <Link
+          href="/profile"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-muted)] transition hover:text-[var(--text)]"
+        >
+          <ArrowLeft size={16} />
+          Back to Profile
+        </Link>
       </div>
-    </main>
+
+      {/* Main Card */}
+      <div className="card p-8">
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
+            Security
+          </p>
+          <h1 className="mt-3 heading-md">
+            Change Password
+          </h1>
+          <p className="mt-2 text-[var(--text-muted)]">
+            Update your password to keep your account secure
+          </p>
+        </div>
+
+        <PasswordUpdateForm />
+      </div>
+    </div>
   );
 }

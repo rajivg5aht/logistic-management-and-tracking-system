@@ -35,7 +35,7 @@ export default function PasswordUpdateForm() {
           type="password"
           id="newPassword"
           name="newPassword"
-          className="form-input h-12"
+          className="form-input"
           required
           minLength={6}
         />
@@ -57,7 +57,7 @@ export default function PasswordUpdateForm() {
           type="password"
           id="confirmPassword"
           name="confirmPassword"
-          className="form-input h-12"
+          className="form-input"
           required
           minLength={6}
         />

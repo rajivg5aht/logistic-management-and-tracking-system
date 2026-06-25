@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function BillingBanner() {
   return (
-    <div className="app-card">
+    <div className="app-card p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Icon + Text */}
         <div className="flex items-center gap-4">

@@ -10,22 +10,22 @@ export default function RegisterPage() {
       />
       <div className="absolute inset-0 bg-[image:var(--auth-overlay)]" />
 
-      <div className="card relative z-10 w-full max-w-[520px] overflow-hidden p-6 sm:p-8 md:p-10">
+      <div className="card relative z-10 w-full max-w-[480px] overflow-hidden p-8 sm:p-10">
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.35)] to-transparent" />
 
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3.5 flex items-center gap-2.5">
-            <div className="rounded-xl border border-[rgba(200,162,74,0.25)] bg-[var(--accent-soft)] p-2">
+          <div className="mb-4 flex items-center gap-2.5">
+            <div className="rounded-xl border border-[rgba(200,162,74,0.25)] bg-[var(--accent-soft)] p-2.5">
               <RocketIcon />
             </div>
-            <span className="text-3xl font-extrabold tracking-normal text-[var(--text)]">
+            <span className="text-3xl font-extrabold tracking-tight text-[var(--text)]">
               CargoNep
             </span>
           </div>
-          <h1 className="mb-2 text-3xl font-bold tracking-normal text-[var(--text)]">
+          <h1 className="heading-md mb-2">
             Get Started
           </h1>
-          <p className="max-w-[320px] text-sm leading-6 text-[var(--text-muted)]">
+          <p className="max-w-[320px] text-sm leading-relaxed text-[var(--text-muted)]">
             Register your workspace and start tracking.
           </p>
         </div>

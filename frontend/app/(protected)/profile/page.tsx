@@ -24,29 +24,27 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="page-shell">
-      <div className="page-container space-y-8">
-        {/* Profile Header */}
-        <ProfileHeader user={user} />
+    <div className="space-y-8">
+      {/* Profile Header */}
+      <ProfileHeader user={user} />
 
-        {/* Quick Action Cards */}
-        <QuickActionCards />
+      {/* Quick Action Cards */}
+      <QuickActionCards />
 
-        {/* Settings List */}
-        <SettingsList user={user} />
+      {/* Settings List */}
+      <SettingsList user={user} />
 
-        {/* Support Banner */}
-        <SupportBanner />
+      {/* Support Banner */}
+      <SupportBanner />
 
-        {/* Terms & Logout */}
-        <TermsLogoutSection />
+      {/* Terms & Logout */}
+      <TermsLogoutSection />
 
-        {/* Footer */}
-        <div className="mt-8 border-t border-[var(--border)] pt-6 text-center">
-          <p className="text-xs text-[var(--text-muted)]">
-            &copy; {new Date().getFullYear()} Logistic Management System. All rights reserved.
-          </p>
-        </div>
+      {/* Footer */}
+      <div className="mt-8 border-t border-[var(--border)] pt-6 text-center">
+        <p className="text-xs text-[var(--text-muted)]">
+          &copy; {new Date().getFullYear()} Logistic Management System. All rights reserved.
+        </p>
       </div>
     </div>
   );

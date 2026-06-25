@@ -41,7 +41,7 @@ export default function Footer() {
           <p className="text-xs text-[var(--text-muted)]">&copy; 2026 CargoNep Inc. All rights reserved.</p>
           <div className="flex items-center gap-6">
             {["Privacy Policy", "Terms of Service", "Security"].map((item) => (
-              <a key={item} href="#" className="text-xs text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors font-medium">{item}</a>
+              <a key={item} href="#" className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors font-medium">{item}</a>
             ))}
           </div>
           <div className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export default function Footer() {
                 key={label}
                 href="#"
                 aria-label={label}
-                className="w-9 h-9 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border)] hover:text-[var(--text-muted)] transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                   <path d={path} />
