@@ -16,7 +16,7 @@ export type AdminUserPayload = {
   fullName: string;
   email: string;
   password?: string;
-  role: "admin" | "user";
+  role: "admin" | "customer" | "driver";
   phoneNumber?: string;
   status?: "active" | "inactive";
 };

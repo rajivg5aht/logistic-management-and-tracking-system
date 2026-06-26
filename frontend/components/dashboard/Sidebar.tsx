@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Users } from "lucide-react";
+import { LayoutDashboard, Mail, MapPinned, User, LogOut, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Sidebar() {
@@ -17,9 +17,6 @@ export function Sidebar() {
     { label: "Shipments", href: "/shipments", icon: Mail },
     { label: "Tracking", href: "/tracking", icon: MapPinned },
     { label: "Profile", href: "/profile", icon: User },
-    ...(user?.role === "admin"
-      ? [{ label: "Users", href: "/admin/users", icon: Users }]
-      : []),
   ];
 
   useEffect(() => {
@@ -38,9 +35,8 @@ export function Sidebar() {
     };
   }, [pathname]);
 
-  const handleLogout = () => {
-    document.cookie = "token=; path=/; max-age=0";
-    document.cookie = "user=; path=/; max-age=0";
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
 

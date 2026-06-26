@@ -28,9 +28,10 @@ import Modal from "@/components/ui/Modal";
 interface AdminUserManagementProps {
   token: string;
   currentUser: AuthUser;
+  onMutationFinished?: () => void;
 }
 
-export default function AdminUserManagement({ token, currentUser }: AdminUserManagementProps) {
+export default function AdminUserManagement({ token, currentUser, onMutationFinished }: AdminUserManagementProps) {
   // Lists & pagination
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [meta, setMeta] = useState<AdminUserMeta | null>(null);
@@ -55,7 +56,7 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
     fullName: "",
     email: "",
     password: "",
-    role: "user" as "admin" | "user",
+    role: "customer" as "admin" | "customer" | "driver",
     status: "active" as "active" | "inactive",
   });
 
@@ -78,6 +79,7 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
       const res = await adminGetUsers(token, page, limit, searchQuery);
       setUsers(res.data);
       setMeta(res.meta);
+      onMutationFinished?.();
     } catch (err: any) {
       setError(err.message || "Failed to load users. Please check your connection.");
     } finally {
@@ -95,7 +97,7 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
       fullName: "",
       email: "",
       password: "",
-      role: "user",
+      role: "customer",
       status: "active",
     });
     setFormError(null);
@@ -342,14 +344,16 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEditOpen(user)}
-                            className="p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] rounded-lg transition-colors cursor-pointer"
-                            title="Edit User"
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          {currentUser.id !== user.id && (
+                            <button
+                              type="button"
+                              onClick={() => handleEditOpen(user)}
+                              className="p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] rounded-lg transition-colors cursor-pointer"
+                              title="Edit User"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                          )}
                           {currentUser.id !== user.id && (
                             <button
                               type="button"
@@ -486,11 +490,11 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
             <select
               id="role"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "user" })}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as "customer" | "driver" })}
               className="form-input"
             >
-              <option value="user">User (Standard)</option>
-              <option value="admin">Admin</option>
+              <option value="customer">Customer</option>
+              <option value="driver">Driver</option>
             </select>
           </div>
 
@@ -563,11 +567,11 @@ export default function AdminUserManagement({ token, currentUser }: AdminUserMan
               <select
                 id="edit-role"
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "user" })}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as "customer" | "driver" })}
                 className="form-input"
               >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="customer">Customer</option>
+                <option value="driver">Driver</option>
               </select>
             </div>
             <div>

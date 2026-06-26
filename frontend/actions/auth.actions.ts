@@ -88,6 +88,25 @@ export async function loginAction(
     };
   }
 
+  const selectedTab = formData.get("role") as string;
+  let expectedRole = "customer";
+  if (selectedTab === "Admin") {
+    expectedRole = "admin";
+  } else if (selectedTab === "Driver") {
+    expectedRole = "driver";
+  }
+
+  if (user.role !== expectedRole) {
+    let friendlyName = "Customer";
+    if (user.role === "admin") friendlyName = "Admin";
+    else if (user.role === "driver") friendlyName = "Driver";
+
+    return {
+      success: false,
+      message: `Role mismatch. Your account is registered as a ${friendlyName}. Please select the correct tab.`,
+    };
+  }
+
   const cookieStore = await cookies();
 
   cookieStore.set("token", token, {
@@ -106,7 +125,13 @@ export async function loginAction(
     path: "/",
   });
 
-  redirect("/dashboard");
+  if (user.role === "admin") {
+    redirect("/admin");
+  } else if (user.role === "driver") {
+    redirect("/driver");
+  } else {
+    redirect("/dashboard");
+  }
 }
 
 export async function updateProfileAction(
