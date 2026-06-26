@@ -122,6 +122,7 @@ export function Sidebar() {
               type="button"
               className="shrink-0 rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] transition-colors"
               aria-label="Logout"
+              suppressHydrationWarning
             >
               <LogOut size={18} />
             </button>

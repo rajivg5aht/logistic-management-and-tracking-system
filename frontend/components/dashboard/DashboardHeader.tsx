@@ -29,11 +29,12 @@ export function DashboardHeader() {
             type="button"
             className="relative rounded-xl p-2.5 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors cursor-pointer"
             aria-label="Notifications"
+            suppressHydrationWarning
           >
             <Bell size={20} />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--danger)]" />
           </button>
-          <Link href="/shipments/new" className="btn-primary btn-sm hidden sm:inline-flex">
+          <Link href="/shipments" className="btn-primary btn-sm hidden sm:inline-flex">
             + New Shipment
           </Link>
         </div>

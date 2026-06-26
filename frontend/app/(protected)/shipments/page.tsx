@@ -1,56 +1,65 @@
 "use client";
 
-import { RouteDetailsCard } from "@/components/shipment/RouteDetailsCard";
-import { ParcelDetailsCard } from "@/components/shipment/ParcelDetailsCard";
-import { SelectServiceCard } from "@/components/shipment/SelectServiceCard";
-import { ShipmentSummary } from "@/components/shipment/ShipmentSummary";
-import { SecurePaymentBadge } from "@/components/shipment/SecurePaymentBadge";
-import { RouteMapBlock } from "@/components/shipment/RouteMapBlock";
+import { StepProgressBar } from "@/components/shipment/StepProgressBar";
+import { PickupAddressCard } from "@/components/shipment/PickupAddressCard";
+import { DeliveryAddressCard } from "@/components/shipment/DeliveryAddressCard";
+import { MapPanel } from "@/components/shipment/MapPanel";
+import { ShipmentSummaryCard } from "@/components/shipment/ShipmentSummaryCard";
 
 export default function CreateShipmentPage() {
-  return (
-    <div className="min-h-screen bg-[#F5F0E8]">
-      {/* Page Header */}
-      <div className="mx-auto max-w-[1180px] px-6 pt-6 pb-4 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Title */}
-          <h1 className="text-2xl font-bold text-[#1A2B3C]">
-            Create Shipment
-          </h1>
+  const steps = [
+    { number: 1, label: "Addresses", active: true },
+    { number: 2, label: "Package Details", active: false },
+    { number: 3, label: "Service Type", active: false },
+    { number: 4, label: "Review & Pay", active: false },
+  ];
 
-          {/* Step Indicator */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold text-[#2B7A7A]">
-              STEP 2 OF 4
-            </span>
-            
-            {/* Progress Bar - 4 segments, 2 filled */}
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-8 rounded-full bg-[#E8B84B]" />
-              <div className="h-2 w-8 rounded-full bg-[#E8B84B]" />
-              <div className="h-2 w-8 rounded-full bg-[#DDD8CE]" />
-              <div className="h-2 w-8 rounded-full bg-[#DDD8CE]" />
-            </div>
-          </div>
-        </div>
+  return (
+    <div className="space-y-6">
+      {/* Step Progress Bar */}
+      <div className="py-2">
+        <StepProgressBar steps={steps} />
       </div>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-[1180px] px-6 py-8 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-          {/* Left Column - Form Cards */}
-          <div className="space-y-6">
-            <RouteDetailsCard />
-            <ParcelDetailsCard />
-            <SelectServiceCard />
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column Area (Spans 2 columns on lg screens) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Pickup Address Card */}
+            <PickupAddressCard />
+
+            {/* Delivery Address Card */}
+            <DeliveryAddressCard />
           </div>
 
-          {/* Right Column - Sticky Sidebar */}
-          <div className="lg:sticky lg:top-8 lg:self-start space-y-6">
-            <ShipmentSummary />
-            <SecurePaymentBadge />
-            <RouteMapBlock />
+          {/* Action Bar Container */}
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
+            <button
+              type="button"
+              className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+              suppressHydrationWarning
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-7 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+              suppressHydrationWarning
+            >
+              Next Step
+            </button>
           </div>
+        </div>
+
+        {/* Right Column Area (Spans 1 column on lg screens) */}
+        <div className="space-y-6">
+          {/* Map Card */}
+          <MapPanel />
+
+          {/* Summary Card */}
+          <ShipmentSummaryCard />
         </div>
       </div>
     </div>
