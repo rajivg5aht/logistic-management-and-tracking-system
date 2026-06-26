@@ -5,6 +5,8 @@ import { StepProgressBar } from "@/components/shipment/StepProgressBar";
 import { PickupAddressCard } from "@/components/shipment/PickupAddressCard";
 import { DeliveryAddressCard } from "@/components/shipment/DeliveryAddressCard";
 import { ParcelDetailsCard } from "@/components/shipment/ParcelDetailsCard";
+import { SelectServiceCard } from "@/components/shipment/SelectServiceCard";
+import { DetailedSummaryCard } from "@/components/shipment/DetailedSummaryCard";
 import { MapPanel } from "@/components/shipment/MapPanel";
 import { ShipmentSummaryCard } from "@/components/shipment/ShipmentSummaryCard";
 
@@ -83,7 +85,35 @@ export default function CreateShipmentPage() {
                   className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                   suppressHydrationWarning
                 >
-                  Next Step: Shipping Method →
+                  Next Step: Service Type
+                </button>
+              </div>
+            </>
+          )}
+
+          {currentStep === 3 && (
+            <>
+              {/* Select Service Component */}
+              <SelectServiceCard />
+
+              {/* Action Bar Container */}
+              <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+                  suppressHydrationWarning
+                >
+                  ← Back to Package
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(4)}
+                  className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  suppressHydrationWarning
+                >
+                  Next Step: Review & Pay →
                 </button>
               </div>
             </>
@@ -92,11 +122,17 @@ export default function CreateShipmentPage() {
 
         {/* Right Column Area (Spans 1 column on lg screens) */}
         <div className="space-y-6">
-          {/* Map Card */}
-          <MapPanel />
+          {currentStep === 3 ? (
+            <DetailedSummaryCard />
+          ) : (
+            <>
+              {/* Map Card */}
+              <MapPanel />
 
-          {/* Summary Card */}
-          <ShipmentSummaryCard currentStep={currentStep} />
+              {/* Summary Card */}
+              <ShipmentSummaryCard currentStep={currentStep} />
+            </>
+          )}
         </div>
       </div>
     </div>
