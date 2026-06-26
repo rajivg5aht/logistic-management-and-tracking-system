@@ -11,6 +11,7 @@ export function MapPanel() {
           src="/mock_route_map.png"
           alt="Route Map from NY to Chicago"
           fill
+          sizes="(max-width: 768px) 100vw, 600px"
           className="object-cover"
         />
       </div>
