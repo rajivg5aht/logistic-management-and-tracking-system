@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Mail, MapPinned, User, LogOut, X } from "lucide-react";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Shipments", href: "/shipments", icon: Mail },
-  { label: "Tracking", href: "/tracking", icon: MapPinned },
-  { label: "Profile", href: "/profile", icon: User },
-];
+import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Users } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+
+  const navItems = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Shipments", href: "/shipments", icon: Mail },
+    { label: "Tracking", href: "/tracking", icon: MapPinned },
+    { label: "Profile", href: "/profile", icon: User },
+    ...(user?.role === "admin"
+      ? [{ label: "Users", href: "/admin/users", icon: Users }]
+      : []),
+  ];
 
   useEffect(() => {
     const handleToggle = () => setIsOpen((prev) => !prev);
@@ -31,6 +37,12 @@ export function Sidebar() {
       window.removeEventListener("close-sidebar", handleClose);
     };
   }, [pathname]);
+
+  const handleLogout = () => {
+    document.cookie = "token=; path=/; max-age=0";
+    document.cookie = "user=; path=/; max-age=0";
+    router.push("/login");
+  };
 
   return (
     <>
@@ -110,17 +122,18 @@ export function Sidebar() {
 
         {/* User Profile Strip */}
         <div className="border-t border-[var(--border)] p-4">
-          <div className="flex items-center gap-3 rounded-xl p-2 hover:bg-[var(--surface-soft)] transition-colors">
+          <div className="flex items-center gap-3 rounded-xl p-2 hover:bg-[var(--surface-soft)] transition-colors font-sans">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--text)]">
-              K
+              {user?.fullName?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[var(--text)]">Kushal</p>
-              <p className="truncate text-xs text-[var(--text-muted)]">Admin</p>
+              <p className="truncate text-sm font-semibold text-[var(--text)]">{user?.fullName || "User"}</p>
+              <p className="truncate text-xs capitalize text-[var(--text-muted)]">{user?.role || "user"}</p>
             </div>
             <button
               type="button"
-              className="shrink-0 rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] transition-colors"
+              onClick={handleLogout}
+              className="shrink-0 rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
               aria-label="Logout"
               suppressHydrationWarning
             >

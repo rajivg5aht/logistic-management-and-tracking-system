@@ -2,8 +2,11 @@
 
 import { Bell, Menu } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export function DashboardHeader() {
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[rgba(251,246,236,0.80)] backdrop-blur-md">
       <div className="flex items-center justify-between px-6 py-4 lg:px-8">
@@ -19,7 +22,7 @@ export function DashboardHeader() {
           </button>
           <div>
             <p className="text-xs font-medium text-[var(--text-muted)] lg:text-sm">Welcome back,</p>
-            <h1 className="text-xl font-bold text-[var(--text)] lg:text-2xl">Hello, Kushal!</h1>
+            <h1 className="text-xl font-bold text-[var(--text)] lg:text-2xl">Hello, {user?.fullName || "User"}!</h1>
           </div>
         </div>
 

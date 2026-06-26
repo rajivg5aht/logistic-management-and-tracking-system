@@ -7,6 +7,8 @@ export type AuthUser = {
   phoneNumber: string;
   profileImage: string | null;
   role: "admin" | "user";
+  status?: string;
+  createdAt?: string;
 };
 
 export type RegisterPayload = {
