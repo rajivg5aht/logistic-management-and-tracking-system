@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const user_service_1 = require("../services/user.service");
 const admin_dto_1 = require("../dtos/admin.dto");
-const apihelper_util_1 = require("../uttils/apihelper.util");
+const apihelper_util_1 = require("../utils/apihelper.util");
 const mongoose_1 = __importDefault(require("mongoose"));
 const zod_1 = require("zod");
 const userService = new user_service_1.UserService();
@@ -53,6 +53,10 @@ class AdminController {
             if (!parsedData.success) {
                 return apihelper_util_1.ApiResponseHelper.error(res, zod_1.z.prettifyError(parsedData.error), 400);
             }
+            // Security: Administrators cannot create another admin account
+            if (parsedData.data.role === "admin") {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot create another administrator account", 403);
+            }
             const user = await userService.adminCreateUser(parsedData.data);
             return apihelper_util_1.ApiResponseHelper.success(res, user, "User created successfully", 201);
         }
@@ -66,6 +70,11 @@ class AdminController {
             if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
                 return apihelper_util_1.ApiResponseHelper.error(res, "Invalid user ID", 400);
             }
+            // Security: Administrators cannot modify their own accounts in this panel
+            const authReq = req;
+            if (authReq.user?.id === id) {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot edit or modify their own accounts in the management panel", 403);
+            }
             const body = { ...req.body };
             // Map name to fullName if provided by frontend
             if (body.name && !body.fullName) {
@@ -74,6 +83,10 @@ class AdminController {
             const parsedData = admin_dto_1.AdminUpdateUserDTO.safeParse(body);
             if (!parsedData.success) {
                 return apihelper_util_1.ApiResponseHelper.error(res, zod_1.z.prettifyError(parsedData.error), 400);
+            }
+            // Security: Administrators cannot promote a user to admin role
+            if (parsedData.data.role === "admin") {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot promote users to the administrator role", 403);
             }
             const updatedUser = await userService.adminUpdateUser(id, parsedData.data);
             return apihelper_util_1.ApiResponseHelper.success(res, updatedUser, "User updated successfully");
@@ -87,6 +100,11 @@ class AdminController {
             const id = req.params.id;
             if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
                 return apihelper_util_1.ApiResponseHelper.error(res, "Invalid user ID", 400);
+            }
+            // Security: Administrators cannot delete their own accounts
+            const authReq = req;
+            if (authReq.user?.id === id) {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot delete their own accounts", 403);
             }
             await userService.adminDeleteUser(id);
             return apihelper_util_1.ApiResponseHelper.success(res, null, "User deleted successfully");

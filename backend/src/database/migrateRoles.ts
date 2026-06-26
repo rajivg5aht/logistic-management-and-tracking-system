@@ -1,21 +1,20 @@
-import mongoose from "mongoose";
-import { MONGODB_URL } from "../configs/constant";
+import { connectToMongoDB, disconnectFromMongoDB } from "./mongodb";
 import { UserModel } from "../models/user.model";
 
 async function migrateRoles() {
   try {
-    await mongoose.connect(MONGODB_URL);
+    await connectToMongoDB();
     console.log("Connected to MongoDB for role migration...");
 
     // Update all users where role is "user" to "customer"
     const result = await UserModel.updateMany(
-      { role: "user" },
-      { $set: { role: "customer" } }
+      { role: "user" as any },
+      { $set: { role: "customer" as any } }
     );
 
     console.log(`Migration complete. Matched and updated ${result.modifiedCount} users from 'user' to 'customer'.`);
 
-    await mongoose.disconnect();
+    await disconnectFromMongoDB();
     process.exit(0);
   } catch (error) {
     console.error("Migration failed:", error);

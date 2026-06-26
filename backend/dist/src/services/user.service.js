@@ -118,8 +118,12 @@ class UserService {
         }
         const hashedPassword = await bcryptjs_1.default.hash(userData.password, 10);
         const user = await userRepository.createUser({
-            ...userData,
+            fullName: userData.fullName,
+            email: userData.email,
             password: hashedPassword,
+            phoneNumber: userData.phoneNumber || "",
+            role: userData.role ?? "user",
+            status: userData.status ?? "active",
         });
         return this.sanitizeUser(user);
     }

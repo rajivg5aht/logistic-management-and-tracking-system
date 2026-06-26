@@ -2,7 +2,7 @@ import { UserService } from "../services/user.service";
 import { z } from "zod";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import { Request, Response } from "express";
-import { ApiResponseHelper } from "../uttils/apihelper.util";
+import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
 
 const userService = new UserService();

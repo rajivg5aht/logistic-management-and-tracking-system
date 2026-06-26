@@ -4,7 +4,7 @@ exports.UserController = void 0;
 const user_service_1 = require("../services/user.service");
 const zod_1 = require("zod");
 const user_dto_1 = require("../dtos/user.dto");
-const apihelper_util_1 = require("../uttils/apihelper.util");
+const apihelper_util_1 = require("../utils/apihelper.util");
 const userService = new user_service_1.UserService();
 class UserController {
     async createUser(req, res) {

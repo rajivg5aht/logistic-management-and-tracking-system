@@ -1,11 +1,10 @@
-import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
-import { MONGODB_URL } from "../configs/constant";
+import { connectToMongoDB, disconnectFromMongoDB } from "./mongodb";
 import { UserModel } from "../models/user.model";
 
 async function seedAdmin() {
   try {
-    await mongoose.connect(MONGODB_URL);
+    await connectToMongoDB();
     console.log("Connected to MongoDB for seeding...");
 
     const adminEmail = "admin@example.com";
@@ -45,7 +44,7 @@ async function seedAdmin() {
       console.log("  Password: Admin@123");
     }
 
-    await mongoose.disconnect();
+    await disconnectFromMongoDB();
     console.log("Seeding complete. Disconnected from MongoDB.");
     process.exit(0);
   } catch (error) {

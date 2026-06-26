@@ -1,19 +1,5 @@
 import { Response } from "express";
 
-// API response example
-const responseExample = {
-  status: 200,
-  success: true,
-  message: "Products fetched successfully",
-  data: [],
-  meta: {
-    // pagination
-    page: 1,
-    limit: 10,
-    total: 100,
-  },
-};
-
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -30,7 +16,6 @@ export interface ApiResponse<T> {
 }
 
 export class ApiResponseHelper {
-  // consistent way ma response gardai janu
   static success<T>(
     res: Response,
     data: T,

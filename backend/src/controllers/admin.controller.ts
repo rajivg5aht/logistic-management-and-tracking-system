@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/user.service";
 import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
-import { ApiResponseHelper } from "../uttils/apihelper.util";
+import { ApiResponseHelper } from "../utils/apihelper.util";
 import mongoose from "mongoose";
 import { z } from "zod";
 
@@ -73,6 +73,15 @@ export class AdminController {
         );
       }
 
+      // Security: Administrators cannot create another admin account
+      if (parsedData.data.role === "admin") {
+        return ApiResponseHelper.error(
+          res,
+          "Forbidden - Administrators cannot create another administrator account",
+          403
+        );
+      }
+
       const user = await userService.adminCreateUser(parsedData.data);
       return ApiResponseHelper.success(res, user, "User created successfully", 201);
     } catch (error: any) {
@@ -91,6 +100,16 @@ export class AdminController {
         return ApiResponseHelper.error(res, "Invalid user ID", 400);
       }
 
+      // Security: Administrators cannot modify their own accounts in this panel
+      const authReq = req as any;
+      if (authReq.user?.id === id) {
+        return ApiResponseHelper.error(
+          res,
+          "Forbidden - Administrators cannot edit or modify their own accounts in the management panel",
+          403
+        );
+      }
+
       const body = { ...req.body };
       // Map name to fullName if provided by frontend
       if (body.name && !body.fullName) {
@@ -103,6 +122,15 @@ export class AdminController {
           res,
           z.prettifyError(parsedData.error),
           400
+        );
+      }
+
+      // Security: Administrators cannot promote a user to admin role
+      if (parsedData.data.role === "admin") {
+        return ApiResponseHelper.error(
+          res,
+          "Forbidden - Administrators cannot promote users to the administrator role",
+          403
         );
       }
 
@@ -122,6 +150,16 @@ export class AdminController {
       const id = req.params.id as string;
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return ApiResponseHelper.error(res, "Invalid user ID", 400);
+      }
+
+      // Security: Administrators cannot delete their own accounts
+      const authReq = req as any;
+      if (authReq.user?.id === id) {
+        return ApiResponseHelper.error(
+          res,
+          "Forbidden - Administrators cannot delete their own accounts",
+          403
+        );
       }
 
       await userService.adminDeleteUser(id);

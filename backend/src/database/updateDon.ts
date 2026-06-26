@@ -1,11 +1,10 @@
-import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
-import { MONGODB_URL } from "../configs/constant";
+import { connectToMongoDB, disconnectFromMongoDB } from "./mongodb";
 import { UserModel } from "../models/user.model";
 
 async function updateDonUser() {
   try {
-    await mongoose.connect(MONGODB_URL);
+    await connectToMongoDB();
     console.log("Connected to MongoDB to update don@gmail.com...");
 
     const email = "don@gmail.com";
@@ -14,12 +13,12 @@ async function updateDonUser() {
     const user = await UserModel.findOne({ email });
 
     if (user) {
-      console.log(`User found. Old role: ${user.role}. Updating role to 'user' and setting password to '123456'...`);
+      console.log(`User found. Old role: ${user.role}. Updating role to 'customer' and setting password to '123456'...`);
       await UserModel.updateOne(
         { email },
         { 
           $set: { 
-            role: "user",
+            role: "customer",
             password: hashedPassword,
             status: "active"
           } 
@@ -32,14 +31,14 @@ async function updateDonUser() {
         fullName: "Don Customer",
         email,
         password: hashedPassword,
-        role: "user",
+        role: "customer",
         phoneNumber: "9876543210",
         status: "active",
       });
-      console.log("User don@gmail.com created successfully with role 'user' and password '123456'.");
+      console.log("User don@gmail.com created successfully with role 'customer' and password '123456'.");
     }
 
-    await mongoose.disconnect();
+    await disconnectFromMongoDB();
     console.log("Done.");
     process.exit(0);
   } catch (error) {
