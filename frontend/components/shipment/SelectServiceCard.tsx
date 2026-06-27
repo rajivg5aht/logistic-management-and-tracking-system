@@ -2,9 +2,34 @@
 
 import { Truck, Zap, SunDim } from "lucide-react";
 import { useShipment } from "@/context/ShipmentContext";
+import { getServicePrice, INSURANCE_FEE, SPECIAL_HANDLING_FEE } from "@/lib/pricing";
 
 export function SelectServiceCard() {
-  const { selectedService, setSelectedService, insurance, setInsurance, specialHandling, setSpecialHandling } = useShipment();
+  const {
+    selectedService,
+    setSelectedService,
+    insurance,
+    setInsurance,
+    specialHandling,
+    setSpecialHandling,
+    packageDetails,
+  } = useShipment();
+
+  // Dynamic prices based on weight + dimensions
+  const standardPrice = getServicePrice(packageDetails, "standard");
+  const expressPrice = getServicePrice(packageDetails, "express");
+  const overnightPrice = getServicePrice(packageDetails, "overnight");
+
+  // Estimated delivery date helpers
+  const today = new Date();
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const addDays = (days: number) =>
+    new Date(today.getTime() + days * 86_400_000);
+
+  const standardEta = `Est: ${fmt(addDays(3))} – ${fmt(addDays(5))}`;
+  const expressEta = `Est: ${fmt(addDays(1))} – ${fmt(addDays(2))}`;
+  const overnightEta = `Est: Tomorrow, ${fmt(addDays(1))}`;
 
   return (
     <div className="space-y-6">
@@ -48,10 +73,10 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                $24.50
+                ${standardPrice.toFixed(2)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
-                Est: Oct 28 - Oct 30
+                {standardEta}
               </span>
             </div>
           </div>
@@ -90,10 +115,10 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                $48.00
+                ${expressPrice.toFixed(2)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
-                Est: Oct 25 - Oct 26
+                {expressEta}
               </span>
             </div>
           </div>
@@ -127,10 +152,10 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                $82.15
+                ${overnightPrice.toFixed(2)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
-                Est: Tomorrow, Oct 24
+                {overnightEta}
               </span>
             </div>
           </div>
@@ -145,7 +170,13 @@ export function SelectServiceCard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Shipping Insurance */}
-          <label className="border border-[#E2E8F0] hover:border-slate-300 rounded-xl p-4.5 flex items-start gap-3.5 cursor-pointer bg-white select-none">
+          <label
+            className={`border rounded-xl p-4.5 flex items-start gap-3.5 cursor-pointer select-none transition-all duration-200 ${
+              insurance
+                ? "border-[#1D7A8C] bg-[#EAF5F8]/20"
+                : "border-[#E2E8F0] bg-white hover:border-slate-300"
+            }`}
+          >
             <input
               type="checkbox"
               checked={insurance}
@@ -161,13 +192,19 @@ export function SelectServiceCard() {
                 Protect against loss or damage up to $5,000.
               </span>
               <span className="text-[10px] font-bold text-[#1D7A8C] mt-2 block">
-                +$5.00 Base + 0.5% Value
+                +${INSURANCE_FEE.toFixed(2)}
               </span>
             </div>
           </label>
 
           {/* Special Handling */}
-          <label className="border border-[#E2E8F0] hover:border-slate-300 rounded-xl p-4.5 flex items-start gap-3.5 cursor-pointer bg-white select-none">
+          <label
+            className={`border rounded-xl p-4.5 flex items-start gap-3.5 cursor-pointer select-none transition-all duration-200 ${
+              specialHandling
+                ? "border-[#1D7A8C] bg-[#EAF5F8]/20"
+                : "border-[#E2E8F0] bg-white hover:border-slate-300"
+            }`}
+          >
             <input
               type="checkbox"
               checked={specialHandling}
@@ -183,7 +220,7 @@ export function SelectServiceCard() {
                 For fragile or oversized items requiring manual sorting.
               </span>
               <span className="text-[10px] font-bold text-[#1D7A8C] mt-2 block">
-                +$12.50 Flat Fee
+                +${SPECIAL_HANDLING_FEE.toFixed(2)}
               </span>
             </div>
           </label>
@@ -196,7 +233,7 @@ export function SelectServiceCard() {
           i
         </div>
         <p className="text-[11px] font-medium text-[#6B668B] leading-relaxed">
-          All services include real-time GPS tracking and digital proof of delivery. Estimated dates are based on current logistics capacity and transit schedules.
+          All services include real-time GPS tracking and digital proof of delivery. Prices are calculated based on your parcel weight and dimensions. Estimated dates are based on current logistics capacity.
         </p>
       </div>
     </div>

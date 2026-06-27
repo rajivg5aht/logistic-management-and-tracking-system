@@ -1,6 +1,7 @@
 "use client";
 
 import { useShipment } from "@/context/ShipmentContext";
+import { calculatePrices } from "@/lib/pricing";
 import {
   MapPin,
   Package,
@@ -11,14 +12,13 @@ import {
   Truck,
   SunDim,
   Shield,
+  Wrench,
 } from "lucide-react";
 import { useState } from "react";
 
 const SERVICE_INFO = {
   standard: {
     label: "Standard Delivery",
-    price: 24.5,
-    fuel: 3.2,
     eta: "3-5 Business Days",
     features: ["GPS Tracking Included", "Proof of Delivery", "Email Notifications"],
     icon: Truck,
@@ -27,8 +27,6 @@ const SERVICE_INFO = {
   },
   express: {
     label: "Priority Express",
-    price: 48.0,
-    fuel: 8.5,
     eta: "1-2 Business Days",
     features: ["Guaranteed Next-Day", "Real-time GPS Tracking", "Signature Required"],
     icon: Zap,
@@ -37,8 +35,6 @@ const SERVICE_INFO = {
   },
   overnight: {
     label: "Premium Overnight",
-    price: 82.15,
-    fuel: 12.1,
     eta: "Next Day by 10:00 AM",
     features: ["Guaranteed by 10 AM", "Priority Handling", "Signature Required"],
     icon: SunDim,
@@ -88,12 +84,8 @@ export function ReviewAndPayCard({
   const service = SERVICE_INFO[selectedService];
   const ServiceIcon = service.icon;
 
-  // Price calculation
-  const shippingFee = service.price;
-  const fuelSurcharge = service.fuel;
-  const insuranceFee = insurance ? 25.0 : 0;
-  const handlingFee = specialHandling ? 12.5 : 0;
-  const totalAmount = shippingFee + fuelSurcharge + insuranceFee + handlingFee;
+  // Dynamic price calculation from shared utility
+  const prices = calculatePrices(packageDetails, selectedService, insurance, specialHandling);
 
   // Generate a reference number
   const refNumber = `CARGO-${Date.now().toString(36).toUpperCase().slice(-6)}-X`;
@@ -385,20 +377,20 @@ export function ReviewAndPayCard({
                   Shipping Fee ({service.label})
                 </span>
                 <span className="font-bold text-slate-700">
-                  ${shippingFee.toFixed(2)}
+                  ${prices.shippingFee.toFixed(2)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Fuel Surcharge</span>
                 <span className="font-bold text-slate-700">
-                  ${fuelSurcharge.toFixed(2)}
+                  ${prices.fuelSurcharge.toFixed(2)}
                 </span>
               </div>
               {insurance && (
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Insurance (Standard + Extra)</span>
                   <span className="font-bold text-slate-700">
-                    ${insuranceFee.toFixed(2)}
+                    ${prices.insuranceFee.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -406,7 +398,7 @@ export function ReviewAndPayCard({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Handling &amp; Processing</span>
                   <span className="font-bold text-slate-700">
-                    ${handlingFee.toFixed(2)}
+                    ${prices.handlingFee.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -422,7 +414,7 @@ export function ReviewAndPayCard({
                   Total Amount
                 </p>
                 <p className="text-[28px] font-extrabold text-slate-800 leading-none mt-1">
-                  ${totalAmount.toFixed(2)}
+                  ${prices.total.toFixed(2)}
                 </p>
               </div>
               <span className="text-[11px] font-bold text-[#1D7A8C] bg-[#EAF5F8] px-2.5 py-1 rounded-md mb-1">
@@ -555,7 +547,7 @@ export function ReviewAndPayCard({
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
         >
-          Confirm &amp; Pay ${totalAmount.toFixed(2)}
+          Confirm &amp; Pay ${prices.total.toFixed(2)}
         </button>
       </div>
     </div>
