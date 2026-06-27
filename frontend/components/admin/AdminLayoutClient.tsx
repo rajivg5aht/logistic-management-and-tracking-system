@@ -109,6 +109,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             type="button"
             onClick={handleLogout}
             className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-[#7C788A] hover:bg-[#EAE8EF] hover:text-[#1E1B24] transition-all cursor-pointer text-left"
+            suppressHydrationWarning
           >
             <LogOut size={20} className="text-[#8C8896]" />
             Sign Out
@@ -164,6 +165,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
                 className="w-full text-sm py-2 pl-10 pr-4 rounded-xl border border-[#E5E2EB] bg-[#F5F3F7] focus:outline-none focus:border-[#6C63FF] focus:bg-white transition-all text-[#1E1B24] placeholder-[#8C8896]"
+                suppressHydrationWarning
               />
             </div>
 
@@ -172,6 +174,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               type="button"
               className="p-2 rounded-xl border border-[#E5E2EB] hover:bg-[#FAF9F6] text-[#7C788A] hover:text-[#1E1B24] transition-all cursor-pointer relative"
               aria-label="Notifications"
+              suppressHydrationWarning
             >
               <Bell size={18} />
               <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#E9C46A]" />
@@ -182,6 +185,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               type="button"
               className="p-2 rounded-xl border border-[#E5E2EB] hover:bg-[#FAF9F6] text-[#7C788A] hover:text-[#1E1B24] transition-all cursor-pointer"
               aria-label="Settings"
+              suppressHydrationWarning
             >
               <Settings size={18} />
             </button>

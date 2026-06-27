@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function DriverDashboardPage() {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
+  const userCookie = cookieStore.get("user_driver")?.value;
 
   if (!userCookie) {
     redirect("/login");

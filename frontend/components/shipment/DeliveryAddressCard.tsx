@@ -1,20 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useShipment } from "@/context/ShipmentContext";
 
 export function DeliveryAddressCard() {
-  const [formData, setFormData] = useState({
-    recipientName: "",
-    streetAddress: "456 Commerce St, Suite 200",
-    city: "Chicago",
-    postalCode: "60601",
-    country: "United States",
-    residentialAddress: false,
-  });
-
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const { deliveryAddress, updateDeliveryField } = useShipment();
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
@@ -46,13 +35,13 @@ export function DeliveryAddressCard() {
         {/* Recipient Name */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            RECIPIENT NAME
+            RECIPIENT NAME <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             placeholder="e.g. Jane Smith"
-            value={formData.recipientName}
-            onChange={(e) => handleChange("recipientName", e.target.value)}
+            value={deliveryAddress.recipientName}
+            onChange={(e) => updateDeliveryField("recipientName", e.target.value)}
             className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
             suppressHydrationWarning
           />
@@ -61,13 +50,13 @@ export function DeliveryAddressCard() {
         {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            STREET ADDRESS
+            STREET ADDRESS <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             placeholder="456 Commerce St, Suite 200"
-            value={formData.streetAddress}
-            onChange={(e) => handleChange("streetAddress", e.target.value)}
+            value={deliveryAddress.streetAddress}
+            onChange={(e) => updateDeliveryField("streetAddress", e.target.value)}
             className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
             suppressHydrationWarning
           />
@@ -77,26 +66,26 @@ export function DeliveryAddressCard() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              CITY
+              CITY <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               placeholder="Chicago"
-              value={formData.city}
-              onChange={(e) => handleChange("city", e.target.value)}
+              value={deliveryAddress.city}
+              onChange={(e) => updateDeliveryField("city", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
               suppressHydrationWarning
             />
           </div>
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              POSTAL CODE
+              POSTAL CODE <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               placeholder="60601"
-              value={formData.postalCode}
-              onChange={(e) => handleChange("postalCode", e.target.value)}
+              value={deliveryAddress.postalCode}
+              onChange={(e) => updateDeliveryField("postalCode", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
               suppressHydrationWarning
             />
@@ -110,8 +99,8 @@ export function DeliveryAddressCard() {
           </label>
           <div className="relative">
             <select
-              value={formData.country}
-              onChange={(e) => handleChange("country", e.target.value)}
+              value={deliveryAddress.country}
+              onChange={(e) => updateDeliveryField("country", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10"
               suppressHydrationWarning
             >
@@ -134,8 +123,8 @@ export function DeliveryAddressCard() {
         <label className="flex items-center gap-2.5 text-xs text-slate-500 font-medium cursor-pointer mt-4 select-none">
           <input
             type="checkbox"
-            checked={formData.residentialAddress}
-            onChange={(e) => handleChange("residentialAddress", e.target.checked)}
+            checked={deliveryAddress.residentialAddress}
+            onChange={(e) => updateDeliveryField("residentialAddress", e.target.checked)}
             className="w-4 h-4 rounded border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF] cursor-pointer"
             suppressHydrationWarning
           />

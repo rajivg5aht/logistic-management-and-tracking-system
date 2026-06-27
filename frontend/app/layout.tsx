@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "CargoNep - Smart Logistics Platform",
@@ -16,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </body>
     </html>
   );

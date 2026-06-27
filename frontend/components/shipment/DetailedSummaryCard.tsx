@@ -1,8 +1,33 @@
 "use client";
 
 import { FileText } from "lucide-react";
+import { useShipment } from "@/context/ShipmentContext";
 
 export function DetailedSummaryCard() {
+  const { pickupAddress, deliveryAddress, packageDetails } = useShipment();
+
+  // Format display strings with fallbacks
+  const pickupStreet = pickupAddress.streetAddress || "—";
+  const pickupCityLine = [pickupAddress.city, pickupAddress.postalCode]
+    .filter(Boolean)
+    .join(", ") || "—";
+
+  const deliveryStreet = deliveryAddress.streetAddress || "—";
+  const deliveryCityLine = [deliveryAddress.city, deliveryAddress.postalCode]
+    .filter(Boolean)
+    .join(", ") || "—";
+
+  const weightDisplay = packageDetails.weight
+    ? `${packageDetails.weight} kg`
+    : "—";
+
+  const dimensionsDisplay =
+    packageDetails.dimensions.length &&
+    packageDetails.dimensions.width &&
+    packageDetails.dimensions.height
+      ? `${packageDetails.dimensions.length} x ${packageDetails.dimensions.width} x ${packageDetails.dimensions.height} cm`
+      : "—";
+
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
       {/* Header */}
@@ -15,7 +40,7 @@ export function DetailedSummaryCard() {
 
       {/* Address Timeline */}
       <div className="space-y-0.5">
-        {/* Springfield Address (Pickup) */}
+        {/* Pickup Address */}
         <div className="flex gap-4">
           {/* Vertical indicator column */}
           <div className="flex flex-col items-center shrink-0">
@@ -31,15 +56,15 @@ export function DetailedSummaryCard() {
               PICKUP FROM
             </p>
             <p className="text-[13px] font-bold text-slate-800 leading-tight">
-              742 Evergreen Terrace
+              {pickupStreet}
             </p>
             <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
-              Springfield, OR 97403
+              {pickupCityLine}
             </p>
           </div>
         </div>
 
-        {/* NY Address (Delivery) */}
+        {/* Delivery Address */}
         <div className="flex gap-4">
           {/* Vertical indicator column */}
           <div className="flex flex-col items-center shrink-0">
@@ -54,10 +79,10 @@ export function DetailedSummaryCard() {
               DELIVER TO
             </p>
             <p className="text-[13px] font-bold text-slate-800 leading-tight">
-              The Empire State Building
+              {deliveryStreet}
             </p>
             <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
-              New York, NY 10118
+              {deliveryCityLine}
             </p>
           </div>
         </div>
@@ -69,16 +94,24 @@ export function DetailedSummaryCard() {
       {/* Price breakdown details */}
       <div className="space-y-3.5 my-5 text-[13px] border-t border-slate-100 pt-5">
         <div className="flex items-center justify-between">
+          <span className="text-slate-500 font-medium">Parcel Type</span>
+          <span className="font-bold text-slate-700 capitalize">{packageDetails.parcelType === "fragile" ? "Fragile / High Value" : packageDetails.parcelType === "pallet" ? "Pallet / Bulk" : "Standard Box"}</span>
+        </div>
+        <div className="flex items-center justify-between">
           <span className="text-slate-500 font-medium">Parcel Weight</span>
-          <span className="font-bold text-slate-700">36.0 kg</span>
+          <span className="font-bold text-slate-700">{weightDisplay}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500 font-medium">Dimensions</span>
-          <span className="font-bold text-slate-700">12 x 12 x 8 cm</span>
+          <span className="font-bold text-slate-700">{dimensionsDisplay}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slate-500 font-medium">Quantity</span>
+          <span className="font-bold text-slate-700">{packageDetails.quantity}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500 font-medium">Service Type</span>
-          <span className="font-bold text-slate-700">Express Courier</span>
+          <span className="font-bold text-slate-700">—</span>
         </div>
       </div>
 
@@ -145,7 +178,7 @@ export function DetailedSummaryCard() {
             opacity="0.9"
           />
 
-          {/* Pickup Pin Springfield (Bottom Left) */}
+          {/* Pickup Pin */}
           <g transform="translate(45, 70)">
             <circle cx="0" cy="0" r="3" fill="#1D7A8C" />
             <path d="M -3 -8 L 3 -8 L 0 0 Z" fill="#1D7A8C" />
@@ -153,7 +186,7 @@ export function DetailedSummaryCard() {
             <circle cx="0" cy="-8" r="1.8" fill="white" />
           </g>
 
-          {/* Delivery Pin New York (Top Right) */}
+          {/* Delivery Pin */}
           <g transform="translate(95, 35)">
             <circle cx="0" cy="0" r="3" fill="#1D7A8C" />
             <path d="M -3 -8 L 3 -8 L 0 0 Z" fill="#1D7A8C" />
@@ -171,7 +204,6 @@ export function DetailedSummaryCard() {
               height="18"
               rx="3"
               fill="white"
-              box-shadow="0 2px 4px rgba(0,0,0,0.1)"
             />
             {/* Map fold pattern */}
             <path

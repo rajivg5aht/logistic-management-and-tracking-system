@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Truck, Zap, SunDim } from "lucide-react";
+import { useShipment } from "@/context/ShipmentContext";
 
 export function SelectServiceCard() {
-  const [selectedService, setSelectedService] = useState<"standard" | "express" | "overnight">("express");
-  const [insurance, setInsurance] = useState(false);
-  const [specialHandling, setSpecialHandling] = useState(false);
+  const { selectedService, setSelectedService, insurance, setInsurance, specialHandling, setSpecialHandling } = useShipment();
 
   return (
     <div className="space-y-6">

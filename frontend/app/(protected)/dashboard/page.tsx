@@ -8,7 +8,7 @@ import { BillingBanner } from "@/components/dashboard/BillingBanner";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
+  const userCookie = cookieStore.get("user_customer")?.value;
 
   if (!userCookie) {
     redirect("/login");

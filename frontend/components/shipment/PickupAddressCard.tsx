@@ -1,20 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useShipment } from "@/context/ShipmentContext";
 
 export function PickupAddressCard() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    streetAddress: "",
-    city: "New York",
-    postalCode: "10001",
-    country: "United States",
-    saveToAddressBook: false,
-  });
-
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const { pickupAddress, updatePickupField } = useShipment();
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
@@ -44,14 +33,16 @@ export function PickupAddressCard() {
         {/* Full Name / Company */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            FULL NAME / COMPANY
+            FULL NAME / COMPANY <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             placeholder="e.g. John Doe"
-            value={formData.fullName}
-            onChange={(e) => handleChange("fullName", e.target.value)}
-            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+            value={pickupAddress.fullName}
+            onChange={(e) => updatePickupField("fullName", e.target.value)}
+            className={`w-full h-11 border rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all ${
+              !pickupAddress.fullName.trim() ? "border-[#E2E8F0]" : "border-[#E2E8F0]"
+            }`}
             suppressHydrationWarning
           />
         </div>
@@ -59,13 +50,13 @@ export function PickupAddressCard() {
         {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            STREET ADDRESS
+            STREET ADDRESS <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             placeholder="123 Logistics Way"
-            value={formData.streetAddress}
-            onChange={(e) => handleChange("streetAddress", e.target.value)}
+            value={pickupAddress.streetAddress}
+            onChange={(e) => updatePickupField("streetAddress", e.target.value)}
             className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
             suppressHydrationWarning
           />
@@ -75,26 +66,26 @@ export function PickupAddressCard() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              CITY
+              CITY <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               placeholder="New York"
-              value={formData.city}
-              onChange={(e) => handleChange("city", e.target.value)}
+              value={pickupAddress.city}
+              onChange={(e) => updatePickupField("city", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
               suppressHydrationWarning
             />
           </div>
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              POSTAL CODE
+              POSTAL CODE <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               placeholder="10001"
-              value={formData.postalCode}
-              onChange={(e) => handleChange("postalCode", e.target.value)}
+              value={pickupAddress.postalCode}
+              onChange={(e) => updatePickupField("postalCode", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
               suppressHydrationWarning
             />
@@ -108,8 +99,8 @@ export function PickupAddressCard() {
           </label>
           <div className="relative">
             <select
-              value={formData.country}
-              onChange={(e) => handleChange("country", e.target.value)}
+              value={pickupAddress.country}
+              onChange={(e) => updatePickupField("country", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10"
               suppressHydrationWarning
             >
@@ -132,8 +123,8 @@ export function PickupAddressCard() {
         <label className="flex items-center gap-2.5 text-xs text-slate-500 font-medium cursor-pointer mt-4 select-none">
           <input
             type="checkbox"
-            checked={formData.saveToAddressBook}
-            onChange={(e) => handleChange("saveToAddressBook", e.target.checked)}
+            checked={pickupAddress.saveToAddressBook}
+            onChange={(e) => updatePickupField("saveToAddressBook", e.target.checked)}
             className="w-4 h-4 rounded border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF] cursor-pointer"
             suppressHydrationWarning
           />

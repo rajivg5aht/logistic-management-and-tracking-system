@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/lib/api/auth.api";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default async function AdminLayout({
   children,
@@ -9,8 +10,8 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
-  const token = cookieStore.get("token")?.value;
+  const userCookie = cookieStore.get("user_admin")?.value;
+  const token = cookieStore.get("token_admin")?.value;
 
   if (!userCookie || !token) redirect("/login");
 
@@ -24,8 +25,10 @@ export default async function AdminLayout({
   if (user.role !== "admin") redirect("/dashboard");
 
   return (
-    <AdminLayoutClient user={user}>
-      {children}
-    </AdminLayoutClient>
+    <AuthProvider initialUser={user} role="admin">
+      <AdminLayoutClient user={user}>
+        {children}
+      </AdminLayoutClient>
+    </AuthProvider>
   );
 }

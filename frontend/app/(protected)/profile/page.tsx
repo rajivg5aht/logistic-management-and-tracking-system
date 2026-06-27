@@ -9,7 +9,7 @@ import TermsLogoutSection from "@/components/profile/TermsLogoutSection";
 
 export default async function ProfilePage() {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
+  const userCookie = cookieStore.get("user_customer")?.value;
 
   if (!userCookie) {
     redirect("/login");

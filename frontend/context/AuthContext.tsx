@@ -15,27 +15,38 @@ const AuthContext = createContext<AuthContextType>({
   setUser: () => {},
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser = null,
+  role = "customer",
+}: {
+  children: ReactNode;
+  initialUser?: AuthUser | null;
+  role?: "customer" | "admin" | "driver";
+}) {
+  const [user, setUser] = useState<AuthUser | null>(initialUser);
+  const [isLoading, setIsLoading] = useState(!initialUser);
 
   useEffect(() => {
-    // Read user from cookie on mount
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("user="))
-      ?.split("=")[1];
+    // Read user from role-specific cookie on mount if not provided by server
+    if (!user) {
+      const cookieName = `user_${role}=`;
+      const cookieValue = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(cookieName))
+        ?.split("=")[1];
 
-    if (cookieValue) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(cookieValue)) as AuthUser;
-        setUser(parsed);
-      } catch {
-        setUser(null);
+      if (cookieValue) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(cookieValue)) as AuthUser;
+          setUser(parsed);
+        } catch {
+          setUser(null);
+        }
       }
     }
     setIsLoading(false);
-  }, []);
+  }, [user, role]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, setUser }}>

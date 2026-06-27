@@ -231,6 +231,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           type="button"
           onClick={handleCreateOpen}
           className="btn-primary flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          suppressHydrationWarning
         >
           <Plus size={18} />
           Create User
@@ -251,6 +252,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="form-input pl-10 w-full"
+              suppressHydrationWarning
             />
           </div>
           <div className="text-sm font-semibold text-[var(--text-soft)] sm:ml-auto">

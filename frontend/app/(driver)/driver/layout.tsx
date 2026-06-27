@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/lib/api/auth.api";
 import DriverLayoutClient from "@/components/driver/DriverLayoutClient";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default async function DriverLayout({
   children,
@@ -9,8 +10,8 @@ export default async function DriverLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
-  const token = cookieStore.get("token")?.value;
+  const userCookie = cookieStore.get("user_driver")?.value;
+  const token = cookieStore.get("token_driver")?.value;
 
   if (!userCookie || !token) {
     redirect("/login");
@@ -29,8 +30,10 @@ export default async function DriverLayout({
   }
 
   return (
-    <DriverLayoutClient user={user}>
-      {children}
-    </DriverLayoutClient>
+    <AuthProvider initialUser={user} role="driver">
+      <DriverLayoutClient user={user}>
+        {children}
+      </DriverLayoutClient>
+    </AuthProvider>
   );
 }

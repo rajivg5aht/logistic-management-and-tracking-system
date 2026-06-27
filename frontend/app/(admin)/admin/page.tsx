@@ -10,8 +10,8 @@ export const metadata = {
 
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
-  const token = cookieStore.get("token")?.value;
+  const userCookie = cookieStore.get("user_admin")?.value;
+  const token = cookieStore.get("token_admin")?.value;
 
   if (!userCookie || !token) {
     redirect("/login");

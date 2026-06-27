@@ -1,24 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useShipment } from "@/context/ShipmentContext";
 import { Package, GlassWater, ClipboardCheck, Check } from "lucide-react";
 
 export function ParcelDetailsCard() {
-  const [parcelType, setParcelType] = useState<"standard" | "fragile" | "pallet">("standard");
-  const [weight, setWeight] = useState("0.00");
-  const [quantity, setQuantity] = useState(1);
-  const [dimensions, setDimensions] = useState({
-    length: "",
-    width: "",
-    height: "",
-  });
+  const { packageDetails, updatePackageField, updateDimension } = useShipment();
 
-  const handleDimensionChange = (field: "length" | "width" | "height", value: string) => {
-    setDimensions((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const incrementQuantity = () => setQuantity((prev) => prev + 1);
-  const decrementQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const incrementQuantity = () => updatePackageField("quantity", packageDetails.quantity + 1);
+  const decrementQuantity = () => updatePackageField("quantity", packageDetails.quantity > 1 ? packageDetails.quantity - 1 : 1);
 
   return (
     <div className="space-y-6">
@@ -31,9 +20,9 @@ export function ParcelDetailsCard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Option 1: Standard Box */}
           <div
-            onClick={() => setParcelType("standard")}
+            onClick={() => updatePackageField("parcelType", "standard")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
-              parcelType === "standard"
+              packageDetails.parcelType === "standard"
                 ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
@@ -42,7 +31,7 @@ export function ParcelDetailsCard() {
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
-                  parcelType === "standard"
+                  packageDetails.parcelType === "standard"
                     ? "bg-[#EAF5F8] text-[#1D7A8C]"
                     : "bg-slate-50 text-slate-500"
                 }`}
@@ -50,7 +39,7 @@ export function ParcelDetailsCard() {
                 <Package className="h-5 w-5" />
               </div>
 
-              {parcelType === "standard" ? (
+              {packageDetails.parcelType === "standard" ? (
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
@@ -68,9 +57,9 @@ export function ParcelDetailsCard() {
 
           {/* Option 2: Fragile / High Value */}
           <div
-            onClick={() => setParcelType("fragile")}
+            onClick={() => updatePackageField("parcelType", "fragile")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
-              parcelType === "fragile"
+              packageDetails.parcelType === "fragile"
                 ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
@@ -79,7 +68,7 @@ export function ParcelDetailsCard() {
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
-                  parcelType === "fragile"
+                  packageDetails.parcelType === "fragile"
                     ? "bg-[#EAF5F8] text-[#1D7A8C]"
                     : "bg-slate-50 text-slate-500"
                 }`}
@@ -87,7 +76,7 @@ export function ParcelDetailsCard() {
                 <GlassWater className="h-5 w-5" />
               </div>
 
-              {parcelType === "fragile" ? (
+              {packageDetails.parcelType === "fragile" ? (
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
@@ -105,9 +94,9 @@ export function ParcelDetailsCard() {
 
           {/* Option 3: Pallet / Bulk */}
           <div
-            onClick={() => setParcelType("pallet")}
+            onClick={() => updatePackageField("parcelType", "pallet")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
-              parcelType === "pallet"
+              packageDetails.parcelType === "pallet"
                 ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
@@ -116,7 +105,7 @@ export function ParcelDetailsCard() {
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
-                  parcelType === "pallet"
+                  packageDetails.parcelType === "pallet"
                     ? "bg-[#EAF5F8] text-[#1D7A8C]"
                     : "bg-slate-50 text-slate-500"
                 }`}
@@ -124,7 +113,7 @@ export function ParcelDetailsCard() {
                 <ClipboardCheck className="h-5 w-5" />
               </div>
 
-              {parcelType === "pallet" ? (
+              {packageDetails.parcelType === "pallet" ? (
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
@@ -153,14 +142,14 @@ export function ParcelDetailsCard() {
           {/* Total Weight */}
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              Total Weight
+              Total Weight <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all overflow-hidden">
               <input
                 type="text"
                 placeholder="0.00"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                value={packageDetails.weight}
+                onChange={(e) => updatePackageField("weight", e.target.value)}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400 px-3.5"
                 suppressHydrationWarning
               />
@@ -185,7 +174,7 @@ export function ParcelDetailsCard() {
                 -
               </button>
               <span className="text-[13px] font-bold text-slate-800">
-                {quantity}
+                {packageDetails.quantity}
               </span>
               <button
                 type="button"
@@ -202,7 +191,7 @@ export function ParcelDetailsCard() {
         {/* Row 2: Dimensions */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-2.5 uppercase">
-            Dimensions (Outer Box)
+            Dimensions (Outer Box) <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
             {/* Length */}
@@ -210,8 +199,8 @@ export function ParcelDetailsCard() {
               <input
                 type="text"
                 placeholder="Length"
-                value={dimensions.length}
-                onChange={(e) => handleDimensionChange("length", e.target.value)}
+                value={packageDetails.dimensions.length}
+                onChange={(e) => updateDimension("length", e.target.value)}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />
@@ -223,8 +212,8 @@ export function ParcelDetailsCard() {
               <input
                 type="text"
                 placeholder="Width"
-                value={dimensions.width}
-                onChange={(e) => handleDimensionChange("width", e.target.value)}
+                value={packageDetails.dimensions.width}
+                onChange={(e) => updateDimension("width", e.target.value)}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />
@@ -236,8 +225,8 @@ export function ParcelDetailsCard() {
               <input
                 type="text"
                 placeholder="Height"
-                value={dimensions.height}
-                onChange={(e) => handleDimensionChange("height", e.target.value)}
+                value={packageDetails.dimensions.height}
+                onChange={(e) => updateDimension("height", e.target.value)}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />
