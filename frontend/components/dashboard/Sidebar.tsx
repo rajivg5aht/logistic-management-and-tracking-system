@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu } from "lucide-react";
+import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Sidebar() {
@@ -27,6 +27,8 @@ export function Sidebar() {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
+    // Emit event for layout to listen
+    window.dispatchEvent(new Event("sidebar-toggle"));
   };
 
   useEffect(() => {
@@ -54,6 +56,8 @@ export function Sidebar() {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Shipments", href: "/shipments", icon: Mail },
     { label: "Tracking", href: "/tracking", icon: MapPinned },
+    { label: "Shipment History", href: "/shipments/history", icon: Package },
+    { label: "Billing & Invoices", href: "/billing", icon: CreditCard },
     { label: "Profile", href: "/profile", icon: User },
   ];
 
@@ -71,7 +75,7 @@ export function Sidebar() {
       <aside 
         className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 transition-all duration-280 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } ${isCollapsed ? "w-[76px]" : "w-[260px]"}`}
+        } ${isCollapsed ? "w-[76px]" : "w-[260px]"} lg:fixed lg:z-0`}
         style={{ transitionDuration: '280ms' }}
       >
         {/* Logo Section */}
@@ -96,6 +100,7 @@ export function Sidebar() {
               onClick={toggleCollapsed}
               aria-label="Collapse sidebar"
               aria-expanded={!isCollapsed}
+              suppressHydrationWarning
             >
               <Menu size={18} />
             </button>
@@ -123,6 +128,7 @@ export function Sidebar() {
               onClick={toggleCollapsed}
               aria-label="Expand sidebar"
               aria-expanded={!isCollapsed}
+              suppressHydrationWarning
             >
               <Menu size={20} />
             </button>

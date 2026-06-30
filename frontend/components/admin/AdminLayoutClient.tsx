@@ -67,7 +67,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   return (
     <div className="flex min-h-screen bg-[var(--app-bg)] font-sans antialiased">
       {/* Sidebar Panel */}
-      <aside className={`border-r border-[var(--border)] bg-[var(--surface)] flex flex-col shrink-0 transition-all duration-280 ease-in-out ${
+      <aside className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 transition-all duration-280 ease-in-out ${
         isCollapsed ? "w-[76px]" : "w-[260px]"
       }`} style={{ transitionDuration: '280ms' }}>
         {/* Brand/Logo Header */}
@@ -92,6 +92,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               onClick={toggleCollapsed}
               aria-label="Collapse sidebar"
               aria-expanded={!isCollapsed}
+              suppressHydrationWarning
             >
               <Menu size={18} />
             </button>
@@ -107,6 +108,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               onClick={toggleCollapsed}
               aria-label="Expand sidebar"
               aria-expanded={!isCollapsed}
+              suppressHydrationWarning
             >
               <Menu size={20} />
             </button>
@@ -198,7 +200,13 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       </aside>
 
       {/* Main Body Column */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div 
+        className="flex-1 flex flex-col min-w-0 transition-all duration-280 ease-in-out"
+        style={{ 
+          marginLeft: isCollapsed ? '76px' : '260px',
+          transitionDuration: '280ms'
+        }}
+      >
         {/* Scrollable Layout Content */}
         <main className="flex-1 overflow-y-auto px-6 py-8">
           <div className="mx-auto w-full" style={{ maxWidth: '1100px' }}>
