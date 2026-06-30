@@ -6,7 +6,7 @@ import Link from "next/link";
 const actions = [
   {
     label: "New Shipment",
-    href: "/shipments/new",
+    href: "/shipments",
     icon: Plus,
     accent: true,
   },

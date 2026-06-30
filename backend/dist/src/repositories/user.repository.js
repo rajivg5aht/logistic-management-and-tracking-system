@@ -29,5 +29,20 @@ class UserMongoRepository {
         const deleted = await user_model_1.UserModel.findByIdAndDelete(id);
         return !!deleted;
     }
+    async getPaginatedUsers(page, limit, search) {
+        const query = {};
+        if (search) {
+            query.$or = [
+                { fullName: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+            ];
+        }
+        const total = await user_model_1.UserModel.countDocuments(query);
+        const users = await user_model_1.UserModel.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+        return { users, total };
+    }
 }
 exports.UserMongoRepository = UserMongoRepository;

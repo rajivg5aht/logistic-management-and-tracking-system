@@ -11,5 +11,5 @@ userRouter.post("/register", userController.createUser);
 userRouter.post("/login", userController.loginUser);
 // Protected routes
 userRouter.get("/whoami", auth_middleware_1.authMiddleware, userController.whoami);
-userRouter.patch("/update", auth_middleware_1.authMiddleware, multer_config_1.upload.single("profileImage"), userController.updateUser);
+userRouter.put("/update", auth_middleware_1.authMiddleware, multer_config_1.upload.single("profileImage"), userController.updateUser);
 exports.default = userRouter;

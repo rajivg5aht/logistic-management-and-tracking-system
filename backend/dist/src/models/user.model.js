@@ -50,7 +50,8 @@ const UserMongoSchema = new mongoose_1.Schema({
     },
     phoneNumber: {
         type: String,
-        required: true,
+        required: false,
+        default: "",
         trim: true,
     },
     password: {
@@ -63,8 +64,13 @@ const UserMongoSchema = new mongoose_1.Schema({
     },
     role: {
         type: String,
-        enum: ["admin", "user"],
-        default: "user",
+        enum: ["admin", "customer", "driver"],
+        default: "customer",
+    },
+    status: {
+        type: String,
+        enum: ["active", "inactive"],
+        default: "active",
     },
 }, {
     timestamps: true,

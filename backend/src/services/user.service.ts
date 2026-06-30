@@ -15,6 +15,8 @@ export type SafeUser = {
   phoneNumber: string;
   profileImage: string | null;
   role: IUser["role"];
+  status?: string;
+  createdAt?: Date;
 };
 
 export class UserService {
@@ -23,9 +25,11 @@ export class UserService {
       id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,
-      phoneNumber: user.phoneNumber,
+      phoneNumber: user.phoneNumber || "",
       profileImage: user.profileImage || null,
       role: user.role,
+      status: user.status || "active",
+      createdAt: user.createdAt,
     };
   }
 
@@ -159,5 +163,78 @@ export class UserService {
     }
 
     return this.sanitizeUser(updatedUser);
+  }
+
+  async adminGetUsers(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{ users: SafeUser[]; total: number }> {
+    const { users, total } = await userRepository.getPaginatedUsers(
+      page,
+      limit,
+      search,
+    );
+
+    return {
+      users: users.map((u) => this.sanitizeUser(u)),
+      total,
+    };
+  }
+
+  async adminCreateUser(userData: any): Promise<SafeUser> {
+    const existingEmail = await userRepository.getUserByEmail(userData.email);
+    if (existingEmail) {
+      throw new HttpException(400, "Email already exists");
+    }
+
+    const hashedPassword = await bcryptjs.hash(userData.password, 10);
+
+    const user = await userRepository.createUser({
+      fullName: userData.fullName,
+      email: userData.email,
+      password: hashedPassword,
+      phoneNumber: userData.phoneNumber || "",
+      role: userData.role ?? "user",
+      status: userData.status ?? "active",
+    });
+
+    return this.sanitizeUser(user);
+  }
+
+  async adminUpdateUser(userId: string, updateData: any): Promise<SafeUser> {
+    const user = await userRepository.getUserById(userId);
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    if (updateData.email && updateData.email !== user.email) {
+      const existingEmail = await userRepository.getUserByEmail(
+        updateData.email,
+      );
+      if (existingEmail) {
+        throw new HttpException(400, "Email already exists");
+      }
+    }
+
+    if (updateData.password) {
+      updateData.password = await bcryptjs.hash(updateData.password, 10);
+    }
+
+    const updatedUser = await userRepository.update(userId, updateData);
+    if (!updatedUser) {
+      throw new HttpException(500, "Failed to update user");
+    }
+
+    return this.sanitizeUser(updatedUser);
+  }
+
+  async adminDeleteUser(userId: string): Promise<boolean> {
+    const user = await userRepository.getUserById(userId);
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    return userRepository.delete(userId);
   }
 }

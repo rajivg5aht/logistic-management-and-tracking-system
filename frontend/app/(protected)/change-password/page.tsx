@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default async function ChangePasswordPage() {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
+  const userCookie = cookieStore.get("user_customer")?.value;
 
   if (!userCookie) {
     redirect("/login");

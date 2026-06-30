@@ -6,7 +6,9 @@ export type AuthUser = {
   email: string;
   phoneNumber: string;
   profileImage: string | null;
-  role: "admin" | "user";
+  role: "admin" | "customer" | "driver";
+  status?: string;
+  createdAt?: string;
 };
 
 export type RegisterPayload = {

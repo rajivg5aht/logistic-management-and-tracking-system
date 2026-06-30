@@ -16,13 +16,20 @@
 
 @theme inline {
   --font-sans: var(--font-inter, Inter), ui-sans-serif, system-ui, sans-serif;
-  --color-bg: #f6f1e7;
-  --color-surface: #fffaf0;
-  --color-surface-2: #f0e7d7;
-  --color-primary: #c8a24a;
-  --color-accent: #b58a2a;
-  --color-muted: #7d766b;
-  --color-border: #e7ddca;
+  --color-bg: #F8F5EF;
+  --color-card: #FFFFFF;
+  --color-primary: #E9C46A;
+  --color-primary-dark: #C99A3D;
+  --color-primary-ink: #3A2E12;
+  --color-primary-tint: #FBF1DC;
+  --color-secondary: #1D7A8C;
+  --color-secondary-tint: #E5F1F3;
+  --color-text-primary: #2D2D2D;
+  --color-text-secondary: #6B6B6B;
+  --color-text-muted: #9B9B9B;
+  --color-border: #E6E1D6;
+  --color-border-light: #EFEAE0;
+  --color-accent-purple: #6C63FF;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -38,49 +45,58 @@
 :root {
   color-scheme: light;
 
-  --app-bg: #f6f1e7;
-  --app-bg-soft: #fbf6ec;
-  --surface: #fffaf0;
-  --surface-soft: #f2eadb;
-  --surface-muted: #ebe0ce;
+  --app-bg: #F8F5EF;
+  --app-bg-soft: #FBF1DC;
+  --surface: #FFFFFF;
+  --surface-soft: #FBF1DC;
+  --surface-muted: #EFEAE0;
   --surface-dark: #191817;
   --surface-dark-2: #24211e;
 
-  --accent: #c8a24a;
-  --accent-hover: #d8b45c;
-  --accent-strong: #a9791d;
-  --accent-soft: rgba(200, 162, 74, 0.14);
+  --accent: #E9C46A;
+  --accent-hover: #C99A3D;
+  --accent-strong: #3A2E12;
+  --accent-soft: rgba(233, 196, 106, 0.14);
 
-  --text: #1f1d1a;
-  --text-soft: #514c43;
-  --text-muted: #7d766b;
-  --text-faint: #a39a8c;
-  --text-on-dark: #fff7e8;
-  --text-on-dark-muted: rgba(255, 247, 232, 0.66);
-  --text-on-accent: #1d1608;
+  --text: #2D2D2D;
+  --text-soft: #6B6B6B;
+  --text-muted: #9B9B9B;
+  --text-faint: #9B9B9B;
+  --text-on-dark: #FFFFFF;
+  --text-on-dark-muted: rgba(255, 255, 255, 0.66);
+  --text-on-accent: #3A2E12;
 
-  --border: #e5dac7;
-  --border-strong: #d5c4a9;
-  --border-dark: rgba(255, 247, 232, 0.12);
+  --border: #E6E1D6;
+  --border-strong: #D5C4A9;
+  --border-dark: rgba(0, 0, 0, 0.12);
 
   --success: #5f7f35;
   --danger: #b5473b;
-  --warning: #c8a24a;
+  --warning: #E9C46A;
+
+  /* Shipment page tokens */
+  --teal: #1D7A8C;
+  --teal-tint: #E5F1F3;
+  --gold: #E9C46A;
+  --gold-dark: #C99A3D;
+  --gold-ink: #3A2E12;
+  --gold-tint: #FBF1DC;
+  --step-active: #6C63FF;
 
   --radius-sm: 0.625rem;
   --radius-md: 0.9rem;
   --radius-lg: 1.25rem;
   --radius-xl: 1.75rem;
 
-  --shadow-sm: 0 10px 24px rgba(56, 44, 23, 0.08);
-  --shadow-md: 0 18px 46px rgba(56, 44, 23, 0.12);
+  --shadow-sm: 0 10px 24px rgba(58, 46, 18, 0.08);
+  --shadow-md: 0 18px 46px rgba(58, 46, 18, 0.12);
   --shadow-dark: 0 18px 46px rgba(25, 24, 23, 0.24);
 
-  --container: 1180px;
+  --container: 900px;
   --page-pad: clamp(1rem, 4vw, 2rem);
   --section-gap: clamp(1.25rem, 3vw, 2rem);
   --transition: 180ms ease;
-  --auth-overlay: linear-gradient(135deg, rgba(35, 33, 29, 0.92), rgba(35, 33, 29, 0.76) 48%, rgba(200, 162, 74, 0.18));
+  --auth-overlay: linear-gradient(135deg, rgba(35, 33, 29, 0.92), rgba(35, 33, 29, 0.76) 48%, rgba(233, 196, 106, 0.18));
 
   /* Legacy aliases so older components inherit the new theme safely. */
   --bg: var(--app-bg);
@@ -494,6 +510,16 @@ select {
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+.settings-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .form-input {

@@ -3,6 +3,7 @@ import { UserType } from "../types/user.type";
 
 export interface IUser extends UserType, Document {
   _id: mongoose.Types.ObjectId;
+  status?: "active" | "inactive";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,7 +26,8 @@ const UserMongoSchema: Schema<IUser> = new Schema(
 
     phoneNumber: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
       trim: true,
     },
 
@@ -41,8 +43,14 @@ const UserMongoSchema: Schema<IUser> = new Schema(
 
     role: {
       type: String,
-      enum: ["admin", "user"],
-      default: "user",
+      enum: ["admin", "customer", "driver"],
+      default: "customer",
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {

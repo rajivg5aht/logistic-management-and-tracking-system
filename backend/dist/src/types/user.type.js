@@ -12,5 +12,5 @@ exports.UserSchema = zod_1.z.object({
         .string()
         .min(6, "Password must be at least 6 character long"),
     profileImage: zod_1.z.string().nullable().optional(),
-    role: zod_1.z.enum(["admin", "user"]).default("user"),
+    role: zod_1.z.enum(["admin", "customer", "driver"]).default("customer"),
 });

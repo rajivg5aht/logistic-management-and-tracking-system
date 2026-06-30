@@ -88,9 +88,30 @@ export async function loginAction(
     };
   }
 
-  const cookieStore = await cookies();
+  const selectedTab = formData.get("role") as string;
+  let expectedRole = "customer";
+  if (selectedTab === "Admin") {
+    expectedRole = "admin";
+  } else if (selectedTab === "Driver") {
+    expectedRole = "driver";
+  }
 
-  cookieStore.set("token", token, {
+  if (user.role !== expectedRole) {
+    let friendlyName = "Customer";
+    if (user.role === "admin") friendlyName = "Admin";
+    else if (user.role === "driver") friendlyName = "Driver";
+
+    return {
+      success: false,
+      message: `Role mismatch. Your account is registered as a ${friendlyName}. Please select the correct tab.`,
+    };
+  }
+
+  const cookieStore = await cookies();
+  const tokenCookieName = `token_${user.role}`;
+  const userCookieName = `user_${user.role}`;
+
+  cookieStore.set(tokenCookieName, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -98,7 +119,7 @@ export async function loginAction(
     path: "/",
   });
 
-  cookieStore.set("user", JSON.stringify(user), {
+  cookieStore.set(userCookieName, JSON.stringify(user), {
     httpOnly: false, // Allow client-side JS to read via AuthContext
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -106,7 +127,13 @@ export async function loginAction(
     path: "/",
   });
 
-  redirect("/dashboard");
+  if (user.role === "admin") {
+    redirect("/admin");
+  } else if (user.role === "driver") {
+    redirect("/driver");
+  } else {
+    redirect("/dashboard");
+  }
 }
 
 export async function updateProfileAction(
@@ -115,7 +142,9 @@ export async function updateProfileAction(
 ): Promise<AuthFormState> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
+    const token = cookieStore.get("token_customer")?.value ||
+                  cookieStore.get("token_admin")?.value ||
+                  cookieStore.get("token_driver")?.value;
 
     if (!token) {
       return {
@@ -143,7 +172,7 @@ export async function updateProfileAction(
 
     const updatedUser = await updateProfile(token, payload);
 
-    cookieStore.set("user", JSON.stringify(updatedUser), {
+    cookieStore.set(`user_${updatedUser.role}`, JSON.stringify(updatedUser), {
       httpOnly: false, // Allow client-side JS to read via AuthContext
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -194,7 +223,9 @@ export async function updatePasswordAction(
 
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
+    const token = cookieStore.get("token_customer")?.value ||
+                  cookieStore.get("token_admin")?.value ||
+                  cookieStore.get("token_driver")?.value;
 
     if (!token) {
       return {
@@ -218,9 +249,9 @@ export async function updatePasswordAction(
   }
 }
 
-export async function getUserFromCookie() {
+export async function getUserFromCookie(role: "customer" | "admin" | "driver" = "customer") {
   const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user")?.value;
+  const userCookie = cookieStore.get(`user_${role}`)?.value;
 
   if (!userCookie) {
     return null;
@@ -235,7 +266,11 @@ export async function getUserFromCookie() {
 
 export async function logoutAction() {
   const cookieStore = await cookies();
-  cookieStore.delete("token");
-  cookieStore.delete("user");
+  cookieStore.delete("token_customer");
+  cookieStore.delete("user_customer");
+  cookieStore.delete("token_admin");
+  cookieStore.delete("user_admin");
+  cookieStore.delete("token_driver");
+  cookieStore.delete("user_driver");
   redirect("/login");
 }
