@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   LayoutGrid,
   Map,
@@ -13,11 +14,7 @@ import {
   Users,
   HelpCircle,
   LogOut,
-  Search,
-  Bell,
-  Settings,
-  Box,
-  ChevronDown
+  Menu
 } from "lucide-react";
 import { AuthUser } from "@/lib/api/auth.api";
 
@@ -29,7 +26,22 @@ interface AdminLayoutClientProps {
 export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [searchVal, setSearchVal] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Initialize collapsed state from localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem("admin-sidebar-collapsed");
+    if (savedState !== null) {
+      setIsCollapsed(JSON.parse(savedState));
+    }
+  }, []);
+
+  // Save collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("admin-sidebar-collapsed", JSON.stringify(newState));
+  };
 
   const handleLogout = async () => {
     try {
@@ -53,164 +65,143 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#FAF9F6] font-sans antialiased">
+    <div className="flex min-h-screen bg-[var(--app-bg)] font-sans antialiased">
       {/* Sidebar Panel */}
-      <aside className="w-[260px] border-r border-[#E5E2EB] bg-[#F5F3F7] flex flex-col shrink-0">
+      <aside className={`border-r border-[var(--border)] bg-[var(--surface)] flex flex-col shrink-0 transition-all duration-280 ease-in-out ${
+        isCollapsed ? "w-[76px]" : "w-[260px]"
+      }`} style={{ transitionDuration: '280ms' }}>
         {/* Brand/Logo Header */}
-        <div className="flex h-20 items-center gap-3 px-6 border-b border-[#E5E2EB]">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#E9C46A] text-[#3A2E12] shadow-sm">
-            <Box size={22} className="fill-[#3A2E12]/10" />
+        <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[88px]' : 'justify-between h-[88px] px-7'}`}>
+          <div className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl overflow-hidden shrink-0" style={{ boxShadow: 'var(--shadow-sm)' }}>
+              <Image src="/logo.png" alt="CargoNep Logo" width={44} height={44} className="object-cover" />
+            </div>
+            {!isCollapsed && (
+              <span className="text-[30px] font-extrabold tracking-tight whitespace-nowrap">
+                <span className="text-[var(--text)]">Cargo</span>
+                <span className="text-[var(--accent)]">Nep</span>
+              </span>
+            )}
           </div>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-extrabold tracking-tight text-[#1E1B24]">
-              Logistics Portal
-            </span>
-            <span className="text-[11px] font-bold text-[#8C8896] uppercase tracking-wider">
-              Admin Console
-            </span>
-          </div>
+          
+          {/* Toggle Button */}
+          {!isCollapsed && (
+            <button 
+              type="button"
+              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              onClick={toggleCollapsed}
+              aria-label="Collapse sidebar"
+              aria-expanded={!isCollapsed}
+            >
+              <Menu size={18} />
+            </button>
+          )}
         </div>
 
+        {/* Expand Button (shown when collapsed) */}
+        {isCollapsed && (
+          <div className="flex justify-center py-4 border-b border-[var(--border)]">
+            <button 
+              type="button"
+              className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-colors cursor-pointer"
+              onClick={toggleCollapsed}
+              aria-label="Expand sidebar"
+              aria-expanded={!isCollapsed}
+            >
+              <Menu size={20} />
+            </button>
+          </div>
+        )}
+
         {/* Navigation Menu */}
-        <nav className="flex-1 py-6 px-3 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-                  item.active
-                    ? "bg-[#6C63FF]/10 text-[#6C63FF] shadow-sm"
-                    : "text-[#7C788A] hover:bg-[#EAE8EF] hover:text-[#1E1B24]"
-                }`}
-              >
-                {/* Active Left Vertical Stripe */}
-                {item.active && (
-                  <div className="absolute left-0 top-1/4 h-1/2 w-1.5 rounded-r bg-[#6C63FF]" />
-                )}
-                <Icon size={20} className={item.active ? "text-[#6C63FF]" : "text-[#8C8896]"} />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-6 px-3" id="sidebar-navigation">
+          <ul className="space-y-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className={`relative flex items-center rounded-xl px-4 py-3.5 text-base font-semibold transition-all duration-200 group ${
+                      isCollapsed ? 'justify-center' : 'gap-3.5'
+                    } ${
+                      item.active
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        : "text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
+                    }`}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    {/* Active Left Vertical Stripe */}
+                    {item.active && !isCollapsed && (
+                      <div className="absolute left-0 top-1/4 h-1/2 w-1.5 rounded-r bg-[var(--accent)]" />
+                    )}
+                    <Icon size={22} className={`shrink-0 ${item.active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`} />
+                    {!isCollapsed && (
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    )}
+                    
+                    {/* Tooltip for collapsed state */}
+                    {isCollapsed && (
+                      <span className="absolute left-full ml-2 px-3 py-1.5 bg-[var(--surface-dark)] text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200" style={{ boxShadow: 'var(--shadow-md)' }}>
+                        {item.label}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
 
         {/* Sidebar Bottom Footer */}
-        <div className="border-t border-[#E5E2EB] p-3 space-y-1">
-          <Link
-            href="#"
-            className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-[#7C788A] hover:bg-[#EAE8EF] hover:text-[#1E1B24] transition-all"
-          >
-            <HelpCircle size={20} className="text-[#8C8896]" />
-            Help Center
-          </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-[#7C788A] hover:bg-[#EAE8EF] hover:text-[#1E1B24] transition-all cursor-pointer text-left"
-            suppressHydrationWarning
-          >
-            <LogOut size={20} className="text-[#8C8896]" />
-            Sign Out
-          </button>
+        <div className="border-t border-[var(--border)] p-3 space-y-1.5">
+          {!isCollapsed ? (
+            <>
+              <Link
+                href="#"
+                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-all"
+              >
+                <HelpCircle size={20} className="text-[var(--text-muted)] shrink-0" />
+                <span className="whitespace-nowrap">Help Center</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-all cursor-pointer text-left"
+                suppressHydrationWarning
+              >
+                <LogOut size={20} className="text-[var(--text-muted)] shrink-0" />
+                <span className="whitespace-nowrap">Sign Out</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="#"
+                className="flex items-center justify-center rounded-lg px-4 py-3 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-all"
+                title="Help Center"
+              >
+                <HelpCircle size={20} className="text-[var(--text-muted)]" />
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center rounded-lg px-4 py-3 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)] transition-all cursor-pointer"
+                title="Sign Out"
+                suppressHydrationWarning
+              >
+                <LogOut size={20} className="text-[var(--text-muted)]" />
+              </button>
+            </>
+          )}
         </div>
       </aside>
 
       {/* Main Body Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Navigation */}
-        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-[#E5E2EB] bg-white px-8 shadow-sm">
-          {/* Top Nav Left Brand & Links */}
-          <div className="flex items-center gap-8">
-            <h2 className="text-xl font-extrabold text-[#4F378B] tracking-tight mr-4">
-              Smart Logistics
-            </h2>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/admin"
-                className={`text-sm font-bold pb-2 transition-all relative ${
-                  pathname === "/admin"
-                    ? "text-[#4F378B]"
-                    : "text-[#8C8896] hover:text-[#1E1B24]"
-                }`}
-              >
-                Dashboard
-                {pathname === "/admin" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#6C63FF] rounded-full" />
-                )}
-              </Link>
-              <Link href="#" className="text-sm font-bold text-[#8C8896] hover:text-[#1E1B24] pb-2">
-                Shipments
-              </Link>
-              <Link href="#" className="text-sm font-bold text-[#8C8896] hover:text-[#1E1B24] pb-2">
-                Fleet
-              </Link>
-              <Link href="#" className="text-sm font-bold text-[#8C8896] hover:text-[#1E1B24] pb-2">
-                Reports
-              </Link>
-            </nav>
-          </div>
-
-          {/* Top Nav Right Controls */}
-          <div className="flex items-center gap-6">
-            {/* Search Box */}
-            <div className="relative w-64">
-              <span className="absolute inset-y-0 left-3 flex items-center text-[#8C8896] pointer-events-none">
-                <Search size={18} />
-              </span>
-              <input
-                type="text"
-                placeholder="Track shipment..."
-                value={searchVal}
-                onChange={(e) => setSearchVal(e.target.value)}
-                className="w-full text-sm py-2 pl-10 pr-4 rounded-xl border border-[#E5E2EB] bg-[#F5F3F7] focus:outline-none focus:border-[#6C63FF] focus:bg-white transition-all text-[#1E1B24] placeholder-[#8C8896]"
-                suppressHydrationWarning
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <button
-              type="button"
-              className="p-2 rounded-xl border border-[#E5E2EB] hover:bg-[#FAF9F6] text-[#7C788A] hover:text-[#1E1B24] transition-all cursor-pointer relative"
-              aria-label="Notifications"
-              suppressHydrationWarning
-            >
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#E9C46A]" />
-            </button>
-
-            {/* Settings Gear */}
-            <button
-              type="button"
-              className="p-2 rounded-xl border border-[#E5E2EB] hover:bg-[#FAF9F6] text-[#7C788A] hover:text-[#1E1B24] transition-all cursor-pointer"
-              aria-label="Settings"
-              suppressHydrationWarning
-            >
-              <Settings size={18} />
-            </button>
-
-            {/* User Profile Info */}
-            <div className="flex items-center gap-3 pl-2 border-l border-[#E5E2EB]">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4F378B] text-white font-extrabold text-sm shadow-sm">
-                {user.fullName?.charAt(0).toUpperCase() || "A"}
-              </div>
-              <div className="hidden lg:flex flex-col text-left">
-                <span className="text-sm font-bold text-[#1E1B24] leading-tight">
-                  {user.fullName || "Admin User"}
-                </span>
-                <span className="text-xs text-[#8C8896] font-medium leading-none mt-0.5">
-                  {user.email}
-                </span>
-              </div>
-              <ChevronDown size={14} className="text-[#8C8896] hidden lg:block" />
-            </div>
-          </div>
-        </header>
-
         {/* Scrollable Layout Content */}
-        <main className="flex-1 overflow-y-auto px-8 py-8">
-          <div className="mx-auto max-w-[1200px] w-full">
+        <main className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="mx-auto w-full" style={{ maxWidth: '1100px' }}>
             {children}
           </div>
         </main>
