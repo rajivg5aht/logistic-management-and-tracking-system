@@ -100,6 +100,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             form={activeFormId}
             onClick={handleDiscard}
             className="btn-secondary btn-sm"
+            suppressHydrationWarning
           >
             Discard
           </button>
@@ -108,6 +109,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             form={activeFormId}
             disabled={isPending}
             className="btn-primary btn-sm"
+            suppressHydrationWarning
           >
             {isPending
               ? "Saving..."
@@ -130,6 +132,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 ? "text-[var(--accent-strong)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
+            suppressHydrationWarning
           >
             {tab.label}
             {activeTab === tab.id && (
@@ -187,6 +190,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--surface)] bg-[var(--accent)] text-[var(--text-on-accent)] shadow-lg transition-colors hover:bg-[var(--accent-hover)]"
                     aria-label="Update profile photo"
+                    suppressHydrationWarning
                   >
                     <Camera size={14} />
                   </button>
@@ -208,6 +212,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 accept="image/*"
                 onChange={handleImageChange}
                 className="hidden"
+                suppressHydrationWarning
               />
 
               {/* Fields */}
@@ -223,6 +228,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     defaultValue={user.fullName}
                     className="form-input"
                     required
+                    suppressHydrationWarning
                   />
                   {profileState.fieldErrors?.fullName && (
                     <p className="mt-1 text-sm text-[var(--danger)]">
@@ -242,6 +248,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     defaultValue={user.email}
                     className="form-input"
                     required
+                    suppressHydrationWarning
                   />
                   {profileState.fieldErrors?.email && (
                     <p className="mt-1 text-sm text-[var(--danger)]">
@@ -261,6 +268,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     defaultValue={user.phoneNumber}
                     className="form-input"
                     required
+                    suppressHydrationWarning
                   />
                   {profileState.fieldErrors?.phoneNumber && (
                     <p className="mt-1 text-sm text-[var(--danger)]">
@@ -305,6 +313,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     className="form-input"
                     required
                     minLength={6}
+                    suppressHydrationWarning
                   />
                   {passwordState.fieldErrors?.newPassword && (
                     <p className="mt-1 text-sm text-[var(--danger)]">
@@ -324,6 +333,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                     className="form-input"
                     required
                     minLength={6}
+                    suppressHydrationWarning
                   />
                   {passwordState.fieldErrors?.confirmPassword && (
                     <p className="mt-1 text-sm text-[var(--danger)]">
@@ -350,6 +360,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               type="button"
               onClick={() => setActiveTab("security")}
               className="btn-secondary btn-sm mt-4 w-full"
+              suppressHydrationWarning
             >
               <KeyRound size={15} />
               Change Password

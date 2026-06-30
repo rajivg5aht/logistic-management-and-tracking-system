@@ -27,6 +27,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // Initialize collapsed state from localStorage
   useEffect(() => {
@@ -34,6 +35,9 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     if (savedState !== null) {
       setIsCollapsed(JSON.parse(savedState));
     }
+    // Mark hydrated only after the persisted state is applied so the initial
+    // correction doesn't animate (otherwise the sidebar visibly snaps shut).
+    setHydrated(true);
   }, []);
 
   // Save collapsed state to localStorage
@@ -57,19 +61,21 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const navItems = [
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
     { label: "Live Map", href: "#", icon: Map, active: false },
-    { label: "Shipments", href: "#", icon: Package, active: false },
+    { label: "Shipments", href: "/admin/shipments", icon: Package, active: pathname.startsWith("/admin/shipments") },
     { label: "Fleet Management", href: "#", icon: Truck, active: false },
     { label: "Warehouse", href: "#", icon: Warehouse, active: false },
-    { label: "Analytics", href: "#", icon: BarChart3, active: false },
+    { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },
   ];
 
   return (
     <div className="flex min-h-screen bg-[var(--app-bg)] font-sans antialiased">
       {/* Sidebar Panel */}
-      <aside className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 transition-all duration-280 ease-in-out ${
+      <aside className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 ease-in-out ${
+        hydrated ? "transition-all duration-280" : ""
+      } ${
         isCollapsed ? "w-[76px]" : "w-[260px]"
-      }`} style={{ transitionDuration: '280ms' }}>
+      }`} style={hydrated ? { transitionDuration: '280ms' } : undefined}>
         {/* Brand/Logo Header */}
         <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[88px]' : 'justify-between h-[88px] px-7'}`}>
           <div className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
@@ -200,16 +206,16 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       </aside>
 
       {/* Main Body Column */}
-      <div 
-        className="flex-1 flex flex-col min-w-0 transition-all duration-280 ease-in-out"
-        style={{ 
+      <div
+        className={`flex-1 flex flex-col min-w-0 ease-in-out ${hydrated ? "transition-all duration-280" : ""}`}
+        style={{
           marginLeft: isCollapsed ? '76px' : '260px',
-          transitionDuration: '280ms'
+          transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
         {/* Scrollable Layout Content */}
-        <main className="flex-1 overflow-y-auto px-6 py-8">
-          <div className="mx-auto w-full" style={{ maxWidth: '1100px' }}>
+        <main className="flex-1 overflow-y-auto px-8 py-8 lg:px-12 xl:px-16">
+          <div className="w-full">
             {children}
           </div>
         </main>
