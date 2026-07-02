@@ -1,0 +1,279 @@
+"use client";
+
+import { useState } from "react";
+import { MapPin, Phone, Mail, Send, ChevronDown } from "lucide-react";
+
+const contactInfo = [
+  {
+    icon: MapPin,
+    title: "Office Location",
+    lines: [
+      { text: "Koteshwor-32, Kathmandu, Nepal" },
+      { text: "CargoNep Logistics Center" },
+    ],
+  },
+  {
+    icon: Phone,
+    title: "Phone Numbers",
+    lines: [
+      { text: "+977-1-4XXXXXX", href: "tel:+97714000000" },
+      { text: "+977-98XXXXXXX (Mobile/Support)", href: "tel:+97798000000" },
+    ],
+  },
+  {
+    icon: Mail,
+    title: "Email Support",
+    lines: [
+      { text: "support@cargonep.com.np", href: "mailto:support@cargonep.com.np" },
+      { text: "business@cargonep.com.np", href: "mailto:business@cargonep.com.np" },
+    ],
+  },
+];
+
+const socials = [
+  { label: "Facebook", path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
+  { label: "Twitter", path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" },
+  { label: "Instagram", path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" },
+  { label: "LinkedIn", path: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" },
+];
+
+const faqs = [
+  {
+    q: "How do I track my shipment?",
+    a: "Enter your tracking ID (e.g. CN-84321) in the tracking bar on our homepage, or open the Live Dashboard from your account to see real-time GPS updates and estimated arrival times.",
+  },
+  {
+    q: "What are the delivery charges for outside valley?",
+    a: "Charges outside the Kathmandu Valley are calculated by distance, parcel weight, and service level. You will always see transparent pricing with no hidden fees before you confirm a booking.",
+  },
+  {
+    q: "Do you provide home pick-up services?",
+    a: "Yes. Schedule a doorstep pickup in a few clicks and our nearest rider collects your parcel at your preferred time slot — available across all 77 districts we cover.",
+  },
+];
+
+function OfficeMap() {
+  return (
+    <svg viewBox="0 0 600 260" className="h-full w-full" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="260" fill="#EFEAE0" />
+
+      {/* Park block */}
+      <rect x="34" y="24" width="120" height="78" rx="8" fill="rgba(95,127,53,0.16)" />
+      {/* City blocks */}
+      <g fill="#F4EFE4" stroke="#E2DACB" strokeWidth="1.5">
+        <rect x="200" y="24" width="120" height="70" rx="6" />
+        <rect x="360" y="30" width="110" height="60" rx="6" />
+        <rect x="500" y="24" width="90" height="80" rx="6" />
+        <rect x="34" y="150" width="150" height="86" rx="6" />
+        <rect x="360" y="160" width="130" height="76" rx="6" />
+        <rect x="520" y="150" width="70" height="86" rx="6" />
+      </g>
+
+      {/* Roads */}
+      <g stroke="#DCD2BE" strokeWidth="8" strokeLinecap="round">
+        <line x1="0" y1="120" x2="600" y2="120" />
+        <line x1="190" y1="0" x2="190" y2="260" />
+        <line x1="350" y1="0" x2="350" y2="260" />
+        <line x1="490" y1="0" x2="490" y2="260" />
+      </g>
+      {/* Main avenue */}
+      <line x1="0" y1="120" x2="600" y2="120" stroke="var(--accent)" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
+
+      {/* River */}
+      <path d="M-20 60 C 140 110, 250 60, 360 140 S 540 220, 620 190" fill="none" stroke="var(--teal)" strokeWidth="16" opacity="0.30" strokeLinecap="round" />
+
+      {/* Pin */}
+      <g transform="translate(300,110)">
+        <circle r="30" fill="rgba(200,162,74,0.18)">
+          <animate attributeName="r" values="24;34;24" dur="2.6s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.35;0;0.35" dur="2.6s" repeatCount="indefinite" />
+        </circle>
+        <path d="M0 -22 C 11 -22 20 -13 20 -2 C 20 12 0 26 0 26 C 0 26 -20 12 -20 -2 C -20 -13 -11 -22 0 -22 Z" fill="var(--accent-hover)" stroke="var(--surface)" strokeWidth="2" />
+        <circle cx="0" cy="-2" r="6.5" fill="var(--surface)" />
+      </g>
+    </svg>
+  );
+}
+
+export default function ContactContent() {
+  const [sent, setSent] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSent(true);
+    e.currentTarget.reset();
+  };
+
+  return (
+    <section className="relative pt-28 pb-20 sm:pt-32">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,162,74,0.05)_0%,transparent_55%)]" />
+
+      <div className="relative mx-auto w-full max-w-[1200px] px-5 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-10 sm:mb-12">
+          <div className="section-tag"><span className="section-tag-dot" />Contact Us</div>
+          <h1 className="heading-lg mt-1">Get in Touch</h1>
+          <p className="mt-4 max-w-2xl body-text">
+            Have questions about your delivery or want to partner with us? Our team is here to help
+            you navigate the logistics of Nepal.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Left column */}
+          <div className="space-y-6">
+            {/* Info card */}
+            <div className="card p-6 sm:p-8">
+              <div className="space-y-6">
+                {contactInfo.map(({ icon: Icon, title, lines }) => (
+                  <div key={title} className="flex gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <Icon size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[var(--text)]">{title}</p>
+                      {lines.map((line) =>
+                        "href" in line && line.href ? (
+                          <a
+                            key={line.text}
+                            href={line.href}
+                            className="block break-words text-sm leading-relaxed text-[var(--text-muted)] transition-colors hover:text-[var(--accent-hover)]"
+                          >
+                            {line.text}
+                          </a>
+                        ) : (
+                          <p key={line.text} className="text-sm leading-relaxed text-[var(--text-muted)]">
+                            {line.text}
+                          </p>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 border-t border-[var(--border)] pt-6">
+                <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">Connect with us</p>
+                <div className="mt-4 flex items-center gap-3">
+                  {socials.map(({ label, path }) => (
+                    <a
+                      key={label}
+                      href="#"
+                      aria-label={label}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                        <path d={path} />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Map card */}
+            <div className="card overflow-hidden">
+              <div className="flex items-center gap-1.5 border-b border-[var(--border)] px-5 py-3 text-sm">
+                <span className="font-bold tracking-tight">
+                  <span className="text-[var(--text)]">Cargo</span>
+                  <span className="text-[var(--accent)]">Nep</span>
+                </span>
+                <span className="text-[var(--text-muted)]">· Contact Us</span>
+              </div>
+              <div className="relative aspect-[600/260]">
+                <OfficeMap />
+                <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.92)] px-3 py-2 text-xs font-semibold text-[var(--text)] shadow-[var(--shadow-sm)] backdrop-blur">
+                  <MapPin size={14} className="text-[var(--accent-hover)]" />
+                  Find us at Koteshwor-32
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right column - form */}
+          <div className="card p-6 sm:p-8">
+            <form onSubmit={handleSubmit} className="form-wrapper">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="fullName" className="form-label">Full Name</label>
+                  <input id="fullName" name="fullName" type="text" required placeholder="Enter your full name" className="form-input" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="form-label">Email Address</label>
+                  <input id="email" name="email" type="email" required placeholder="email@example.com" className="form-input" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="subject" className="form-label">Subject</label>
+                <div className="relative">
+                  <select id="subject" name="subject" defaultValue="Support" className="form-input cursor-pointer appearance-none pr-10">
+                    <option>Support</option>
+                    <option>Business Partnership</option>
+                    <option>Complaint</option>
+                    <option>General Inquiry</option>
+                  </select>
+                  <ChevronDown size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="message" className="form-label">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  required
+                  rows={6}
+                  placeholder="How can we help you?"
+                  className="w-full resize-y rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--app-bg-soft)] p-3.5 text-sm text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-faint)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:bg-[var(--surface)] focus:shadow-[0_0_0_3px_rgba(200,162,74,0.12)]"
+                />
+              </div>
+
+              {sent && (
+                <p className="form-success" role="status">
+                  Thanks for reaching out! Our team will get back to you within 24 hours.
+                </p>
+              )}
+
+              <button type="submit" className="btn-primary self-start">
+                Send Message <Send size={16} />
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-16 sm:mt-20">
+          <h2 className="heading-md text-center">Frequently Asked Questions</h2>
+          <div className="mx-auto mt-8 max-w-[760px] space-y-3">
+            {faqs.map((faq, idx) => {
+              const open = openFaq === idx;
+              return (
+                <div key={faq.q} className="card overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(open ? null : idx)}
+                    aria-expanded={open}
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                  >
+                    <span className="text-sm font-bold text-[var(--text)]">{faq.q}</span>
+                    <ChevronDown
+                      size={18}
+                      className={`shrink-0 text-[var(--accent-hover)] transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <div className={`grid transition-all duration-300 ease-out ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                    <div className="overflow-hidden">
+                      <p className="body-text-sm px-5 pb-5">{faq.a}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

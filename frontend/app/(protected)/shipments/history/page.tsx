@@ -24,4 +24,5 @@ export default async function ShipmentHistoryPage() {
   }
 
   return <ShipmentHistory user={user} />;
+  
 }
