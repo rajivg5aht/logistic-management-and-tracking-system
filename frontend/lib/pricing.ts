@@ -1,28 +1,29 @@
 import type { ServiceType, PackageDetails } from "@/context/ShipmentContext";
 
 /**
- * Pricing tiers based on parcel weight (kg).
+ * Pricing tiers based on parcel weight (kg). Amounts are in Nepali Rupees (NPR),
+ * tuned for affordable domestic delivery across Nepal.
  *
- * ≤ 10 kg  → base $100
- * 10–50 kg → base $250
- * 50–100 kg → base $500
- * > 100 kg → base $1,000
+ * ≤ 10 kg   → base Rs 150
+ * 10–50 kg  → base Rs 450
+ * 50–100 kg → base Rs 900
+ * > 100 kg  → base Rs 1,800
  */
 function getWeightBase(weight: number): number {
-  if (weight <= 0) return 50; // fallback for empty/zero
-  if (weight <= 10) return 100;
-  if (weight <= 50) return 250;
-  if (weight <= 100) return 500;
-  return 1000;
+  if (weight <= 0) return 80; // fallback for empty/zero
+  if (weight <= 10) return 150;
+  if (weight <= 50) return 450;
+  if (weight <= 100) return 900;
+  return 1800;
 }
 
 /**
- * Dimension surcharge — based on cubic volume (cm³).
+ * Dimension surcharge (NPR) — based on cubic volume (cm³).
  *
- * ≤ 10,000 cm³  (small)   → +$0
- * 10,001–50,000 cm³       → +$25
- * 50,001–200,000 cm³      → +$75
- * > 200,000 cm³ (large)   → +$150
+ * ≤ 10,000 cm³  (small)   → +Rs 0
+ * 10,001–50,000 cm³       → +Rs 50
+ * 50,001–200,000 cm³      → +Rs 150
+ * > 200,000 cm³ (large)   → +Rs 300
  */
 function getDimensionSurcharge(dims: { length: string; width: string; height: string }): number {
   const l = parseFloat(dims.length) || 0;
@@ -32,22 +33,22 @@ function getDimensionSurcharge(dims: { length: string; width: string; height: st
 
   if (volume <= 0) return 0;
   if (volume <= 10_000) return 0;
-  if (volume <= 50_000) return 25;
-  if (volume <= 200_000) return 75;
-  return 150;
+  if (volume <= 50_000) return 50;
+  if (volume <= 200_000) return 150;
+  return 300;
 }
 
 /**
  * Service multiplier applied on the base price.
  *
  * Standard  → 1×
- * Express   → 1.8×
- * Overnight → 3×
+ * Express   → 1.5×
+ * Overnight → 2.5×
  */
 const SERVICE_MULTIPLIER: Record<ServiceType, number> = {
   standard: 1,
-  express: 1.8,
-  overnight: 3,
+  express: 1.5,
+  overnight: 2.5,
 };
 
 /**
@@ -59,9 +60,17 @@ const FUEL_PERCENT: Record<ServiceType, number> = {
   overnight: 0.1,
 };
 
-// ── Fixed add-on fees ────────────────────────
-export const INSURANCE_FEE = 25.0;
-export const SPECIAL_HANDLING_FEE = 12.5;
+// ── Fixed add-on fees (NPR) ──────────────────
+export const INSURANCE_FEE = 100;
+export const SPECIAL_HANDLING_FEE = 60;
+
+/**
+ * Formats an amount as Nepali Rupees, e.g. 150000 → "Rs 1,50,000".
+ * Uses the South-Asian (lakh) digit grouping used in Nepal.
+ */
+export function formatNPR(amount: number): string {
+  return `Rs ${Math.round(amount).toLocaleString("en-IN")}`;
+}
 
 // ── Public API ───────────────────────────────
 
@@ -89,20 +98,16 @@ export function calculatePrices(
   const dimSurcharge = getDimensionSurcharge(packageDetails.dimensions);
   const multiplier = SERVICE_MULTIPLIER[service];
 
-  const shippingFee = parseFloat(
-    ((weightBase + dimSurcharge) * multiplier * packageDetails.quantity).toFixed(2),
+  const shippingFee = Math.round(
+    (weightBase + dimSurcharge) * multiplier * packageDetails.quantity,
   );
 
-  const fuelSurcharge = parseFloat(
-    (shippingFee * FUEL_PERCENT[service]).toFixed(2),
-  );
+  const fuelSurcharge = Math.round(shippingFee * FUEL_PERCENT[service]);
 
   const insuranceFee = hasInsurance ? INSURANCE_FEE : 0;
   const handlingFee = hasSpecialHandling ? SPECIAL_HANDLING_FEE : 0;
 
-  const total = parseFloat(
-    (shippingFee + fuelSurcharge + insuranceFee + handlingFee).toFixed(2),
-  );
+  const total = shippingFee + fuelSurcharge + insuranceFee + handlingFee;
 
   return { shippingFee, fuelSurcharge, insuranceFee, handlingFee, total };
 }
@@ -119,7 +124,7 @@ export function getServicePrice(
   const weightBase = getWeightBase(weight);
   const dimSurcharge = getDimensionSurcharge(packageDetails.dimensions);
   const multiplier = SERVICE_MULTIPLIER[service];
-  return parseFloat(
-    ((weightBase + dimSurcharge) * multiplier * packageDetails.quantity).toFixed(2),
+  return Math.round(
+    (weightBase + dimSurcharge) * multiplier * packageDetails.quantity,
   );
 }

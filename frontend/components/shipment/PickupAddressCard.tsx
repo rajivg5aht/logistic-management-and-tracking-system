@@ -1,6 +1,6 @@
 "use client";
 
-import { useShipment } from "@/context/ShipmentContext";
+import { useShipment, NEPAL_DISTRICTS } from "@/context/ShipmentContext";
 
 export function PickupAddressCard() {
   const { pickupAddress, updatePickupField } = useShipment();
@@ -47,14 +47,36 @@ export function PickupAddressCard() {
           />
         </div>
 
+        {/* Phone Number */}
+        <div>
+          <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
+            PHONE NUMBER <span className="text-red-500">*</span>
+          </label>
+          <div className="flex">
+            <span className="flex h-11 items-center rounded-l-lg border border-r-0 border-[#E2E8F0] bg-slate-50 px-3 text-[13px] font-semibold text-slate-500">
+              +977
+            </span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              placeholder="98XXXXXXXX"
+              value={pickupAddress.phoneNumber}
+              onChange={(e) => updatePickupField("phoneNumber", e.target.value.replace(/[^0-9]/g, ""))}
+              maxLength={10}
+              className="w-full h-11 border border-[#E2E8F0] rounded-r-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+              suppressHydrationWarning
+            />
+          </div>
+        </div>
+
         {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            STREET ADDRESS <span className="text-red-500">*</span>
+            DELIVERY ADDRESS <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            placeholder="123 Logistics Way"
+            placeholder="Street name, Building No, Tole"
             value={pickupAddress.streetAddress}
             onChange={(e) => updatePickupField("streetAddress", e.target.value)}
             className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
@@ -62,60 +84,45 @@ export function PickupAddressCard() {
           />
         </div>
 
-        {/* City and Postal Code */}
+        {/* District and City / Municipality */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              CITY <span className="text-red-500">*</span>
+              DISTRICT <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={pickupAddress.district}
+                onChange={(e) => updatePickupField("district", e.target.value)}
+                className={`w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10 ${
+                  pickupAddress.district ? "text-slate-800" : "text-slate-400"
+                }`}
+                suppressHydrationWarning
+              >
+                <option value="">Select District</option>
+                {NEPAL_DISTRICTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
+              CITY / MUNICIPALITY <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              placeholder="New York"
+              placeholder="e.g. Kathmandu"
               value={pickupAddress.city}
               onChange={(e) => updatePickupField("city", e.target.value)}
               className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
               suppressHydrationWarning
             />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-              POSTAL CODE <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="10001"
-              value={pickupAddress.postalCode}
-              onChange={(e) => updatePickupField("postalCode", e.target.value)}
-              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
-              suppressHydrationWarning
-            />
-          </div>
-        </div>
-
-        {/* Country */}
-        <div>
-          <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            COUNTRY
-          </label>
-          <div className="relative">
-            <select
-              value={pickupAddress.country}
-              onChange={(e) => updatePickupField("country", e.target.value)}
-              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10"
-              suppressHydrationWarning
-            >
-              <option>United States</option>
-              <option>United Kingdom</option>
-              <option>Canada</option>
-              <option>Germany</option>
-              <option>France</option>
-              <option>Australia</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
           </div>
         </div>
 

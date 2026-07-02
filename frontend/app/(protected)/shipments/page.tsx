@@ -29,15 +29,19 @@ function ShipmentPageContent() {
 
     // Pickup address validation
     if (!pickupAddress.fullName.trim()) errors.push("Pickup: Full Name is required");
-    if (!pickupAddress.streetAddress.trim()) errors.push("Pickup: Street Address is required");
-    if (!pickupAddress.city.trim()) errors.push("Pickup: City is required");
-    if (!pickupAddress.postalCode.trim()) errors.push("Pickup: Postal Code is required");
+    if (!pickupAddress.phoneNumber.trim()) errors.push("Pickup: Phone Number is required");
+    else if (!/^9\d{9}$/.test(pickupAddress.phoneNumber)) errors.push("Pickup: Enter a valid 10-digit mobile number");
+    if (!pickupAddress.streetAddress.trim()) errors.push("Pickup: Delivery Address is required");
+    if (!pickupAddress.district.trim()) errors.push("Pickup: District is required");
+    if (!pickupAddress.city.trim()) errors.push("Pickup: City / Municipality is required");
 
     // Delivery address validation
     if (!deliveryAddress.recipientName.trim()) errors.push("Delivery: Recipient Name is required");
-    if (!deliveryAddress.streetAddress.trim()) errors.push("Delivery: Street Address is required");
-    if (!deliveryAddress.city.trim()) errors.push("Delivery: City is required");
-    if (!deliveryAddress.postalCode.trim()) errors.push("Delivery: Postal Code is required");
+    if (!deliveryAddress.phoneNumber.trim()) errors.push("Delivery: Phone Number is required");
+    else if (!/^9\d{9}$/.test(deliveryAddress.phoneNumber)) errors.push("Delivery: Enter a valid 10-digit mobile number");
+    if (!deliveryAddress.streetAddress.trim()) errors.push("Delivery: Delivery Address is required");
+    if (!deliveryAddress.district.trim()) errors.push("Delivery: District is required");
+    if (!deliveryAddress.city.trim()) errors.push("Delivery: City / Municipality is required");
 
     setValidationErrors(errors);
     return errors.length === 0;
