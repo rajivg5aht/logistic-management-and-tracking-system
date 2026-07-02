@@ -2,21 +2,37 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
+// All 77 districts of Nepal (alphabetical) for address selection.
+export const NEPAL_DISTRICTS = [
+  "Achham", "Arghakhanchi", "Baglung", "Baitadi", "Bajhang", "Bajura", "Banke",
+  "Bara", "Bardiya", "Bhaktapur", "Bhojpur", "Chitwan", "Dadeldhura", "Dailekh",
+  "Dang", "Darchula", "Dhading", "Dhankuta", "Dhanusha", "Dolakha", "Dolpa",
+  "Doti", "Gorkha", "Gulmi", "Humla", "Ilam", "Jajarkot", "Jhapa", "Jumla",
+  "Kailali", "Kalikot", "Kanchanpur", "Kapilvastu", "Kaski", "Kathmandu",
+  "Kavrepalanchok", "Khotang", "Lalitpur", "Lamjung", "Mahottari", "Makwanpur",
+  "Manang", "Morang", "Mugu", "Mustang", "Myagdi", "Nawalparasi East",
+  "Nawalparasi West", "Nuwakot", "Okhaldhunga", "Palpa", "Panchthar", "Parbat",
+  "Parsa", "Pyuthan", "Ramechhap", "Rasuwa", "Rautahat", "Rolpa", "Rukum East",
+  "Rukum West", "Rupandehi", "Salyan", "Sankhuwasabha", "Saptari", "Sarlahi",
+  "Sindhuli", "Sindhupalchok", "Siraha", "Solukhumbu", "Sunsari", "Surkhet",
+  "Syangja", "Tanahun", "Taplejung", "Terhathum", "Udayapur",
+] as const;
+
 export interface PickupAddress {
   fullName: string;
+  phoneNumber: string;
   streetAddress: string;
   city: string;
-  postalCode: string;
-  country: string;
+  district: string;
   saveToAddressBook: boolean;
 }
 
 export interface DeliveryAddress {
   recipientName: string;
+  phoneNumber: string;
   streetAddress: string;
   city: string;
-  postalCode: string;
-  country: string;
+  district: string;
   residentialAddress: boolean;
 }
 
@@ -60,19 +76,19 @@ const ShipmentContext = createContext<ShipmentContextType | undefined>(undefined
 export function ShipmentProvider({ children }: { children: ReactNode }) {
   const [pickupAddress, setPickupAddress] = useState<PickupAddress>({
     fullName: "",
+    phoneNumber: "",
     streetAddress: "",
     city: "",
-    postalCode: "",
-    country: "United States",
+    district: "",
     saveToAddressBook: false,
   });
 
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress>({
     recipientName: "",
+    phoneNumber: "",
     streetAddress: "",
     city: "",
-    postalCode: "",
-    country: "United States",
+    district: "",
     residentialAddress: false,
   });
 

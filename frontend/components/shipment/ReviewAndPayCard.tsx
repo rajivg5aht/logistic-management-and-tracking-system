@@ -1,18 +1,19 @@
 "use client";
 
 import { useShipment } from "@/context/ShipmentContext";
-import { calculatePrices } from "@/lib/pricing";
+import { calculatePrices, formatNPR } from "@/lib/pricing";
 import {
   MapPin,
   Package,
   CreditCard,
-  Plus,
   Check,
+  ChevronRight,
+  Smartphone,
+  Banknote,
   Zap,
   Truck,
   SunDim,
   Shield,
-  Wrench,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -45,22 +46,29 @@ const SERVICE_INFO = {
 
 const PAYMENT_METHODS = [
   {
-    id: "visa",
-    brand: "VISA",
-    brandColor: "bg-[#1A1F71]",
-    brandText: "text-white",
-    label: "Visa Corporate Platinum",
-    ending: "4242",
-    expires: "12/26",
+    id: "esewa",
+    label: "eSewa Wallet",
+    description: "Pay securely using your eSewa account",
+    icon: Smartphone,
+    iconBg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
   },
   {
-    id: "mc",
-    brand: "MC",
-    brandColor: "bg-[#EB001B]",
-    brandText: "text-white",
-    label: "Mastercard Business",
-    ending: "8801",
-    expires: "08/25",
+    id: "khalti",
+    label: "Khalti Wallet",
+    description: "Pay securely using your Khalti account",
+    icon: Smartphone,
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-600",
+  },
+  {
+    id: "cod",
+    label: "Cash on Delivery",
+    description: "Pay in cash when your shipment arrives",
+    icon: Banknote,
+    iconBg: "bg-amber-50",
+    iconColor: "text-amber-600",
+    note: "Fee applies",
   },
 ];
 
@@ -78,7 +86,7 @@ export function ReviewAndPayCard({
     specialHandling,
   } = useShipment();
 
-  const [selectedPayment, setSelectedPayment] = useState("visa");
+  const [selectedPayment, setSelectedPayment] = useState("esewa");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const service = SERVICE_INFO[selectedService];
@@ -101,10 +109,10 @@ export function ReviewAndPayCard({
   });
 
   // Format helpers
-  const pickupCityLine = [pickupAddress.city, pickupAddress.postalCode]
+  const pickupCityLine = [pickupAddress.city, pickupAddress.district]
     .filter(Boolean)
     .join(", ");
-  const deliveryCityLine = [deliveryAddress.city, deliveryAddress.postalCode]
+  const deliveryCityLine = [deliveryAddress.city, deliveryAddress.district]
     .filter(Boolean)
     .join(", ");
 
@@ -255,7 +263,7 @@ export function ReviewAndPayCard({
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-[#1D7A8C]" />
                 <span className="text-[12px] font-semibold text-slate-600">
-                  Full Value Insurance Coverage (Up to $5,000 USD)
+                  Full Value Insurance Coverage (Up to Rs 50,000)
                 </span>
               </div>
             </div>
@@ -274,63 +282,67 @@ export function ReviewAndPayCard({
           </div>
 
           <div className="space-y-3">
-            {PAYMENT_METHODS.map((method) => (
-              <label
-                key={method.id}
-                onClick={() => setSelectedPayment(method.id)}
-                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none ${
-                  selectedPayment === method.id
-                    ? "border-[#1D7A8C] bg-[#EAF5F8]/20"
-                    : "border-[#E2E8F0] bg-white hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Radio */}
-                  <div
-                    className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      selectedPayment === method.id
-                        ? "border-[#1D7A8C] bg-[#1D7A8C]"
-                        : "border-slate-300"
+            {PAYMENT_METHODS.map((method) => {
+              const MethodIcon = method.icon;
+              const isSelected = selectedPayment === method.id;
+
+              return (
+                <button
+                  type="button"
+                  key={method.id}
+                  onClick={() => setSelectedPayment(method.id)}
+                  aria-pressed={isSelected}
+                  className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left cursor-pointer transition-all duration-200 ${
+                    isSelected
+                      ? "border-[#1D7A8C] bg-[#EAF5F8]/40 shadow-sm"
+                      : "border-[#E2E8F0] bg-white hover:border-slate-300 hover:bg-slate-50/60"
+                  }`}
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                        isSelected
+                          ? "border-[#1D7A8C]"
+                          : "border-slate-300"
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#1D7A8C]" />
+                      )}
+                    </span>
+
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${method.iconBg}`}
+                    >
+                      <MethodIcon className={`h-5 w-5 ${method.iconColor}`} />
+                    </span>
+
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className="text-[13px] font-bold text-slate-800">
+                          {method.label}
+                        </span>
+                        {method.note && (
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-700">
+                            {method.note}
+                          </span>
+                        )}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {method.description}
+                      </span>
+                    </span>
+                  </div>
+
+                  <ChevronRight
+                    className={`h-4 w-4 shrink-0 ${
+                      isSelected ? "text-[#1D7A8C]" : "text-slate-400"
                     }`}
-                  >
-                    {selectedPayment === method.id && (
-                      <div className="h-2 w-2 rounded-full bg-white" />
-                    )}
-                  </div>
-
-                  {/* Brand badge */}
-                  <div
-                    className={`${method.brandColor} ${method.brandText} text-[10px] font-bold px-2.5 py-1.5 rounded-md tracking-wider`}
-                  >
-                    {method.brand}
-                  </div>
-
-                  {/* Info */}
-                  <div>
-                    <p className="text-[13px] font-bold text-slate-800">
-                      {method.label}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Ending in {method.ending} • Expires {method.expires}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Check icon for selected */}
-                {selectedPayment === method.id && (
-                  <div className="h-6 w-6 rounded-full bg-[#1D7A8C] flex items-center justify-center">
-                    <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
-                  </div>
-                )}
-              </label>
-            ))}
+                  />
+                </button>
+              );
+            })}
           </div>
-
-          {/* Add new */}
-          <button className="mt-4 flex items-center gap-2 text-[12px] font-bold text-[#1D7A8C] hover:text-[#15616D] transition-colors cursor-pointer">
-            <Plus className="h-4 w-4" />
-            Add New Payment Method
-          </button>
         </div>
 
         {/* ─── Terms & Agreement ─── */}
@@ -377,20 +389,20 @@ export function ReviewAndPayCard({
                   Shipping Fee ({service.label})
                 </span>
                 <span className="font-bold text-slate-700">
-                  ${prices.shippingFee.toFixed(2)}
+                  {formatNPR(prices.shippingFee)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Fuel Surcharge</span>
                 <span className="font-bold text-slate-700">
-                  ${prices.fuelSurcharge.toFixed(2)}
+                  {formatNPR(prices.fuelSurcharge)}
                 </span>
               </div>
               {insurance && (
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Insurance (Standard + Extra)</span>
                   <span className="font-bold text-slate-700">
-                    ${prices.insuranceFee.toFixed(2)}
+                    {formatNPR(prices.insuranceFee)}
                   </span>
                 </div>
               )}
@@ -398,7 +410,7 @@ export function ReviewAndPayCard({
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Handling &amp; Processing</span>
                   <span className="font-bold text-slate-700">
-                    ${prices.handlingFee.toFixed(2)}
+                    {formatNPR(prices.handlingFee)}
                   </span>
                 </div>
               )}
@@ -414,11 +426,11 @@ export function ReviewAndPayCard({
                   Total Amount
                 </p>
                 <p className="text-[28px] font-extrabold text-slate-800 leading-none mt-1">
-                  ${prices.total.toFixed(2)}
+                  {formatNPR(prices.total)}
                 </p>
               </div>
               <span className="text-[11px] font-bold text-[#1D7A8C] bg-[#EAF5F8] px-2.5 py-1 rounded-md mb-1">
-                USD
+                NPR
               </span>
             </div>
           </div>
@@ -547,7 +559,8 @@ export function ReviewAndPayCard({
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
         >
-          Confirm &amp; Pay ${prices.total.toFixed(2)}
+          {selectedPayment === "cod" ? "Confirm Order" : "Confirm & Pay"}{" "}
+          {formatNPR(prices.total)}
         </button>
       </div>
     </div>

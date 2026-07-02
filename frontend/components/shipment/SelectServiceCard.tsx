@@ -2,7 +2,7 @@
 
 import { Truck, Zap, SunDim } from "lucide-react";
 import { useShipment } from "@/context/ShipmentContext";
-import { getServicePrice, INSURANCE_FEE, SPECIAL_HANDLING_FEE } from "@/lib/pricing";
+import { formatNPR, getServicePrice, INSURANCE_FEE, SPECIAL_HANDLING_FEE } from "@/lib/pricing";
 
 export function SelectServiceCard() {
   const {
@@ -73,7 +73,7 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                ${standardPrice.toFixed(2)}
+                {formatNPR(standardPrice)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
                 {standardEta}
@@ -115,7 +115,7 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                ${expressPrice.toFixed(2)}
+                {formatNPR(expressPrice)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
                 {expressEta}
@@ -152,7 +152,7 @@ export function SelectServiceCard() {
             {/* Price & Est Date */}
             <div className="text-right">
               <span className="text-[14px] font-extrabold text-slate-800 block">
-                ${overnightPrice.toFixed(2)}
+                {formatNPR(overnightPrice)}
               </span>
               <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
                 {overnightEta}
@@ -189,10 +189,10 @@ export function SelectServiceCard() {
                 Shipping Insurance
               </span>
               <span className="text-[11px] text-slate-500 leading-normal mt-1 block">
-                Protect against loss or damage up to $5,000.
+                Protect against loss or damage up to Rs 50,000.
               </span>
               <span className="text-[10px] font-bold text-[#1D7A8C] mt-2 block">
-                +${INSURANCE_FEE.toFixed(2)}
+                +{formatNPR(INSURANCE_FEE)}
               </span>
             </div>
           </label>
@@ -220,7 +220,7 @@ export function SelectServiceCard() {
                 For fragile or oversized items requiring manual sorting.
               </span>
               <span className="text-[10px] font-bold text-[#1D7A8C] mt-2 block">
-                +${SPECIAL_HANDLING_FEE.toFixed(2)}
+                +{formatNPR(SPECIAL_HANDLING_FEE)}
               </span>
             </div>
           </label>

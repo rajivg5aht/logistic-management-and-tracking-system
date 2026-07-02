@@ -2,7 +2,7 @@
 
 import { FileText, Shield, Wrench } from "lucide-react";
 import { useShipment } from "@/context/ShipmentContext";
-import { calculatePrices } from "@/lib/pricing";
+import { calculatePrices, formatNPR } from "@/lib/pricing";
 
 const SERVICE_LABELS = {
   standard: "Standard Delivery",
@@ -22,12 +22,12 @@ export function DetailedSummaryCard() {
 
   // Format display strings with fallbacks
   const pickupStreet = pickupAddress.streetAddress || "—";
-  const pickupCityLine = [pickupAddress.city, pickupAddress.postalCode]
+  const pickupCityLine = [pickupAddress.city, pickupAddress.district]
     .filter(Boolean)
     .join(", ") || "—";
 
   const deliveryStreet = deliveryAddress.streetAddress || "—";
-  const deliveryCityLine = [deliveryAddress.city, deliveryAddress.postalCode]
+  const deliveryCityLine = [deliveryAddress.city, deliveryAddress.district]
     .filter(Boolean)
     .join(", ") || "—";
 
@@ -134,11 +134,11 @@ export function DetailedSummaryCard() {
         <div className="border-t border-slate-100 pt-3.5 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Shipping Fee</span>
-            <span className="font-bold text-slate-700">${prices.shippingFee.toFixed(2)}</span>
+            <span className="font-bold text-slate-700">{formatNPR(prices.shippingFee)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Fuel Surcharge</span>
-            <span className="font-bold text-slate-700">${prices.fuelSurcharge.toFixed(2)}</span>
+            <span className="font-bold text-slate-700">{formatNPR(prices.fuelSurcharge)}</span>
           </div>
           {insurance && (
             <div className="flex items-center justify-between">
@@ -146,7 +146,7 @@ export function DetailedSummaryCard() {
                 <Shield className="h-3.5 w-3.5 text-[#1D7A8C]" />
                 Insurance
               </span>
-              <span className="font-bold text-slate-700">${prices.insuranceFee.toFixed(2)}</span>
+              <span className="font-bold text-slate-700">{formatNPR(prices.insuranceFee)}</span>
             </div>
           )}
           {specialHandling && (
@@ -155,7 +155,7 @@ export function DetailedSummaryCard() {
                 <Wrench className="h-3.5 w-3.5 text-[#D5A021]" />
                 Special Handling
               </span>
-              <span className="font-bold text-slate-700">${prices.handlingFee.toFixed(2)}</span>
+              <span className="font-bold text-slate-700">{formatNPR(prices.handlingFee)}</span>
             </div>
           )}
         </div>
@@ -168,7 +168,7 @@ export function DetailedSummaryCard() {
             Estimated Total
           </span>
           <span className="text-[18px] font-extrabold text-[#1D7A8C]">
-            ${prices.total.toFixed(2)}
+            {formatNPR(prices.total)}
           </span>
         </div>
         <span className="text-[9.5px] text-[#1D7A8C]/80 mt-2 block font-medium">
