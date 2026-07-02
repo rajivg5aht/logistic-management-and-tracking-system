@@ -14,7 +14,9 @@ import {
   Users,
   HelpCircle,
   LogOut,
-  Menu
+  Menu,
+  Search,
+  Bell
 } from "lucide-react";
 import { AuthUser } from "@/lib/api/auth.api";
 
@@ -57,6 +59,15 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       router.push("/login");
     }
   };
+
+  const displayName = user?.fullName?.trim() || "Admin User";
+  const initials =
+    displayName
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "AU";
 
   const navItems = [
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
@@ -213,8 +224,59 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
+        {/* Top App Bar */}
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 py-3 backdrop-blur lg:px-12 xl:px-16">
+          <div className="relative w-full max-w-md">
+            <Search
+              size={17}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            />
+            <input
+              type="text"
+              placeholder="Search shipments, IDs, or drivers..."
+              className="h-10 w-full rounded-xl border border-[var(--border)] bg-[#F1F3F6] pl-10 pr-4 text-sm font-medium text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[#123E6B]/40 focus:bg-white"
+              suppressHydrationWarning
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
+              aria-label="Notifications"
+              suppressHydrationWarning
+            >
+              <Bell size={19} />
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#D0533F] ring-2 ring-[var(--surface)]" />
+            </button>
+            <button
+              type="button"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
+              aria-label="Help"
+              suppressHydrationWarning
+            >
+              <HelpCircle size={19} />
+            </button>
+
+            <div className="ml-1 flex items-center gap-3 border-l border-[var(--border)] pl-3">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Senior Admin
+                </p>
+              </div>
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shrink-0"
+                style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
+              >
+                {initials}
+              </div>
+            </div>
+          </div>
+        </header>
+
         {/* Scrollable Layout Content */}
-        <main className="flex-1 overflow-y-auto px-8 py-8 lg:px-12 xl:px-16">
+        <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
           <div className="w-full">
             {children}
           </div>

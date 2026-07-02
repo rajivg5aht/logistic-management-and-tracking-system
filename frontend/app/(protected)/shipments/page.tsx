@@ -80,6 +80,16 @@ function ShipmentPageContent() {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#1E3A5F]">
+          Book a Shipment
+        </h1>
+        <p className="mt-1 text-sm font-medium text-slate-500">
+          Fill in the details below to dispatch your package across Nepal.
+        </p>
+      </div>
+
       {/* Step Progress Bar */}
       <div className="py-2">
         <StepProgressBar steps={steps} />
