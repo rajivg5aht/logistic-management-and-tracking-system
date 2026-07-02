@@ -13,7 +13,6 @@ import {
   KeyRound,
   BadgeCheck,
   Headphones,
-  ChevronRight,
 } from "lucide-react";
 
 const initialState: AuthFormState = { success: false };
@@ -77,13 +76,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]">
-        <span>Profile</span>
-        <ChevronRight size={12} />
-        <span className="text-[var(--text)]">Account</span>
-      </nav>
-
       {/* Header row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>

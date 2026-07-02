@@ -7,6 +7,7 @@ import {
   Package,
   CreditCard,
   Check,
+  CheckCircle2,
   ChevronRight,
   Smartphone,
   Banknote,
@@ -14,8 +15,13 @@ import {
   Truck,
   SunDim,
   Shield,
+  Loader2,
+  ArrowRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState, useTransition } from "react";
+import Link from "next/link";
+import { createShipmentAction } from "@/actions/shipment.actions";
+import type { Shipment, PaymentMethod } from "@/lib/api/shipment.api";
 
 const SERVICE_INFO = {
   standard: {
@@ -86,8 +92,11 @@ export function ReviewAndPayCard({
     specialHandling,
   } = useShipment();
 
-  const [selectedPayment, setSelectedPayment] = useState("esewa");
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("esewa");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [placedShipment, setPlacedShipment] = useState<Shipment | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const service = SERVICE_INFO[selectedService];
   const ServiceIcon = service.icon;
@@ -95,8 +104,48 @@ export function ReviewAndPayCard({
   // Dynamic price calculation from shared utility
   const prices = calculatePrices(packageDetails, selectedService, insurance, specialHandling);
 
-  // Generate a reference number
-  const refNumber = `CARGO-${Date.now().toString(36).toUpperCase().slice(-6)}-X`;
+  const handleConfirm = () => {
+    setErrorMsg(null);
+    startTransition(async () => {
+      const result = await createShipmentAction({
+        pickup: {
+          fullName: pickupAddress.fullName,
+          phoneNumber: pickupAddress.phoneNumber,
+          streetAddress: pickupAddress.streetAddress,
+          city: pickupAddress.city,
+          district: pickupAddress.district,
+        },
+        delivery: {
+          recipientName: deliveryAddress.recipientName,
+          phoneNumber: deliveryAddress.phoneNumber,
+          streetAddress: deliveryAddress.streetAddress,
+          city: deliveryAddress.city,
+          district: deliveryAddress.district,
+        },
+        package: {
+          parcelType: packageDetails.parcelType,
+          weight: packageDetails.weight,
+          quantity: packageDetails.quantity,
+          dimensions: packageDetails.dimensions,
+        },
+        service: selectedService,
+        insurance,
+        specialHandling,
+        paymentMethod: selectedPayment,
+        amount: prices.total,
+      });
+
+      if (result.success && result.shipment) {
+        setPlacedShipment(result.shipment);
+      } else {
+        setErrorMsg(result.message || "Something went wrong. Please try again.");
+      }
+    });
+  };
+
+  // Stable reference used only while reviewing; the backend returns the final tracking ID.
+  const referenceSeed = useId().replaceAll(":", "").toUpperCase();
+  const refNumber = `CARGO-${referenceSeed.slice(-6).padStart(6, "0")}-X`;
 
   // Estimated delivery date
   const today = new Date();
@@ -133,6 +182,73 @@ export function ReviewAndPayCard({
     packageDetails.dimensions.height
       ? `${packageDetails.dimensions.length} × ${packageDetails.dimensions.width} × ${packageDetails.dimensions.height} cm`
       : "—";
+
+  // ── Success screen (after a shipment is created) ──
+  if (placedShipment) {
+    const paid = placedShipment.paymentStatus === "paid";
+    return (
+      <div className="mx-auto max-w-2xl rounded-xl border border-[#E2E8F0] bg-white p-8 text-center shadow-sm sm:p-12">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#E6F7ED]">
+          <CheckCircle2 className="h-9 w-9 text-emerald-600" strokeWidth={2.2} />
+        </div>
+        <h2 className="mt-5 text-2xl font-extrabold text-slate-800">
+          {paid ? "Payment Successful!" : "Order Confirmed!"}
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Your shipment has been booked and is now pending pickup. Our team will
+          assign a driver shortly.
+        </p>
+
+        <div className="mt-6 rounded-xl border border-[#E2E8F0] bg-slate-50 p-5 text-left">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Tracking ID
+            </span>
+            <span className="text-[15px] font-extrabold text-[#1D7A8C]">
+              #{placedShipment.trackingId}
+            </span>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-[#E2E8F0] pt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Amount
+            </span>
+            <span className="text-[15px] font-extrabold text-slate-800">
+              {formatNPR(placedShipment.amount)}
+            </span>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-[#E2E8F0] pt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Payment
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                paid ? "bg-[#E6F7ED] text-emerald-700" : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {paid ? "Paid" : "Cash on Delivery"}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/shipments/history"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1D7A8C] to-[#15616D] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:shadow-md sm:w-auto"
+          >
+            View My Shipments <ArrowRight className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex w-full items-center justify-center rounded-xl border border-[#E2E8F0] px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 cursor-pointer sm:w-auto"
+            suppressHydrationWarning
+          >
+            Book Another Shipment
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -290,7 +406,7 @@ export function ReviewAndPayCard({
                 <button
                   type="button"
                   key={method.id}
-                  onClick={() => setSelectedPayment(method.id)}
+                  onClick={() => setSelectedPayment(method.id as PaymentMethod)}
                   aria-pressed={isSelected}
                   className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left cursor-pointer transition-all duration-200 ${
                     isSelected
@@ -550,17 +666,29 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
+        {/* ─── Error message ─── */}
+        {errorMsg && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-medium text-red-700">
+            {errorMsg}
+          </div>
+        )}
+
         {/* ─── Confirm Button ─── */}
         <button
-          disabled={!agreedToTerms}
-          className={`w-full py-3.5 rounded-xl text-[14px] font-bold transition-all duration-200 cursor-pointer shadow-sm ${
-            agreedToTerms
-              ? "bg-gradient-to-r from-[#1D7A8C] to-[#15616D] text-white hover:shadow-md hover:shadow-[#1D7A8C]/20 active:scale-[0.98]"
+          type="button"
+          onClick={handleConfirm}
+          disabled={!agreedToTerms || isPending}
+          className={`flex w-full items-center justify-center gap-2 py-3.5 rounded-xl text-[14px] font-bold transition-all duration-200 shadow-sm ${
+            agreedToTerms && !isPending
+              ? "bg-gradient-to-r from-[#1D7A8C] to-[#15616D] text-white hover:shadow-md hover:shadow-[#1D7A8C]/20 active:scale-[0.98] cursor-pointer"
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
+          suppressHydrationWarning
         >
-          {selectedPayment === "cod" ? "Confirm Order" : "Confirm & Pay"}{" "}
-          {formatNPR(prices.total)}
+          {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isPending
+            ? "Processing..."
+            : `${selectedPayment === "cod" ? "Confirm Order" : "Confirm & Pay"} ${formatNPR(prices.total)}`}
         </button>
       </div>
     </div>

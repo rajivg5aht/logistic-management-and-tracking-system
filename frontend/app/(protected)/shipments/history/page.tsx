@@ -11,8 +11,9 @@ export const metadata = {
 export default async function ShipmentHistoryPage() {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_customer")?.value;
+  const token = cookieStore.get("token_customer")?.value;
 
-  if (!userCookie) {
+  if (!userCookie || !token) {
     redirect("/login");
   }
 
@@ -23,6 +24,6 @@ export default async function ShipmentHistoryPage() {
     redirect("/login");
   }
 
-  return <ShipmentHistory user={user} />;
+  return <ShipmentHistory user={user} token={token} />;
   
 }

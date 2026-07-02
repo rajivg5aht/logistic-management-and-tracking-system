@@ -18,6 +18,13 @@ import {
   Eye,
   User as UserIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  adminGetShipments,
+  type Shipment,
+  type ShipmentStatus,
+} from "@/lib/api/shipment.api";
 
 /* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
@@ -93,61 +100,76 @@ const FLEET = [
   },
 ];
 
-const STATUS_STYLES: Record<string, string> = {
+const STATUS_STYLES: Record<ShipmentStatus, string> = {
   "in-transit": "bg-[#FDECD8] text-[#C77718]",
   delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
   pending: "bg-[#FBF1DC] text-[#C99A3D]",
-  failed: "bg-[#FBE4E1] text-[#D0453A]",
+  cancelled: "bg-[#FBE4E1] text-[#D0453A]",
 };
 
-const SHIPMENTS = [
-  {
-    id: "#LN-8429",
-    customer: "Rajesh Musalman",
-    initials: "RM",
-    avatar: "bg-[#E8F0FB] text-[#2E6FD6]",
-    status: "In Transit",
-    tone: "in-transit",
-    driver: "Deepak Sharma",
-    assigned: true,
-    dest: "Pokhara, Ward 4",
-  },
-  {
-    id: "#LN-8428",
-    customer: "Sita Thapa",
-    initials: "ST",
-    avatar: "bg-[#E5F1F3] text-[#1D7A8C]",
-    status: "Delivered",
-    tone: "delivered",
-    driver: "Bikash Rai",
-    assigned: true,
-    dest: "Kathmandu, Kalanki",
-  },
-  {
-    id: "#LN-8427",
-    customer: "Anil Gurung",
-    initials: "AG",
-    avatar: "bg-[#FBF1DC] text-[#C99A3D]",
-    status: "Pending",
-    tone: "pending",
-    driver: "Unassigned",
-    assigned: false,
-    dest: "Butwal, Traffic Chowk",
-  },
-  {
-    id: "#LN-8426",
-    customer: "Kiran Basnet",
-    initials: "KB",
-    avatar: "bg-[#F0ECFB] text-[#6C63FF]",
-    status: "Failed",
-    tone: "failed",
-    driver: "Deepak Sharma",
-    assigned: true,
-    dest: "Biratnagar, Ward 3",
-  },
+const STATUS_LABELS: Record<ShipmentStatus, string> = {
+  "in-transit": "In Transit",
+  delivered: "Delivered",
+  pending: "Pending",
+  cancelled: "Cancelled",
+};
+
+const AVATAR_STYLES = [
+  "bg-[#E8F0FB] text-[#2E6FD6]",
+  "bg-[#E5F1F3] text-[#1D7A8C]",
+  "bg-[#FBF1DC] text-[#C99A3D]",
+  "bg-[#F0ECFB] text-[#6C63FF]",
 ];
 
-export default function OverviewDashboard() {
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "CU";
+}
+
+function getDestination(shipment: Shipment): string {
+  return [shipment.delivery.city, shipment.delivery.district]
+    .filter(Boolean)
+    .join(", ") || "—";
+}
+
+export default function OverviewDashboard({ token }: { token: string }) {
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [loadingShipments, setLoadingShipments] = useState(true);
+  const [shipmentError, setShipmentError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadRecentShipments = async () => {
+      try {
+        const result = await adminGetShipments(token, 1, 4);
+        if (!active) return;
+        setShipments(result.data);
+        setShipmentError(null);
+      } catch (error) {
+        if (!active) return;
+        setShipmentError(
+          error instanceof Error ? error.message : "Failed to load recent shipments",
+        );
+      } finally {
+        if (active) setLoadingShipments(false);
+      }
+    };
+
+    void loadRecentShipments();
+    const refreshId = window.setInterval(loadRecentShipments, 15_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(refreshId);
+    };
+  }, [token]);
+
   return (
     <div className="space-y-6 font-sans">
       {/* ============ Page title + actions ============ */}
@@ -335,13 +357,12 @@ export default function OverviewDashboard() {
             >
               Export CSV
             </button>
-            <button
-              type="button"
-              className="text-xs font-bold text-[#123E6B] hover:underline cursor-pointer"
-              suppressHydrationWarning
+            <Link
+              href="/admin/shipments"
+              className="text-xs font-bold text-[#123E6B] hover:underline"
             >
               View All
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -370,57 +391,89 @@ export default function OverviewDashboard() {
               </tr>
             </thead>
             <tbody>
-              {SHIPMENTS.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
-                >
-                  <td className="py-4 font-bold" style={{ color: NAVY }}>
-                    {s.id}
-                  </td>
-                  <td className="py-4">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${s.avatar}`}
-                      >
-                        {s.initials}
-                      </span>
-                      <span className="font-semibold text-[var(--text)]">{s.customer}</span>
-                    </div>
-                  </td>
-                  <td className="py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[s.tone]}`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="py-4">
-                    {s.assigned ? (
-                      <span className="flex items-center gap-1.5 font-semibold text-[var(--text)]">
-                        <UserIcon size={14} className="text-[var(--text-muted)]" />
-                        {s.driver}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 font-medium italic text-[var(--text-muted)]">
-                        <UserIcon size={14} />
-                        Unassigned
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-4 font-medium text-[var(--text-soft)]">{s.dest}</td>
-                  <td className="py-4 text-right">
-                    <button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B] cursor-pointer"
-                      aria-label={`View ${s.id}`}
-                      suppressHydrationWarning
-                    >
-                      <Eye size={16} />
-                    </button>
+              {loadingShipments ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <tr key={index} className="animate-pulse border-b border-[var(--border-light)]">
+                    {Array.from({ length: 6 }).map((__, cell) => (
+                      <td key={cell} className="py-4 pr-4">
+                        <div className="h-4 max-w-28 rounded bg-[var(--border)]" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : shipmentError ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-red-600">
+                    {shipmentError}
                   </td>
                 </tr>
-              ))}
+              ) : shipments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-[var(--text-muted)]">
+                    No customer shipments have been placed yet.
+                  </td>
+                </tr>
+              ) : (
+                shipments.map((shipment, index) => {
+                  const customer = shipment.pickup.fullName || "Customer";
+                  const assigned = Boolean(shipment.assignedDriver);
+
+                  return (
+                    <tr
+                      key={shipment.id}
+                      className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
+                    >
+                      <td className="py-4 font-bold" style={{ color: NAVY }}>
+                        #{shipment.trackingId}
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
+                          >
+                            {getInitials(customer)}
+                          </span>
+                          <span className="font-semibold text-[var(--text)]">
+                            {customer}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[shipment.status]}`}
+                        >
+                          {STATUS_LABELS[shipment.status]}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        {assigned ? (
+                          <span className="flex items-center gap-1.5 font-semibold text-[var(--text)]">
+                            <UserIcon size={14} className="text-[var(--text-muted)]" />
+                            {shipment.assignedDriver}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 font-medium italic text-[var(--text-muted)]">
+                            <UserIcon size={14} />
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 font-medium text-[var(--text-soft)]">
+                        {getDestination(shipment)}
+                      </td>
+                      <td className="py-4 text-right">
+                        <Link
+                          href="/admin/shipments"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B]"
+                          aria-label={`View ${shipment.trackingId}`}
+                        >
+                          <Eye size={16} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

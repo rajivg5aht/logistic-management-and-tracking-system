@@ -16,9 +16,17 @@ import {
   LogOut,
   Menu,
   Search,
-  Bell
+  Bell,
+  ChevronRight,
 } from "lucide-react";
 import { AuthUser } from "@/lib/api/auth.api";
+
+const ADMIN_BREADCRUMBS: Record<string, string> = {
+  "/admin": "Overview",
+  "/admin/shipments": "Shipments",
+  "/admin/analytics": "Analytics",
+  "/admin/users": "User Management",
+};
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
@@ -27,6 +35,7 @@ interface AdminLayoutClientProps {
 
 export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
   const pathname = usePathname();
+  const breadcrumbPage = ADMIN_BREADCRUMBS[pathname] ?? "Overview";
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -277,6 +286,14 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
         {/* Scrollable Layout Content */}
         <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-6 flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]"
+          >
+            <span>Admin</span>
+            <ChevronRight size={12} aria-hidden="true" />
+            <span className="text-[var(--text)]">{breadcrumbPage}</span>
+          </nav>
           <div className="w-full">
             {children}
           </div>

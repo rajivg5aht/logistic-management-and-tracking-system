@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { PageBreadcrumb } from "@/components/dashboard/PageBreadcrumb";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
       >
         {/* Page Content */}
         <main className="mx-auto max-w-[1180px] px-6 py-8 lg:px-8">
+          <PageBreadcrumb />
           {children}
         </main>
       </div>

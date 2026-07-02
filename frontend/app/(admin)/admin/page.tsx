@@ -29,5 +29,5 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  return <OverviewDashboard />;
+  return <OverviewDashboard token={token} />;
 }
