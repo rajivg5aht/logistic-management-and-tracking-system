@@ -21,6 +21,25 @@ export const CreateShipmentDTO = z.object({
 
 export type CreateShipmentDTO = z.infer<typeof CreateShipmentDTO>;
 
+// Customers may edit shipment details only while the shipment is pending.
+export const CustomerUpdateShipmentDTO = z
+  .object({
+    pickup: PickupSchema.optional(),
+    delivery: DeliverySchema.optional(),
+    package: PackageSchema.optional(),
+    service: z.enum(["standard", "express", "overnight"]).optional(),
+    insurance: z.boolean().optional(),
+    specialHandling: z.boolean().optional(),
+    amount: z.number().nonnegative("Amount must be a positive number").optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one shipment field is required",
+  });
+
+export type CustomerUpdateShipmentDTO = z.infer<
+  typeof CustomerUpdateShipmentDTO
+>;
+
 // DTO used by an admin to update a shipment (status / driver assignment).
 export const AdminUpdateShipmentDTO = z.object({
   status: z.enum(SHIPMENT_STATUSES).optional(),

@@ -2,7 +2,11 @@ import {
   ShipmentMongoRepository,
   ShipmentStats,
 } from "../repositories/shipment.repository";
-import { CreateShipmentDTO, AdminUpdateShipmentDTO } from "../dtos/shipment.dto";
+import {
+  CreateShipmentDTO,
+  AdminUpdateShipmentDTO,
+  CustomerUpdateShipmentDTO,
+} from "../dtos/shipment.dto";
 import { IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
@@ -87,6 +91,91 @@ export class ShipmentService {
   async getMyShipments(customerId: string): Promise<SafeShipment[]> {
     const shipments = await shipmentRepository.getByCustomer(customerId);
     return shipments.map((s) => this.sanitize(s));
+  }
+
+  // Fetches a shipment and guarantees it belongs to the requesting customer.
+  // Prevents one customer from reading or mutating another's shipment.
+  private async getOwnedShipment(
+    customerId: string,
+    id: string,
+  ): Promise<IShipment> {
+    const shipment = await shipmentRepository.getById(id);
+    if (!shipment) {
+      throw new HttpException(404, "Shipment not found");
+    }
+    if (shipment.customer?.toString() !== customerId) {
+      throw new HttpException(
+        403,
+        "You do not have permission to modify this shipment",
+      );
+    }
+    return shipment;
+  }
+
+  // Customer edits are only permitted while a shipment is still pending
+  // (i.e. it has not been picked up or dispatched yet).
+  async customerUpdateShipment(
+    customerId: string,
+    id: string,
+    data: CustomerUpdateShipmentDTO,
+  ): Promise<SafeShipment> {
+    const shipment = await this.getOwnedShipment(customerId, id);
+    if (shipment.status !== "pending") {
+      throw new HttpException(
+        409,
+        "Only pending shipments can be edited. This shipment is already " +
+          shipment.status,
+      );
+    }
+
+    const updated = await shipmentRepository.update(
+      id,
+      data as Partial<IShipment>,
+    );
+    if (!updated) {
+      throw new HttpException(500, "Failed to update shipment");
+    }
+    return this.sanitize(updated);
+  }
+
+  // Cancellation is allowed while pending; once in transit or delivered the
+  // customer must go through support so the operational record stays intact.
+  async customerCancelShipment(
+    customerId: string,
+    id: string,
+  ): Promise<SafeShipment> {
+    const shipment = await this.getOwnedShipment(customerId, id);
+    if (shipment.status === "cancelled") {
+      throw new HttpException(409, "This shipment is already cancelled");
+    }
+    if (shipment.status !== "pending") {
+      throw new HttpException(
+        409,
+        "Only pending shipments can be cancelled. Please contact support for shipments already in transit.",
+      );
+    }
+
+    const updated = await shipmentRepository.update(id, { status: "cancelled" });
+    if (!updated) {
+      throw new HttpException(500, "Failed to cancel shipment");
+    }
+    return this.sanitize(updated);
+  }
+
+  // Permanent deletion is limited to cancelled shipments so delivered and
+  // in-transit records can never be erased by a customer.
+  async customerDeleteShipment(
+    customerId: string,
+    id: string,
+  ): Promise<boolean> {
+    const shipment = await this.getOwnedShipment(customerId, id);
+    if (shipment.status !== "cancelled") {
+      throw new HttpException(
+        409,
+        "Only cancelled shipments can be deleted. Cancel the shipment first.",
+      );
+    }
+    return shipmentRepository.delete(id);
   }
 
   async adminGetShipments(

@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import mongoose from "mongoose";
 import { ShipmentService } from "../services/shipment.service";
-import { CreateShipmentDTO, AdminUpdateShipmentDTO } from "../dtos/shipment.dto";
+import {
+  CreateShipmentDTO,
+  AdminUpdateShipmentDTO,
+  CustomerUpdateShipmentDTO,
+} from "../dtos/shipment.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { SHIPMENT_STATUSES, ShipmentStatus } from "../types/shipment.type";
@@ -54,6 +58,99 @@ export class ShipmentController {
         res,
         shipments,
         "Shipments retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // ── Customer: edit own pending shipment ──────────────────────────────────
+  async customerUpdateShipment(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid shipment ID", 400);
+      }
+
+      const parsed = CustomerUpdateShipmentDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const updated = await shipmentService.customerUpdateShipment(
+        req.user.id,
+        id,
+        parsed.data,
+      );
+      return ApiResponseHelper.success(
+        res,
+        updated,
+        "Shipment updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // ── Customer: cancel own pending shipment ────────────────────────────────
+  async customerCancelShipment(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid shipment ID", 400);
+      }
+
+      const updated = await shipmentService.customerCancelShipment(
+        req.user.id,
+        id,
+      );
+      return ApiResponseHelper.success(
+        res,
+        updated,
+        "Shipment cancelled successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // ── Customer: delete own cancelled shipment ──────────────────────────────
+  async customerDeleteShipment(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid shipment ID", 400);
+      }
+
+      await shipmentService.customerDeleteShipment(req.user.id, id);
+      return ApiResponseHelper.success(
+        res,
+        null,
+        "Shipment deleted successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(
