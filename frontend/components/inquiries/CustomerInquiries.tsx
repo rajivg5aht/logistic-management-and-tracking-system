@@ -19,6 +19,7 @@ import {
   type Inquiry,
   type InquiryStatus,
 } from "@/lib/api/inquiry.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_LABELS: Record<InquiryStatus, string> = {
   new: "New",
@@ -73,13 +74,11 @@ export default function CustomerInquiries({
   }, [token]);
 
   useEffect(() => {
-    const initialLoadId = window.setTimeout(loadInquiries, 0);
-    const refreshId = window.setInterval(loadInquiries, 15_000);
-    return () => {
-      window.clearTimeout(initialLoadId);
-      window.clearInterval(refreshId);
-    };
+    loadInquiries();
   }, [loadInquiries]);
+
+  // Surface admin replies / status changes without a manual refresh.
+  useAutoRefresh(loadInquiries, { intervalMs: 15_000 });
 
   const openModal = () => {
     setSubject("Support");

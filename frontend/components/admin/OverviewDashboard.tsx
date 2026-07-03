@@ -17,7 +17,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   adminGetShipments,
   adminGetShipmentStats,
@@ -26,6 +26,7 @@ import {
   type ShipmentStatus,
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 /* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
@@ -109,37 +110,30 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const [loadingShipments, setLoadingShipments] = useState(true);
   const [shipmentError, setShipmentError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    const loadRecentShipments = async () => {
-      try {
-        const [result, stats] = await Promise.all([
-          adminGetShipments(token, 1, 4),
-          adminGetShipmentStats(token),
-        ]);
-        if (!active) return;
-        setShipments(result.data);
-        setShipmentStats(stats);
-        setShipmentError(null);
-      } catch (error) {
-        if (!active) return;
-        setShipmentError(
-          error instanceof Error ? error.message : "Failed to load recent shipments",
-        );
-      } finally {
-        if (active) setLoadingShipments(false);
-      }
-    };
-
-    void loadRecentShipments();
-    const refreshId = window.setInterval(loadRecentShipments, 15_000);
-
-    return () => {
-      active = false;
-      window.clearInterval(refreshId);
-    };
+  const loadRecentShipments = useCallback(async () => {
+    try {
+      const [result, stats] = await Promise.all([
+        adminGetShipments(token, 1, 4),
+        adminGetShipmentStats(token),
+      ]);
+      setShipments(result.data);
+      setShipmentStats(stats);
+      setShipmentError(null);
+    } catch (error) {
+      setShipmentError(
+        error instanceof Error ? error.message : "Failed to load recent shipments",
+      );
+    } finally {
+      setLoadingShipments(false);
+    }
   }, [token]);
+
+  useEffect(() => {
+    loadRecentShipments();
+  }, [loadRecentShipments]);
+
+  // Keep the KPIs and recent-shipments table in sync as customers place orders.
+  useAutoRefresh(loadRecentShipments, { intervalMs: 15_000 });
 
   const kpis = [
     {

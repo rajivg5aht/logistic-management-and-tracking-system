@@ -28,6 +28,7 @@ import {
 import type { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
 import EditShipmentModal from "@/components/shipment/EditShipmentModal";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_META: Record<ShipmentStatus, { text: string; bg: string; color: string; dot: string }> = {
   pending: {
@@ -126,26 +127,40 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getMyShipments(token);
-      setShipments(data);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load your shipments. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  // `silent` refreshes update the list in place without the loading skeleton or
+  // clobbering it with a transient error (used by the auto-refresh polling).
+  const fetchHistory = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
+        const data = await getMyShipments(token);
+        setShipments(data);
+        if (silent) setError(null);
+      } catch (err) {
+        if (!silent) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load your shipments. Please try again.",
+          );
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token],
+  );
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
+
+  // Reflect admin changes (e.g. a shipment marked "delivered" or cancelled)
+  // without a manual page refresh.
+  useAutoRefresh(() => fetchHistory(true));
 
   const handleCancelConfirm = async () => {
     if (!cancelling) return;
@@ -236,7 +251,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           <p className="text-sm font-semibold text-[var(--text)]">{error}</p>
           <button
             type="button"
-            onClick={fetchHistory}
+            onClick={() => fetchHistory()}
             className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)] hover:bg-[var(--surface-soft)] transition-colors cursor-pointer"
             suppressHydrationWarning
           >

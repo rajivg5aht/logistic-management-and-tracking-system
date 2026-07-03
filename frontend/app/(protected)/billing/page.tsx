@@ -11,8 +11,9 @@ export const metadata = {
 export default async function BillingPage() {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_customer")?.value;
+  const token = cookieStore.get("token_customer")?.value;
 
-  if (!userCookie) {
+  if (!userCookie || !token) {
     redirect("/login");
   }
 
@@ -23,5 +24,5 @@ export default async function BillingPage() {
     redirect("/login");
   }
 
-  return <PaymentsBilling user={user} />;
+  return <PaymentsBilling user={user} token={token} />;
 }

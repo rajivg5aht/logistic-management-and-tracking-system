@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -31,6 +31,7 @@ import {
 } from "@/lib/api/admin.api";
 import { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 interface AdminUserManagementProps {
   token: string;
@@ -134,25 +135,37 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Fetch users on query change
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await adminGetUsers(token, page, limit, searchQuery);
-      setUsers(res.data);
-      setMeta(res.meta);
-      onMutationFinished?.();
-    } catch (err: any) {
-      setError(err.message || "Failed to load users. Please check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch users on query change. `silent` refreshes update the table in place
+  // without the loading skeleton or a transient error (used by auto-refresh).
+  const fetchUsers = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
+        const res = await adminGetUsers(token, page, limit, searchQuery);
+        setUsers(res.data);
+        setMeta(res.meta);
+        onMutationFinished?.();
+      } catch (err: any) {
+        if (!silent) {
+          setError(err.message || "Failed to load users. Please check your connection.");
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token, page, searchQuery, onMutationFinished],
+  );
 
   useEffect(() => {
     fetchUsers();
-  }, [page, searchQuery]);
+  }, [fetchUsers]);
+
+  // Reflect new customer/driver registrations and status changes made elsewhere
+  // without a manual page refresh.
+  useAutoRefresh(() => fetchUsers(true));
 
   // Form handlers
   const handleCreateOpen = () => {
@@ -411,7 +424,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             <p className="text-sm font-semibold text-[var(--text)]">{error}</p>
             <button
               type="button"
-              onClick={fetchUsers}
+              onClick={() => fetchUsers()}
               className="btn-secondary btn-sm mt-4 inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw size={16} />

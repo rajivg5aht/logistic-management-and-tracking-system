@@ -27,6 +27,7 @@ import {
   type ShipmentStatus,
 } from "@/lib/api/shipment.api";
 import Modal from "@/components/ui/Modal";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 /* Screenshot-matched navy palette (shared app theme is gold/teal) */
 const NAVY = "#0C3B67";
@@ -173,17 +174,9 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     fetchData();
   }, [fetchData]);
 
-  // Auto-refresh so new customer orders appear without a manual refresh:
-  // poll every 10s and refetch when the admin returns to the tab.
-  useEffect(() => {
-    const id = setInterval(() => fetchData(true), 10000);
-    const onFocus = () => fetchData(true);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      clearInterval(id);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [fetchData]);
+  // Auto-refresh so new customer orders / cancellations appear without a manual
+  // refresh (silent so the table doesn't flash its skeleton on every tick).
+  useAutoRefresh(() => fetchData(true), { intervalMs: 10_000 });
 
   const handleTabChange = (idx: number) => {
     setActiveTab(idx);

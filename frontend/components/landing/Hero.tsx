@@ -134,9 +134,10 @@ export default function Hero() {
                   placeholder="Enter tracking ID (e.g. CN-84321)"
                   className="h-11 w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
                   aria-label="Tracking ID"
+                  suppressHydrationWarning
                 />
               </div>
-              <button type="submit" className="btn-primary sm:w-auto">
+              <button type="submit" className="btn-primary sm:w-auto" suppressHydrationWarning>
                 Track Now <ArrowRight size={16} />
               </button>
             </form>

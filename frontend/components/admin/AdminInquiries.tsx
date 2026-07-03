@@ -28,6 +28,7 @@ import {
   type InquiryStats,
   type InquiryStatus,
 } from "@/lib/api/inquiry.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_LABELS: Record<InquiryStatus, string> = {
   new: "New",
@@ -125,13 +126,11 @@ export default function AdminInquiries({ token }: { token: string }) {
   }, [newOnly, newestFirst, page, token]);
 
   useEffect(() => {
-    const initialLoadId = window.setTimeout(loadData, 0);
-    const refreshId = window.setInterval(loadData, 15_000);
-    return () => {
-      window.clearTimeout(initialLoadId);
-      window.clearInterval(refreshId);
-    };
+    loadData();
   }, [loadData]);
+
+  // Surface newly submitted customer inquiries without a manual refresh.
+  useAutoRefresh(loadData, { intervalMs: 15_000 });
 
   const openInquiry = (inquiry: Inquiry) => {
     setSelected(inquiry);

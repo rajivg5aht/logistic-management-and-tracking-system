@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Plus, Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
@@ -9,6 +9,8 @@ import {
   getMyShipments,
   type Shipment as CustomerShipment,
 } from "@/lib/api/shipment.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { AiAssistant } from "@/components/assistant/AiAssistant";
 
 const RECENT_STATUS_LABELS: Record<CustomerShipment["status"], string> = {
   pending: "Pending",
@@ -38,39 +40,32 @@ export default function DashboardOverview({
   const [recentLoading, setRecentLoading] = useState(true);
   const [recentError, setRecentError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    const loadRecentShipments = async (showLoading = false) => {
+  const loadRecentShipments = useCallback(
+    async (showLoading = false) => {
       try {
         if (showLoading) setRecentLoading(true);
         const customerShipments = await getMyShipments(token);
-        if (!active) return;
         setRecentShipments(customerShipments);
         setRecentError("");
       } catch (error) {
-        if (!active) return;
         setRecentError(
           error instanceof Error
             ? error.message
             : "Unable to load recent shipments.",
         );
       } finally {
-        if (active) setRecentLoading(false);
+        setRecentLoading(false);
       }
-    };
+    },
+    [token],
+  );
 
-    void loadRecentShipments(true);
-    const refreshId = window.setInterval(loadRecentShipments, 15_000);
-    const handleFocus = () => void loadRecentShipments();
-    window.addEventListener("focus", handleFocus);
+  useEffect(() => {
+    loadRecentShipments(true);
+  }, [loadRecentShipments]);
 
-    return () => {
-      active = false;
-      window.clearInterval(refreshId);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [token]);
+  // Reflect admin status changes (dispatch, delivery, cancellation) live.
+  useAutoRefresh(() => loadRecentShipments(), { intervalMs: 15_000 });
 
   const handleTrackParcel = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -487,6 +482,9 @@ export default function DashboardOverview({
           </div>
         </div>
       </div>
+
+      {/* Floating AI Assistant */}
+      <AiAssistant />
     </div>
   );
 }
