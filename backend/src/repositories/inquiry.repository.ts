@@ -25,6 +25,12 @@ export class InquiryMongoRepository {
     return InquiryModel.findById(id);
   }
 
+  getByCustomerOrEmail(customerId: string, email: string): Promise<IInquiry[]> {
+    return InquiryModel.find({
+      $or: [{ customer: customerId }, { customer: null, email: email.toLowerCase() }],
+    }).sort({ createdAt: -1 });
+  }
+
   update(id: string, data: Partial<IInquiry>): Promise<IInquiry | null> {
     return InquiryModel.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   }

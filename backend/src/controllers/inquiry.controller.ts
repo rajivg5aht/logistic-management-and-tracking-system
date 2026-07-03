@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import { AdminUpdateInquiryDTO, CreateInquiryDTO } from "../dtos/inquiry.dto";
+import {
+  AdminUpdateInquiryDTO,
+  CreateCustomerInquiryDTO,
+  CreateInquiryDTO,
+} from "../dtos/inquiry.dto";
 import { InquiryService } from "../services/inquiry.service";
 import {
   INQUIRY_CATEGORIES,
@@ -10,6 +14,7 @@ import {
   type InquiryStatus,
 } from "../types/inquiry.type";
 import { ApiResponseHelper } from "../utils/apihelper.util";
+import type { AuthRequest } from "../middleware/auth.middleware";
 
 const inquiryService = new InquiryService();
 
@@ -22,6 +27,34 @@ export class InquiryController {
       }
       const inquiry = await inquiryService.create(parsed.data);
       return ApiResponseHelper.success(res, inquiry, "Message sent successfully", 201);
+    } catch (error: any) {
+      return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
+    }
+  }
+
+  async createMy(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) return ApiResponseHelper.error(res, "Unauthorized", 401);
+      const parsed = CreateCustomerInquiryDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+      const inquiry = await inquiryService.createForCustomer(req.user.id, parsed.data);
+      return ApiResponseHelper.success(res, inquiry, "Inquiry created successfully", 201);
+    } catch (error: any) {
+      return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
+    }
+  }
+
+  async getMy(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) return ApiResponseHelper.error(res, "Unauthorized", 401);
+      const inquiries = await inquiryService.listByCustomer(req.user.id, req.user.email);
+      return ApiResponseHelper.success(
+        res,
+        inquiries,
+        "Customer inquiries retrieved successfully",
+      );
     } catch (error: any) {
       return ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);
     }

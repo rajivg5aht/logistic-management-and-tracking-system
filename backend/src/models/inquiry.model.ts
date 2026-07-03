@@ -1,4 +1,4 @@
-import { Document, Schema, model } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 import {
   INQUIRY_CATEGORIES,
   INQUIRY_STATUSES,
@@ -7,6 +7,7 @@ import {
 } from "../types/inquiry.type";
 
 export interface IInquiry extends Document {
+  customer: Types.ObjectId | null;
   fullName: string;
   email: string;
   subject: string;
@@ -14,6 +15,8 @@ export interface IInquiry extends Document {
   category: InquiryCategory;
   status: InquiryStatus;
   adminNote: string;
+  adminReply: string;
+  repliedAt: Date | null;
   resolvedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -21,6 +24,7 @@ export interface IInquiry extends Document {
 
 const InquirySchema = new Schema<IInquiry>(
   {
+    customer: { type: Schema.Types.ObjectId, ref: "User", default: null, index: true },
     fullName: { type: String, required: true, trim: true, maxlength: 80 },
     email: { type: String, required: true, trim: true, lowercase: true, maxlength: 120 },
     subject: { type: String, required: true, trim: true, maxlength: 120 },
@@ -38,6 +42,8 @@ const InquirySchema = new Schema<IInquiry>(
       default: "new",
     },
     adminNote: { type: String, trim: true, maxlength: 2000, default: "" },
+    adminReply: { type: String, trim: true, maxlength: 4000, default: "" },
+    repliedAt: { type: Date, default: null },
     resolvedAt: { type: Date, default: null },
   },
   { timestamps: true },
