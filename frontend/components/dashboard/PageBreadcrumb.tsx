@@ -9,6 +9,7 @@ const BREADCRUMBS: Record<string, { section: string; page: string }> = {
   "/tracking": { section: "Tracking", page: "Track Shipment" },
   "/shipments/history": { section: "Shipments", page: "History" },
   "/billing": { section: "Billing", page: "Invoices" },
+  "/inquiries": { section: "Support", page: "My Inquiries" },
   "/profile": { section: "Profile", page: "Account" },
   "/change-password": { section: "Profile", page: "Change Password" },
 };

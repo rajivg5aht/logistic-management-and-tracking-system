@@ -8,6 +8,7 @@ export type InquiryCategory = "support" | "sales" | "general";
 
 export type Inquiry = {
   id: string;
+  customer: string | null;
   fullName: string;
   email: string;
   subject: string;
@@ -15,6 +16,8 @@ export type Inquiry = {
   category: InquiryCategory;
   status: InquiryStatus;
   adminNote: string;
+  adminReply: string;
+  repliedAt: string | null;
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -42,6 +45,11 @@ export type CreateInquiryPayload = {
   message: string;
 };
 
+export type CreateCustomerInquiryPayload = {
+  subject: string;
+  message: string;
+};
+
 export type AdminInquiryFilters = {
   page?: number;
   limit?: number;
@@ -55,6 +63,7 @@ export type AdminUpdateInquiryPayload = {
   status?: InquiryStatus;
   category?: InquiryCategory;
   adminNote?: string;
+  adminReply?: string;
 };
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -70,6 +79,32 @@ export async function createInquiry(payload: CreateInquiryPayload): Promise<Inqu
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+  const result = await parseResponse<{ data: Inquiry }>(response);
+  return result.data;
+}
+
+export async function getMyInquiries(token: string): Promise<Inquiry[]> {
+  const response = await fetch(API_BASE_URL + "/api/v1/inquiries/my", {
+    headers: { Authorization: "Bearer " + token },
+    credentials: "include",
+  });
+  const result = await parseResponse<{ data: Inquiry[] }>(response);
+  return result.data;
+}
+
+export async function createMyInquiry(
+  token: string,
+  payload: CreateCustomerInquiryPayload,
+): Promise<Inquiry> {
+  const response = await fetch(API_BASE_URL + "/api/v1/inquiries/my", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    credentials: "include",
   });
   const result = await parseResponse<{ data: Inquiry }>(response);
   return result.data;

@@ -105,7 +105,7 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
+          <button suppressHydrationWarning
             type="button"
             aria-label="Search"
             className="hidden h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:flex"
@@ -119,7 +119,7 @@ export default function Navbar() {
             Register
           </Link>
 
-          <button
+          <button suppressHydrationWarning
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}

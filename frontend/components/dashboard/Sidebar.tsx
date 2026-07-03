@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard } from "lucide-react";
+import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard, MessageSquareText } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Sidebar() {
@@ -16,10 +16,11 @@ export function Sidebar() {
 
   // Initialize collapsed state from localStorage
   useEffect(() => {
-    const savedState = localStorage.getItem("sidebar-collapsed");
-    if (savedState !== null) {
-      setIsCollapsed(JSON.parse(savedState));
-    }
+    const restoreId = window.setTimeout(() => {
+      const savedState = localStorage.getItem("sidebar-collapsed");
+      if (savedState !== null) setIsCollapsed(JSON.parse(savedState));
+    }, 0);
+    return () => window.clearTimeout(restoreId);
   }, []);
 
   // Save collapsed state to localStorage
@@ -38,10 +39,11 @@ export function Sidebar() {
     window.addEventListener("toggle-sidebar", handleToggle);
     window.addEventListener("close-sidebar", handleClose);
     
-    // Close sidebar on path change (mobile navigation)
-    handleClose();
+    // Close sidebar after a route change without synchronously cascading the effect.
+    const closeId = window.setTimeout(handleClose, 0);
 
     return () => {
+      window.clearTimeout(closeId);
       window.removeEventListener("toggle-sidebar", handleToggle);
       window.removeEventListener("close-sidebar", handleClose);
     };
@@ -58,6 +60,7 @@ export function Sidebar() {
     { label: "Tracking", href: "/tracking", icon: MapPinned },
     { label: "Shipment History", href: "/shipments/history", icon: Package },
     { label: "Billing & Invoices", href: "/billing", icon: CreditCard },
+    { label: "My Inquiries", href: "/inquiries", icon: MessageSquareText },
     { label: "Profile", href: "/profile", icon: User },
   ];
 

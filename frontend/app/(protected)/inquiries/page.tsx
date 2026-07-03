@@ -1,16 +1,18 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import CustomerInquiries from "@/components/inquiries/CustomerInquiries";
 import type { AuthUser } from "@/lib/api/auth.api";
-import DashboardOverview from "@/components/dashboard/DashboardOverview";
 
-export default async function DashboardPage() {
+export const metadata = {
+  title: "My Inquiries - CargoNep",
+  description: "View your support inquiries and CargoNep responses.",
+};
+
+export default async function CustomerInquiriesPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token_customer")?.value;
   const userCookie = cookieStore.get("user_customer")?.value;
-
-  if (!token || !userCookie) {
-    redirect("/login");
-  }
+  if (!token || !userCookie) redirect("/login");
 
   let user: AuthUser;
   try {
@@ -19,5 +21,5 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return <DashboardOverview user={user} token={token} />;
+  return <CustomerInquiries token={token} user={user} />;
 }

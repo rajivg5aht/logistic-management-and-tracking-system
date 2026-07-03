@@ -221,18 +221,18 @@ export default function ContactContent() {
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="fullName" className="form-label">Full Name</label>
-                  <input id="fullName" name="fullName" type="text" required placeholder="Enter your full name" className="form-input" />
+                  <input suppressHydrationWarning id="fullName" name="fullName" type="text" required placeholder="Enter your full name" className="form-input" />
                 </div>
                 <div>
                   <label htmlFor="email" className="form-label">Email Address</label>
-                  <input id="email" name="email" type="email" required placeholder="email@example.com" className="form-input" />
+                  <input suppressHydrationWarning id="email" name="email" type="email" required placeholder="email@example.com" className="form-input" />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="subject" className="form-label">Subject</label>
                 <div className="relative">
-                  <select id="subject" name="subject" defaultValue="Support" className="form-input cursor-pointer appearance-none pr-10">
+                  <select suppressHydrationWarning id="subject" name="subject" defaultValue="Support" className="form-input cursor-pointer appearance-none pr-10">
                     <option>Support</option>
                     <option>Business Partnership</option>
                     <option>Complaint</option>
@@ -244,7 +244,7 @@ export default function ContactContent() {
 
               <div>
                 <label htmlFor="message" className="form-label">Message</label>
-                <textarea
+                <textarea suppressHydrationWarning
                   id="message"
                   name="message"
                   required
@@ -257,6 +257,7 @@ export default function ContactContent() {
               {sent && (
                 <p className="form-success" role="status">
                   Thanks for reaching out! Our team will get back to you within 24 hours.
+                  <span className="mt-1 block text-xs">Use your CargoNep account email to see the response under Dashboard → My Inquiries.</span>
                 </p>
               )}
               {submitError && (
@@ -265,7 +266,7 @@ export default function ContactContent() {
                 </p>
               )}
 
-              <button
+              <button suppressHydrationWarning
                 type="submit"
                 disabled={isSubmitting}
                 className="btn-primary self-start disabled:cursor-not-allowed disabled:opacity-60"
@@ -288,7 +289,7 @@ export default function ContactContent() {
               const open = openFaq === idx;
               return (
                 <div key={faq.q} className="card overflow-hidden">
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={() => setOpenFaq(open ? null : idx)}
                     aria-expanded={open}

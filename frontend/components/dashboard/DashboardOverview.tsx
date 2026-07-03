@@ -1,82 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Plus, Search, Building2, FileText, HelpCircle, Package, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, Plus, Search, Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
+import type { AuthUser } from "@/lib/api/auth.api";
+import {
+  getMyShipments,
+  type Shipment as CustomerShipment,
+} from "@/lib/api/shipment.api";
 
-interface Shipment {
-  id: string;
-  name: string;
-  status: "in-transit" | "out-for-delivery" | "processing";
-  statusText: string;
-  from: string;
-  to: string;
-  progress: number;
-  estimate: string;
-}
+const RECENT_STATUS_LABELS: Record<CustomerShipment["status"], string> = {
+  pending: "Pending",
+  "in-transit": "In Transit",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
 
-interface Order {
-  id: string;
-  name: string;
-  date: string;
-  status: "delivered";
-}
+const RECENT_STATUS_STYLES: Record<CustomerShipment["status"], string> = {
+  pending: "bg-[#FFF3DD] text-[#A96512]",
+  "in-transit": "bg-[#EAF1FC] text-[#3E80E5]",
+  delivered: "bg-[#E2F5EA] text-[#18864B]",
+  cancelled: "bg-[#FDE8E5] text-[#C43D32]",
+};
 
-export default function DashboardOverview({ user }: { user: any }) {
-  const [currentPage, setCurrentPage] = useState(1);
+export default function DashboardOverview({
+  user,
+  token,
+}: {
+  user: AuthUser;
+  token: string;
+}) {
+  const router = useRouter();
+  const [trackingId, setTrackingId] = useState("");
+  const [trackingError, setTrackingError] = useState("");
+  const [recentShipments, setRecentShipments] = useState<CustomerShipment[]>([]);
+  const [recentLoading, setRecentLoading] = useState(true);
+  const [recentError, setRecentError] = useState("");
 
-  const shipments: Shipment[] = [
-    {
-      id: "TRK-8829-XPL",
-      name: "Precision Optics Kit",
-      status: "in-transit",
-      statusText: "In Transit",
-      from: "Munich, GER",
-      to: "London, UK",
-      progress: 75,
-      estimate: "Estimated Arrival: Oct 24, 2023",
-    },
-    {
-      id: "TRK-9002-LIT",
-      name: "Electronic Components",
-      status: "out-for-delivery",
-      statusText: "Out for Delivery",
-      from: "Shenzhen, CHN",
-      to: "San Jose, USA",
-      progress: 90,
-      estimate: "Status: On Local Courier Vehicle",
-    },
-    {
-      id: "TRK-1142-MED",
-      name: "Medical Supplies B-2",
-      status: "processing",
-      statusText: "Processing",
-      from: "Lyon, FRA",
-      to: "Austin, USA",
-      progress: 25,
-      estimate: "Status: Label Created",
-    },
-  ];
+  useEffect(() => {
+    let active = true;
 
-  const orders: Order[] = [
-    { id: "#ORD-5541", name: "Office Furniture Set", date: "Oct 18", status: "delivered" },
-    { id: "#ORD-5320", name: "Industrial Pump X2", date: "Oct 15", status: "delivered" },
-    { id: "#ORD-5119", name: "Bulk Cable Spools", date: "Oct 12", status: "delivered" },
-    { id: "#ORD-5001", name: "Server Rack Chassis", date: "Oct 09", status: "delivered" },
-  ];
+    const loadRecentShipments = async (showLoading = false) => {
+      try {
+        if (showLoading) setRecentLoading(true);
+        const customerShipments = await getMyShipments(token);
+        if (!active) return;
+        setRecentShipments(customerShipments);
+        setRecentError("");
+      } catch (error) {
+        if (!active) return;
+        setRecentError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load recent shipments.",
+        );
+      } finally {
+        if (active) setRecentLoading(false);
+      }
+    };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "in-transit":
-        return { bg: "bg-[#EAF1FC]", text: "text-[#3E80E5]", dot: "bg-[#3E80E5]" };
-      case "out-for-delivery":
-        return { bg: "bg-[#F3EBF9]", text: "text-[#8B5CF6]", dot: "bg-[#8B5CF6]" };
-      case "processing":
-        return { bg: "bg-[rgba(181,162,74,0.1)]", text: "text-[#8B7355]", dot: "bg-[#8B7355]" };
-      default:
-        return { bg: "bg-[var(--surface-muted)]", text: "text-[var(--text-muted)]", dot: "bg-[var(--text-muted)]" };
+    void loadRecentShipments(true);
+    const refreshId = window.setInterval(loadRecentShipments, 15_000);
+    const handleFocus = () => void loadRecentShipments();
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(refreshId);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [token]);
+
+  const handleTrackParcel = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedTrackingId = trackingId.trim();
+
+    if (!normalizedTrackingId) {
+      setTrackingError("Enter a tracking ID to continue.");
+      return;
     }
+
+    setTrackingError("");
+    router.push(`/tracking?trackingId=${encodeURIComponent(normalizedTrackingId)}`);
   };
+
+  const activeShipments = recentShipments.filter(
+    (shipment) =>
+      shipment.status === "pending" || shipment.status === "in-transit",
+  );
 
   return (
     <div className="space-y-6 font-sans">
@@ -140,72 +152,184 @@ export default function DashboardOverview({ user }: { user: any }) {
         </button>
       </div>
 
-      {/* Active Shipments Section */}
+      {/* Quick parcel tracking */}
+      <form
+        onSubmit={handleTrackParcel}
+        className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <MapPin size={21} />
+          </span>
+          <div>
+            <h2 className="text-base font-extrabold text-[var(--text)]">
+              Track a Parcel
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Enter your tracking ID to see the latest delivery movement.
+            </p>
+          </div>
+        </div>
+
+        <div className="w-full sm:max-w-md">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <label htmlFor="dashboard-tracking-id" className="sr-only">
+              Tracking ID
+            </label>
+            <input
+              id="dashboard-tracking-id"
+              type="text"
+              value={trackingId}
+              onChange={(event) => {
+                setTrackingId(event.target.value);
+                if (trackingError) setTrackingError("");
+              }}
+              placeholder="e.g. LN-482913"
+              autoComplete="off"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm font-semibold uppercase text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+              suppressHydrationWarning
+            />
+            <button
+              type="submit"
+              className="h-11 shrink-0 rounded-xl bg-[#1D7A8C] px-5 text-sm font-bold text-white transition-colors hover:bg-[#15656e]"
+              suppressHydrationWarning
+            >
+              Track Now
+            </button>
+          </div>
+          {trackingError && (
+            <p className="mt-2 text-xs font-semibold text-red-600" role="alert">
+              {trackingError}
+            </p>
+          )}
+        </div>
+      </form>
+
+      {/* Live Active Shipments Section */}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-extrabold text-[var(--text)]">
             Active Shipments
           </h2>
-          <a
-            href="#"
+          <Link
+            href="/shipments/history"
             className="text-sm font-semibold text-[#3E80E5] no-underline hover:underline"
           >
-            See all active (4)
-          </a>
+            See all active ({activeShipments.length})
+          </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {shipments.map((shipment) => {
-            const statusColor = getStatusColor(shipment.status);
-            return (
+
+        {recentLoading ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
               <div
-                key={shipment.id}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow"
+                key={index}
+                className="h-52 animate-pulse rounded-2xl border border-[var(--border)] bg-white p-5"
               >
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                    {shipment.id}
-                  </p>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${statusColor.bg} ${statusColor.text}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${statusColor.dot}`} />
-                    {shipment.statusText}
-                  </span>
-                </div>
-
-                {/* Item Name */}
-                <h3 className="text-base font-extrabold text-[var(--text)] mb-3">
-                  {shipment.name}
-                </h3>
-
-                {/* Route */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">From</p>
-                    <p className="text-sm font-semibold text-[var(--text)]">{shipment.from}</p>
-                  </div>
-                  <Package size={16} className="text-[var(--text-muted)]" />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">To</p>
-                    <p className="text-sm font-semibold text-[var(--text)]">{shipment.to}</p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-[var(--surface-muted)] rounded-full h-2 mb-3">
-                  <div
-                    className="bg-[var(--accent)] h-2 rounded-full transition-all"
-                    style={{ width: `${shipment.progress}%` }}
-                  />
-                </div>
-
-                {/* Status/Estimate */}
-                <p className="text-xs text-[var(--text-muted)] font-medium">
-                  {shipment.estimate}
-                </p>
+                <div className="h-4 w-1/2 rounded bg-[var(--surface-muted)]" />
+                <div className="mt-5 h-5 w-2/3 rounded bg-[var(--surface-muted)]" />
+                <div className="mt-8 h-3 w-full rounded bg-[var(--surface-muted)]" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : recentError ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
+            {recentError}
+          </div>
+        ) : activeShipments.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white p-8 text-center">
+            <Package size={30} className="mx-auto text-[var(--text-muted)]" />
+            <p className="mt-3 text-sm font-bold text-[var(--text)]">
+              No active shipments
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              New confirmed shipments will appear here automatically.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {activeShipments.slice(0, 3).map((shipment) => {
+              const progress = shipment.status === "in-transit" ? 70 : 25;
+              const from =
+                [shipment.pickup.city, shipment.pickup.district]
+                  .filter(Boolean)
+                  .join(", ") || "Pickup location";
+              const to =
+                [shipment.delivery.city, shipment.delivery.district]
+                  .filter(Boolean)
+                  .join(", ") || "Delivery location";
+              const parcelName = `${
+                shipment.package.parcelType.charAt(0).toUpperCase() +
+                shipment.package.parcelType.slice(1)
+              } parcel`;
+
+              return (
+                <Link
+                  key={shipment.id}
+                  href={`/tracking?trackingId=${encodeURIComponent(shipment.trackingId)}`}
+                  className="rounded-2xl border border-[var(--border)] bg-white p-5 no-underline shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="truncate text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      {shipment.trackingId}
+                    </p>
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${RECENT_STATUS_STYLES[shipment.status]}`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          shipment.status === "in-transit"
+                            ? "bg-[#3E80E5]"
+                            : "bg-[#A96512]"
+                        }`}
+                      />
+                      {RECENT_STATUS_LABELS[shipment.status]}
+                    </span>
+                  </div>
+
+                  <h3 className="mb-3 text-base font-extrabold text-[var(--text)]">
+                    {parcelName}
+                  </h3>
+
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        From
+                      </p>
+                      <p className="truncate text-sm font-semibold text-[var(--text)]">
+                        {from}
+                      </p>
+                    </div>
+                    <Package size={16} className="shrink-0 text-[var(--text-muted)]" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        To
+                      </p>
+                      <p className="truncate text-sm font-semibold text-[var(--text)]">
+                        {to}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-3 h-2 w-full rounded-full bg-[var(--surface-muted)]">
+                    <div
+                      className="h-2 rounded-full bg-[var(--accent)] transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+
+                  <p className="text-xs font-medium text-[var(--text-muted)]">
+                    {shipment.status === "pending"
+                      ? "Awaiting dispatch"
+                      : shipment.assignedDriver
+                        ? `Driver: ${shipment.assignedDriver}`
+                        : "Shipment is moving to its destination"}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Bottom Section - Two Columns */}
@@ -270,45 +394,89 @@ export default function DashboardOverview({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Right Column - Recent Orders (35%) */}
+        {/* Right Column - Recent Shipments (35%) */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden">
-            <div className="p-5 border-b border-[var(--border)]">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
+            <div className="border-b border-[var(--border)] p-5">
               <h2 className="text-lg font-extrabold text-[var(--text)]">
-                Recent Orders
+                Recent Shipments
               </h2>
             </div>
-            
+
             <div className="divide-y divide-[var(--border)]">
-              {orders.map((order) => (
-                <div key={order.id} className="p-4 hover:bg-[var(--surface-soft)] transition-colors">
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="text-sm font-extrabold text-[var(--text)]">
-                      {order.name}
-                    </h3>
-                    <span className="text-xs font-semibold text-[var(--text-muted)]">
-                      {order.date}
-                    </span>
+              {recentLoading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="animate-pulse p-4">
+                    <div className="h-4 w-2/3 rounded bg-[var(--surface-muted)]" />
+                    <div className="mt-2 h-3 w-1/2 rounded bg-[var(--surface-muted)]" />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-[var(--text-muted)] font-medium">
-                      {order.id}
-                    </p>
-                    <span className="text-xs font-bold text-[var(--success)]">
-                      DELIVERED
-                    </span>
-                  </div>
+                ))
+              ) : recentError ? (
+                <p className="p-5 text-sm font-medium text-red-600">
+                  {recentError}
+                </p>
+              ) : recentShipments.length === 0 ? (
+                <div className="p-5 text-center">
+                  <Package
+                    size={26}
+                    className="mx-auto text-[var(--text-muted)]"
+                  />
+                  <p className="mt-2 text-sm font-bold text-[var(--text)]">
+                    No shipments yet
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    Your confirmed shipments will appear here.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                recentShipments.slice(0, 4).map((shipment) => (
+                  <Link
+                    key={shipment.id}
+                    href={`/tracking?trackingId=${encodeURIComponent(shipment.trackingId)}`}
+                    className="block p-4 no-underline transition-colors hover:bg-[var(--surface-soft)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-extrabold text-[var(--text)]">
+                          {shipment.delivery.recipientName ||
+                            shipment.delivery.city ||
+                            "Parcel delivery"}
+                        </h3>
+                        <p className="mt-1 text-xs font-semibold text-[var(--text-muted)]">
+                          {shipment.trackingId}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase ${RECENT_STATUS_STYLES[shipment.status]}`}
+                      >
+                        {RECENT_STATUS_LABELS[shipment.status]}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
+                      <span className="truncate">
+                        {shipment.delivery.city ||
+                          shipment.delivery.district ||
+                          "Destination pending"}
+                      </span>
+                      <time className="shrink-0" dateTime={shipment.createdAt}>
+                        {new Intl.DateTimeFormat("en-NP", {
+                          month: "short",
+                          day: "numeric",
+                        }).format(new Date(shipment.createdAt))}
+                      </time>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
 
-            <div className="p-4 bg-[#F3EBF9]">
-              <button
-                type="button"
-                className="w-full py-2.5 rounded-lg text-sm font-bold text-[var(--accent)] hover:bg-[#E8D9F0] transition-colors"
+            <div className="bg-[#F3EBF9] p-4">
+              <Link
+                href="/shipments/history"
+                className="block w-full rounded-lg py-2.5 text-center text-sm font-bold text-[var(--accent)] no-underline transition-colors hover:bg-[#E8D9F0]"
               >
-                VIEW ORDER HISTORY
-              </button>
+                VIEW SHIPMENT HISTORY
+              </Link>
             </div>
           </div>
         </div>

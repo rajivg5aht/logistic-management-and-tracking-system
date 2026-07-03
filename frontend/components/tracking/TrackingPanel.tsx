@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Bell,
@@ -61,29 +63,49 @@ const parcelDetails = [
   { id: "insurance", label: "Insurance", value: "Standard Plus", icon: ShieldCheck },
 ];
 
-export default function TrackingPanel() {
+export default function TrackingPanel({
+  initialTrackingId = "",
+}: {
+  initialTrackingId?: string;
+}) {
+  const router = useRouter();
+  const [trackingId, setTrackingId] = useState(initialTrackingId);
+
+  const handleTrack = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedTrackingId = trackingId.trim();
+    if (!normalizedTrackingId) return;
+    router.replace(`/tracking?trackingId=${encodeURIComponent(normalizedTrackingId)}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top search bar */}
       <div className="flex items-center gap-4">
-        <div className="relative mx-auto w-full max-w-xl">
+        <form
+          onSubmit={handleTrack}
+          className="relative mx-auto w-full max-w-xl"
+        >
           <Search
             size={18}
             className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
           />
           <input
             type="text"
-            defaultValue="SL-883-294-001"
+            value={trackingId}
+            onChange={(event) => setTrackingId(event.target.value)}
             className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-11 pr-28 text-sm font-medium text-[var(--text)] shadow-sm outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(200,162,74,0.18)]"
             placeholder="Enter tracking number"
+            suppressHydrationWarning
           />
           <button
-            type="button"
+            type="submit"
             className="absolute right-1.5 top-1/2 flex h-9 -translate-y-1/2 items-center rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-[var(--text-on-accent)] transition-colors hover:bg-[var(--accent-hover)]"
+            suppressHydrationWarning
           >
             Track Now
           </button>
-        </div>
+        </form>
         <div className="hidden items-center gap-2 sm:flex">
           <button
             type="button"

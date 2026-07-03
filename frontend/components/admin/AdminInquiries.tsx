@@ -13,7 +13,7 @@ import {
   Filter,
   Inbox,
   Loader2,
-  Mail,
+  Send,
   Trash2,
   X,
 } from "lucide-react";
@@ -99,6 +99,7 @@ export default function AdminInquiries({ token }: { token: string }) {
   const [editStatus, setEditStatus] = useState<InquiryStatus>("new");
   const [editCategory, setEditCategory] = useState<InquiryCategory>("general");
   const [adminNote, setAdminNote] = useState("");
+  const [adminReply, setAdminReply] = useState("");
   const [saving, setSaving] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -137,6 +138,7 @@ export default function AdminInquiries({ token }: { token: string }) {
     setEditStatus(inquiry.status);
     setEditCategory(inquiry.category);
     setAdminNote(inquiry.adminNote || "");
+    setAdminReply(inquiry.adminReply || "");
   };
 
   const saveInquiry = async () => {
@@ -147,6 +149,7 @@ export default function AdminInquiries({ token }: { token: string }) {
         status: editStatus,
         category: editCategory,
         adminNote,
+        adminReply,
       });
       setSelected(null);
       await loadData();
@@ -357,10 +360,15 @@ export default function AdminInquiries({ token }: { token: string }) {
                 <label className="text-xs font-bold text-[#40566F]">Status<select suppressHydrationWarning value={editStatus} onChange={(event) => setEditStatus(event.target.value as InquiryStatus)} className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm text-[#142B45] outline-none focus:border-[#0C4F86]">{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                 <label className="text-xs font-bold text-[#40566F]">Category<select suppressHydrationWarning value={editCategory} onChange={(event) => setEditCategory(event.target.value as InquiryCategory)} className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm text-[#142B45] outline-none focus:border-[#0C4F86]">{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               </div>
-              <label className="block text-xs font-bold text-[#40566F]">Admin note<textarea suppressHydrationWarning value={adminNote} onChange={(event) => setAdminNote(event.target.value)} rows={4} placeholder="Add an internal note..." className="mt-2 w-full resize-y rounded-lg border border-[var(--border)] p-3 text-sm text-[#142B45] outline-none focus:border-[#0C4F86]" /></label>
+              <label className="block text-xs font-bold text-[#40566F]">
+                Reply visible to customer
+                <textarea suppressHydrationWarning value={adminReply} onChange={(event) => setAdminReply(event.target.value)} rows={5} placeholder="Write the response the customer will see..." className="mt-2 w-full resize-y rounded-lg border border-blue-200 bg-blue-50/40 p-3 text-sm text-[#142B45] outline-none focus:border-[#0C4F86]" />
+                <span className="mt-1.5 block text-[10px] font-medium text-[var(--text-muted)]">Published replies appear in the customer&apos;s My Inquiries page.</span>
+              </label>
+              <label className="block text-xs font-bold text-[#40566F]">Internal admin note<textarea suppressHydrationWarning value={adminNote} onChange={(event) => setAdminNote(event.target.value)} rows={3} placeholder="Private note for the admin team..." className="mt-2 w-full resize-y rounded-lg border border-[var(--border)] p-3 text-sm text-[#142B45] outline-none focus:border-[#0C4F86]" /></label>
               <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <button suppressHydrationWarning type="button" onClick={deleteInquiry} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 size={15} /> Delete</button>
-                <div className="flex gap-3"><a href={"mailto:" + selected.email + "?subject=Re: " + encodeURIComponent(selected.subject)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-bold text-[#40566F] hover:bg-slate-50"><Mail size={15} /> Reply</a><button suppressHydrationWarning type="button" onClick={saveInquiry} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C4F86] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#083E6B] disabled:opacity-60">{saving && <Loader2 size={15} className="animate-spin" />} Save changes</button></div>
+                <button suppressHydrationWarning type="button" onClick={saveInquiry} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C4F86] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#083E6B] disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Save &amp; publish reply</button>
               </div>
             </div>
           </div>
