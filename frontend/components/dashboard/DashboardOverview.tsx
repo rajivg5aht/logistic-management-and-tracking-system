@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Plus, Search, Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
+import { Bell, Plus, Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   getMyShipments,
@@ -120,37 +120,43 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* Quick Action Buttons */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Compact dashboard shortcuts */}
+      <nav
+        aria-label="Dashboard quick actions"
+        className="flex w-fit max-w-full flex-wrap items-center gap-2.5 sm:gap-3"
+      >
         <button
           type="button"
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-white hover:bg-[var(--surface-soft)] text-sm font-semibold text-[var(--text)] transition-all"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#1D7A8C]/40 hover:bg-[#F4FAFA] hover:shadow-[0_8px_20px_rgba(29,122,140,0.12)]"
+          suppressHydrationWarning
         >
-          <Search size={18} className="text-[var(--accent)]" />
-          Track Package
-        </button>
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-white hover:bg-[var(--surface-soft)] text-sm font-semibold text-[var(--text)] transition-all"
-        >
-          <Building2 size={18} className="text-[var(--accent)]" />
+          <Building2
+            size={17}
+            className="text-[#1D7A8C] transition-transform group-hover:scale-110"
+          />
           Delivery Network
         </button>
         <Link
           href="/billing"
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-white hover:bg-[var(--surface-soft)] text-sm font-semibold text-[var(--text)] transition-all no-underline"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] no-underline shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[rgba(200,162,74,0.45)] hover:bg-[var(--accent-soft)] hover:shadow-[0_8px_20px_rgba(200,162,74,0.12)]"
         >
-          <FileText size={18} className="text-[var(--accent)]" />
+          <FileText
+            size={17}
+            className="text-[var(--accent)] transition-transform group-hover:scale-110"
+          />
           View Invoices
         </Link>
-        <button
-          type="button"
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-white hover:bg-[var(--surface-soft)] text-sm font-semibold text-[var(--text)] transition-all"
+        <Link
+          href="/inquiries"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] no-underline shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#D36A62]/40 hover:bg-[#FFF7F5] hover:shadow-[0_8px_20px_rgba(211,106,98,0.12)]"
         >
-          <HelpCircle size={18} className="text-[var(--accent)]" />
+          <HelpCircle
+            size={17}
+            className="text-[#D36A62] transition-transform group-hover:scale-110"
+          />
           Get Help
-        </button>
-      </div>
+        </Link>
+      </nav>
 
       {/* Quick parcel tracking */}
       <form

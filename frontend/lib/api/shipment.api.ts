@@ -71,6 +71,16 @@ export type CreateShipmentPayload = {
   amount: number;
 };
 
+export type CustomerUpdateShipmentPayload = {
+  pickup?: ShipmentAddress;
+  delivery?: ShipmentAddress;
+  package?: ShipmentPackage;
+  service?: ServiceType;
+  insurance?: boolean;
+  specialHandling?: boolean;
+  amount?: number;
+};
+
 export type AdminUpdateShipmentPayload = {
   status?: ShipmentStatus;
   assignedDriver?: string | null;
@@ -116,6 +126,69 @@ export async function getMyShipments(token: string): Promise<Shipment[]> {
   }
 
   return data.data;
+}
+
+export async function updateMyShipment(
+  token: string,
+  id: string,
+  payload: CustomerUpdateShipmentPayload,
+): Promise<Shipment> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update shipment");
+  }
+
+  return data.data;
+}
+
+export async function cancelMyShipment(
+  token: string,
+  id: string,
+): Promise<Shipment> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}/cancel`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to cancel shipment");
+  }
+
+  return data.data;
+}
+
+export async function deleteMyShipment(
+  token: string,
+  id: string,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete shipment");
+  }
 }
 
 // ── Admin ────────────────────────────────────────────────────────────────────

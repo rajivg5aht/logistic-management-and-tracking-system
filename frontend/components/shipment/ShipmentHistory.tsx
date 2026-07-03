@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  Calendar,
-  Filter,
   Plus,
   Package,
   Truck,
@@ -14,9 +12,22 @@ import {
   MessageCircle,
   AlertCircle,
   PackageOpen,
+  Edit2,
+  Ban,
+  Trash2,
+  Loader2,
 } from "lucide-react";
-import { getMyShipments, type Shipment, type ShipmentStatus } from "@/lib/api/shipment.api";
+import {
+  getMyShipments,
+  cancelMyShipment,
+  deleteMyShipment,
+  type Shipment,
+  type ShipmentStatus,
+  type ServiceType,
+} from "@/lib/api/shipment.api";
 import type { AuthUser } from "@/lib/api/auth.api";
+import Modal from "@/components/ui/Modal";
+import EditShipmentModal from "@/components/shipment/EditShipmentModal";
 
 const STATUS_META: Record<ShipmentStatus, { text: string; bg: string; color: string; dot: string }> = {
   pending: {
@@ -53,11 +64,33 @@ function fmtDate(s: string): string {
   });
 }
 
+// Display-only delivery-time budget per service, used to derive an honest
+// "Est. Arrival" for in-transit shipments (the data model has no ETA field).
+const SERVICE_SLA_DAYS: Record<ServiceType, number> = {
+  standard: 5,
+  express: 2,
+  overnight: 1,
+};
+
+function estimatedArrival(createdAt: string, service: ServiceType): string {
+  const d = new Date(createdAt);
+  d.setDate(d.getDate() + SERVICE_SLA_DAYS[service]);
+  return fmtDate(d.toISOString());
+}
+
 function dateLabelFor(status: ShipmentStatus): string {
   if (status === "delivered") return "Delivered On";
   if (status === "cancelled") return "Cancelled On";
   if (status === "in-transit") return "Est. Arrival";
   return "Order Date";
+}
+
+// Keeps the displayed value consistent with dateLabelFor's label.
+function displayDate(s: Shipment): string {
+  if (s.status === "delivered") return fmtDate(s.deliveredAt ?? s.updatedAt);
+  if (s.status === "cancelled") return fmtDate(s.updatedAt);
+  if (s.status === "in-transit") return estimatedArrival(s.createdAt, s.service);
+  return fmtDate(s.createdAt); // pending → Order Date
 }
 
 function getIcon(s: Shipment) {
@@ -86,6 +119,13 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Customer lifecycle actions (edit / cancel / delete).
+  const [editing, setEditing] = useState<Shipment | null>(null);
+  const [cancelling, setCancelling] = useState<Shipment | null>(null);
+  const [deleting, setDeleting] = useState<Shipment | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
@@ -107,6 +147,40 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
     fetchHistory();
   }, [fetchHistory]);
 
+  const handleCancelConfirm = async () => {
+    if (!cancelling) return;
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await cancelMyShipment(token, cancelling.id);
+      setCancelling(null);
+      await fetchHistory();
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Failed to cancel shipment.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleting) return;
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await deleteMyShipment(token, deleting.id);
+      setDeleting(null);
+      await fetchHistory();
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Failed to delete shipment.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(shipments.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const pageItems = shipments.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -126,24 +200,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-semibold text-[var(--text-soft)] hover:bg-[var(--surface-soft)] transition-colors"
-            suppressHydrationWarning
-          >
-            <Calendar size={16} className="text-[var(--text-muted)]" />
-            Last 30 Days
-          </button>
-
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-semibold text-[var(--text-soft)] hover:bg-[var(--surface-soft)] transition-colors"
-            suppressHydrationWarning
-          >
-            <Filter size={16} className="text-[var(--text-muted)]" />
-            All Statuses
-          </button>
-
           <Link
             href="/shipments"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1D7A8C] text-white text-sm font-bold hover:bg-[#15656e] transition-colors"
@@ -256,11 +312,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                           {dateLabelFor(shipment.status)}
                         </p>
                         <p className="text-sm font-semibold text-[var(--text)] mt-0.5">
-                          {fmtDate(
-                            shipment.status === "delivered" || shipment.status === "cancelled"
-                              ? shipment.updatedAt
-                              : shipment.createdAt,
-                          )}
+                          {displayDate(shipment)}
                         </p>
                       </div>
 
@@ -280,6 +332,39 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0">
+                      {shipment.status === "pending" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setEditing(shipment)}
+                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[#1D7A8C]/40 hover:bg-[#F4FAFA] hover:text-[#1D7A8C] cursor-pointer"
+                            title="Edit shipment"
+                            suppressHydrationWarning
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCancelling(shipment)}
+                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[var(--danger)]/40 hover:bg-[rgba(181,71,59,0.08)] hover:text-[var(--danger)] cursor-pointer"
+                            title="Cancel shipment"
+                            suppressHydrationWarning
+                          >
+                            <Ban size={16} />
+                          </button>
+                        </>
+                      )}
+                      {shipment.status === "cancelled" && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleting(shipment)}
+                          className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[var(--danger)]/40 hover:bg-[rgba(181,71,59,0.08)] hover:text-[var(--danger)] cursor-pointer"
+                          title="Delete shipment"
+                          suppressHydrationWarning
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                       <Link
                         href="/tracking"
                         className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -290,12 +375,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                         aria-disabled={isCancelled}
                       >
                         Track
-                      </Link>
-                      <Link
-                        href="/shipments"
-                        className="px-4 py-2 rounded-lg bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold transition-colors"
-                      >
-                        Reorder
                       </Link>
                     </div>
                   </div>
@@ -356,6 +435,120 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </div>
         </>
       )}
+
+      {/* Edit modal (pending shipments only) */}
+      <EditShipmentModal
+        isOpen={editing !== null}
+        shipment={editing}
+        token={token}
+        onClose={() => setEditing(null)}
+        onUpdated={fetchHistory}
+      />
+
+      {/* Cancel confirmation */}
+      <Modal
+        isOpen={cancelling !== null}
+        onClose={() => {
+          setCancelling(null);
+          setActionError(null);
+        }}
+        title="Cancel Shipment"
+      >
+        <div className="space-y-4">
+          {actionError && <div className="form-error">{actionError}</div>}
+
+          <div className="flex gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(181,71,59,0.1)] text-[var(--danger)]">
+              <Ban size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--text)]">
+                Cancel shipment #{cancelling?.trackingId}?
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-soft)]">
+                It will be marked as cancelled and will no longer be dispatched.
+                You can permanently delete it afterwards.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setCancelling(null);
+                setActionError(null);
+              }}
+              className="btn-secondary btn-sm cursor-pointer"
+            >
+              Keep Shipment
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelConfirm}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading && <Loader2 size={16} className="animate-spin" />}
+              Cancel Shipment
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete confirmation (cancelled shipments only) */}
+      <Modal
+        isOpen={deleting !== null}
+        onClose={() => {
+          setDeleting(null);
+          setActionError(null);
+        }}
+        title="Delete Shipment"
+      >
+        <div className="space-y-4">
+          {actionError && <div className="form-error">{actionError}</div>}
+
+          <div className="flex gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(181,71,59,0.1)] text-[var(--danger)]">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--text)]">
+                Permanently delete this shipment?
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-soft)]">
+                Shipment{" "}
+                <span className="font-bold text-[var(--text)]">
+                  #{deleting?.trackingId}
+                </span>{" "}
+                will be removed from your history. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setDeleting(null);
+                setActionError(null);
+              }}
+              className="btn-secondary btn-sm cursor-pointer"
+            >
+              Keep
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading && <Loader2 size={16} className="animate-spin" />}
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Floating Help Button */}
       <button
