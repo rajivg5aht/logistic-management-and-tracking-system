@@ -35,6 +35,7 @@ export type Shipment = {
   specialHandling: boolean;
   paymentMethod: PaymentMethod;
   paymentStatus: "paid" | "pending";
+  deliveredAt: string | null;
   amount: number;
   status: ShipmentStatus;
   assignedDriver: string | null;
@@ -55,6 +56,8 @@ export type ShipmentStats = {
   inTransit: number;
   delivered: number;
   cancelled: number;
+  deliveredToday: number;
+  pendingCodAmount: number;
 };
 
 export type CreateShipmentPayload = {

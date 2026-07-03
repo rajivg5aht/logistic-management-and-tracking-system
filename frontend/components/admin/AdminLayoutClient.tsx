@@ -18,6 +18,7 @@ import {
   Search,
   Bell,
   ChevronRight,
+  MessageSquareText,
 } from "lucide-react";
 import { AuthUser } from "@/lib/api/auth.api";
 
@@ -26,6 +27,7 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/shipments": "Shipments",
   "/admin/analytics": "Analytics",
   "/admin/users": "User Management",
+  "/admin/inquiries": "Inquiries",
 };
 
 interface AdminLayoutClientProps {
@@ -86,6 +88,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     { label: "Warehouse", href: "#", icon: Warehouse, active: false },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },
+    { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquareText, active: pathname.startsWith("/admin/inquiries") },
   ];
 
   return (

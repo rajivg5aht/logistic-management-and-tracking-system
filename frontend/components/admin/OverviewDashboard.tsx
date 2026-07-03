@@ -7,8 +7,6 @@ import {
   Radio,
   CircleCheckBig,
   Wallet,
-  TrendingUp,
-  TrendingDown,
   MoreHorizontal,
   CheckCircle2,
   Wrench,
@@ -22,49 +20,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   adminGetShipments,
+  adminGetShipmentStats,
   type Shipment,
+  type ShipmentStats,
   type ShipmentStatus,
 } from "@/lib/api/shipment.api";
+import { formatNPR } from "@/lib/pricing";
 
 /* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
 const NAVY_BAR = "#123E6B"; // highlighted chart column
 const BAR_IDLE = "#DCE5EE"; // inactive chart columns
-
-const KPIS = [
-  {
-    label: "Total Shipments",
-    value: "1,284",
-    delta: "+12%",
-    up: true,
-    Icon: Package,
-    tint: "bg-[#E8F0FB] text-[#2E6FD6]",
-  },
-  {
-    label: "Active Now",
-    value: "342",
-    delta: "+5.4%",
-    up: true,
-    Icon: Radio,
-    tint: "bg-[#E6F4EC] text-[#1F9D57]",
-  },
-  {
-    label: "Delivered Today",
-    value: "128",
-    delta: "+18%",
-    up: true,
-    Icon: CircleCheckBig,
-    tint: "bg-[#E5F1F3] text-[#1D7A8C]",
-  },
-  {
-    label: "Pending COD",
-    value: "Rs. 45,280",
-    delta: "-2.1%",
-    up: false,
-    Icon: Wallet,
-    tint: "bg-[#FBE9E5] text-[#D0533F]",
-  },
-];
 
 const BARS = [
   { day: "Mon", h: 58 },
@@ -139,6 +105,7 @@ function getDestination(shipment: Shipment): string {
 
 export default function OverviewDashboard({ token }: { token: string }) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [shipmentStats, setShipmentStats] = useState<ShipmentStats | null>(null);
   const [loadingShipments, setLoadingShipments] = useState(true);
   const [shipmentError, setShipmentError] = useState<string | null>(null);
 
@@ -147,9 +114,13 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
     const loadRecentShipments = async () => {
       try {
-        const result = await adminGetShipments(token, 1, 4);
+        const [result, stats] = await Promise.all([
+          adminGetShipments(token, 1, 4),
+          adminGetShipmentStats(token),
+        ]);
         if (!active) return;
         setShipments(result.data);
+        setShipmentStats(stats);
         setShipmentError(null);
       } catch (error) {
         if (!active) return;
@@ -169,6 +140,33 @@ export default function OverviewDashboard({ token }: { token: string }) {
       window.clearInterval(refreshId);
     };
   }, [token]);
+
+  const kpis = [
+    {
+      label: "Total Shipments",
+      value: shipmentStats?.total.toLocaleString("en-IN") ?? "—",
+      Icon: Package,
+      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+    },
+    {
+      label: "Active Now",
+      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "—",
+      Icon: Radio,
+      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+    },
+    {
+      label: "Delivered Today",
+      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "—",
+      Icon: CircleCheckBig,
+      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+    },
+    {
+      label: "Pending COD",
+      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "—",
+      Icon: Wallet,
+      tint: "bg-[#FBE9E5] text-[#D0533F]",
+    },
+  ];
 
   return (
     <div className="space-y-6 font-sans">
@@ -196,9 +194,8 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
       {/* ============ KPI cards ============ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {KPIS.map((kpi) => {
+        {kpis.map((kpi) => {
           const Icon = kpi.Icon;
-          const Trend = kpi.up ? TrendingUp : TrendingDown;
           return (
             <div
               key={kpi.label}
@@ -209,13 +206,9 @@ export default function OverviewDashboard({ token }: { token: string }) {
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${kpi.tint}`}>
                   <Icon size={19} className="stroke-[2.4]" />
                 </div>
-                <span
-                  className={`flex items-center gap-0.5 text-xs font-bold ${
-                    kpi.up ? "text-[#17A34A]" : "text-[#E0533F]"
-                  }`}
-                >
-                  {kpi.delta}
-                  <Trend size={13} className="stroke-[2.5]" />
+                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#1F9D57]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#1F9D57]" />
+                  Live
                 </span>
               </div>
               <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[#5A6B82]">

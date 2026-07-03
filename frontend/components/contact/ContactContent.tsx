@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Phone, Mail, Send, ChevronDown } from "lucide-react";
+import { MapPin, Phone, Mail, Send, ChevronDown, Loader2 } from "lucide-react";
+import { createInquiry } from "@/lib/api/inquiry.api";
 
 const contactInfo = [
   {
@@ -97,12 +98,35 @@ function OfficeMap() {
 
 export default function ContactContent() {
   const [sent, setSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSent(true);
-    e.currentTarget.reset();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setSent(false);
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    try {
+      await createInquiry({
+        fullName: String(formData.get("fullName") || ""),
+        email: String(formData.get("email") || ""),
+        subject: String(formData.get("subject") || ""),
+        message: String(formData.get("message") || ""),
+      });
+      form.reset();
+      setSent(true);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Unable to send your message. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -235,9 +259,22 @@ export default function ContactContent() {
                   Thanks for reaching out! Our team will get back to you within 24 hours.
                 </p>
               )}
+              {submitError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
+                  {submitError}
+                </p>
+              )}
 
-              <button type="submit" className="btn-primary self-start">
-                Send Message <Send size={16} />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-primary self-start disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <><Loader2 size={16} className="animate-spin" /> Sending...</>
+                ) : (
+                  <>Send Message <Send size={16} /></>
+                )}
               </button>
             </form>
           </div>
