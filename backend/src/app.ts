@@ -5,6 +5,8 @@ import userRoutes from "./routes/user.route";
 import adminRoutes from "./routes/admin.route";
 import shipmentRoutes from "./routes/shipment.route";
 import adminShipmentRoutes from "./routes/adminShipment.route";
+import inquiryRoutes from "./routes/inquiry.route";
+import adminInquiryRoutes from "./routes/adminInquiry.route";
 
 const app: Application = express();
 
@@ -39,6 +41,8 @@ app.use("/api/v1/auth", userRoutes);
 app.use("/api/v1/admin/users", adminRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/admin/shipments", adminShipmentRoutes);
+app.use("/api/v1/inquiries", inquiryRoutes);
+app.use("/api/v1/admin/inquiries", adminInquiryRoutes);
 
 app.use((req: Request, res: Response) => {
   return res.status(404).json({

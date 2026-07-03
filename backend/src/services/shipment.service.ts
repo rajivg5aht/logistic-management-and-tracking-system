@@ -21,6 +21,7 @@ export type SafeShipment = {
   specialHandling: boolean;
   paymentMethod: IShipment["paymentMethod"];
   paymentStatus: IShipment["paymentStatus"];
+  deliveredAt: Date | null;
   amount: number;
   status: IShipment["status"];
   assignedDriver: string | null;
@@ -42,6 +43,7 @@ export class ShipmentService {
       specialHandling: shipment.specialHandling,
       paymentMethod: shipment.paymentMethod,
       paymentStatus: shipment.paymentStatus,
+      deliveredAt: shipment.deliveredAt ?? null,
       amount: shipment.amount,
       status: shipment.status,
       assignedDriver: shipment.assignedDriver ?? null,
@@ -123,7 +125,14 @@ export class ShipmentService {
       throw new HttpException(404, "Shipment not found");
     }
 
-    const updated = await shipmentRepository.update(id, data);
+    const updateData: Partial<IShipment> = { ...data };
+    if (data.status === "delivered" && shipment.status !== "delivered") {
+      updateData.deliveredAt = new Date();
+    } else if (data.status && data.status !== "delivered") {
+      updateData.deliveredAt = null;
+    }
+
+    const updated = await shipmentRepository.update(id, updateData);
     if (!updated) {
       throw new HttpException(500, "Failed to update shipment");
     }

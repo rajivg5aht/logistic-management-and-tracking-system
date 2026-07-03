@@ -10,6 +10,7 @@ export interface IShipment extends ShipmentType, Document {
   trackingId: string;
   customer: mongoose.Types.ObjectId;
   paymentStatus: "paid" | "pending";
+  deliveredAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +87,11 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
       type: String,
       enum: SHIPMENT_STATUSES,
       default: "pending",
+    },
+
+    deliveredAt: {
+      type: Date,
+      default: null,
     },
 
     assignedDriver: {

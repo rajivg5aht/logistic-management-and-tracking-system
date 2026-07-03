@@ -7,6 +7,8 @@ export interface ShipmentStats {
   inTransit: number;
   delivered: number;
   cancelled: number;
+  deliveredToday: number;
+  pendingCodAmount: number;
 }
 
 export interface IShipmentRepository {
@@ -85,14 +87,63 @@ export class ShipmentMongoRepository implements IShipmentRepository {
   }
 
   async getStats(): Promise<ShipmentStats> {
-    const [total, pending, inTransit, delivered, cancelled] = await Promise.all([
+    // Nepal uses UTC+05:45 year-round. Convert today's Nepal boundaries to UTC
+    // before querying MongoDB so "Delivered Today" is accurate for local users.
+    const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+    const nowInNepal = new Date(Date.now() + nepalOffsetMs);
+    const startOfToday = new Date(
+      Date.UTC(
+        nowInNepal.getUTCFullYear(),
+        nowInNepal.getUTCMonth(),
+        nowInNepal.getUTCDate(),
+      ) - nepalOffsetMs,
+    );
+    const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+    const [
+      total,
+      pending,
+      inTransit,
+      delivered,
+      cancelled,
+      deliveredToday,
+      pendingCodTotals,
+    ] = await Promise.all([
       ShipmentModel.countDocuments({}),
       ShipmentModel.countDocuments({ status: "pending" }),
       ShipmentModel.countDocuments({ status: "in-transit" }),
       ShipmentModel.countDocuments({ status: "delivered" }),
       ShipmentModel.countDocuments({ status: "cancelled" }),
+      ShipmentModel.countDocuments({
+        status: "delivered",
+        $or: [
+          { deliveredAt: { $gte: startOfToday, $lt: startOfTomorrow } },
+          {
+            deliveredAt: null,
+            updatedAt: { $gte: startOfToday, $lt: startOfTomorrow },
+          },
+        ],
+      }),
+      ShipmentModel.aggregate<{ total: number }>([
+        {
+          $match: {
+            paymentMethod: "cod",
+            paymentStatus: "pending",
+            status: { $ne: "cancelled" },
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
     ]);
 
-    return { total, pending, inTransit, delivered, cancelled };
+    return {
+      total,
+      pending,
+      inTransit,
+      delivered,
+      cancelled,
+      deliveredToday,
+      pendingCodAmount: pendingCodTotals[0]?.total ?? 0,
+    };
   }
 }
