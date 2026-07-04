@@ -18,6 +18,14 @@ export interface ShipmentStats {
   dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
 }
 
+export interface DriverStats {
+  total: number; // All shipments ever assigned to the driver
+  active: number; // Currently pending or in-transit
+  deliveredToday: number;
+  completed: number; // Total delivered
+  codToCollect: number; // Outstanding COD across active assignments
+}
+
 export interface IShipmentRepository {
   create(data: Partial<IShipment>): Promise<IShipment>;
   getById(id: string): Promise<IShipment | null>;
@@ -26,6 +34,10 @@ export interface IShipmentRepository {
   delete(id: string): Promise<boolean>;
 
   getByCustomer(customerId: string): Promise<IShipment[]>;
+  getByDriver(
+    driverId: string,
+    scope?: "active" | "history",
+  ): Promise<IShipment[]>;
   getPaginated(
     page: number,
     limit: number,
@@ -33,6 +45,7 @@ export interface IShipmentRepository {
     status?: ShipmentStatus,
   ): Promise<{ shipments: IShipment[]; total: number }>;
   getStats(): Promise<ShipmentStats>;
+  getDriverStats(driverId: string): Promise<DriverStats>;
 }
 
 export class ShipmentMongoRepository implements IShipmentRepository {
