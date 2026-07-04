@@ -37,7 +37,27 @@ export const SHIPMENT_STATUSES = [
   "cancelled",
 ] as const;
 
+// Granular delivery step owned by the driver. Layered on top of the canonical
+// 4-state status (which the KPIs/chart/customer badges depend on) so it can be
+// as detailed as the operational flow needs without rippling through the app.
+export const DRIVER_STAGES = [
+  "assigned",
+  "picked-up",
+  "in-transit",
+  "out-for-delivery",
+  "delivered",
+  "failed",
+  "returned",
+] as const;
+
 export const PAYMENT_METHODS = ["esewa", "khalti", "cod"] as const;
+
+// One entry per stage transition — powers the customer tracking timeline.
+export const TimelineEntrySchema = z.object({
+  stage: z.enum(DRIVER_STAGES),
+  at: z.coerce.date(),
+  note: z.string().optional(),
+});
 
 // Full shipment schema ------------------------------------------------------
 export const ShipmentSchema = z.object({
