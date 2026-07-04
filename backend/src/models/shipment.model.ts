@@ -101,6 +101,30 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
       type: String,
       default: null,
     },
+
+    assignedDriverId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    driverStage: {
+      type: String,
+      enum: DRIVER_STAGES,
+      default: null,
+    },
+
+    timeline: {
+      type: [
+        {
+          _id: false,
+          stage: { type: String, enum: DRIVER_STAGES, required: true },
+          at: { type: Date, required: true },
+          note: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,
