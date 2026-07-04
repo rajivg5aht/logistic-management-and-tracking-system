@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   adminGetShipments,
   adminGetShipmentStats,
+  type DailyVolume,
   type Shipment,
   type ShipmentStats,
   type ShipmentStatus,
@@ -33,15 +34,27 @@ const NAVY = "#0C3B67"; // headings + KPI values
 const NAVY_BAR = "#123E6B"; // highlighted chart column
 const BAR_IDLE = "#DCE5EE"; // inactive chart columns
 
-const BARS = [
-  { day: "Mon", h: 58 },
-  { day: "Tue", h: 48 },
-  { day: "Wed", h: 96, active: true },
-  { day: "Thu", h: 66 },
-  { day: "Fri", h: 60 },
-  { day: "Sat", h: 30 },
-  { day: "Sun", h: 42 },
-];
+type ChartBar = { day: string; count: number; h: number; active: boolean };
+
+/**
+ * Turns the raw 7-day volume series into chart bars: heights are scaled so the
+ * busiest day fills the column, and that peak day is highlighted. Zero-volume
+ * days keep a thin sliver so the axis stays readable.
+ */
+function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
+  const maxCount = Math.max(1, ...dailyVolume.map((d) => d.count));
+  let peakIndex = 0;
+  dailyVolume.forEach((d, i) => {
+    if (d.count > dailyVolume[peakIndex].count) peakIndex = i;
+  });
+
+  return dailyVolume.map((d, i) => ({
+    day: d.label,
+    count: d.count,
+    h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 100)),
+    active: d.count > 0 && i === peakIndex,
+  }));
+}
 
 const FLEET = [
   {
@@ -162,6 +175,11 @@ export default function OverviewDashboard({ token }: { token: string }) {
     },
   ];
 
+  const bars = shipmentStats ? buildBars(shipmentStats.dailyVolume) : null;
+  const weekTotal = shipmentStats
+    ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
+    : 0;
+
   return (
     <div className="space-y-6 font-sans">
       {/* ============ Page title + actions ============ */}
@@ -229,7 +247,9 @@ export default function OverviewDashboard({ token }: { token: string }) {
                 Shipments over last 7 days
               </h3>
               <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
-                Daily volume analysis from current hub
+                {shipmentStats
+                  ? `${weekTotal.toLocaleString("en-IN")} shipment${weekTotal === 1 ? "" : "s"} in the last 7 days`
+                  : "Daily volume analysis from current hub"}
               </p>
             </div>
             <button
@@ -244,30 +264,40 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
           {/* Bars */}
           <div className="mt-8 flex h-52 items-end gap-2.5 sm:gap-4">
-            {BARS.map((bar) => (
-              <div key={bar.day} className="flex h-full flex-1 flex-col justify-end">
-                <div
-                  className="w-full rounded-lg transition-all duration-500"
-                  style={{
-                    height: `${bar.h}%`,
-                    backgroundColor: bar.active ? NAVY_BAR : BAR_IDLE,
-                  }}
-                />
-              </div>
-            ))}
+            {bars === null
+              ? Array.from({ length: 7 }).map((_, index) => (
+                  <div key={index} className="flex h-full flex-1 flex-col justify-end">
+                    <div
+                      className="w-full animate-pulse rounded-lg"
+                      style={{ height: `${30 + ((index * 37) % 55)}%`, backgroundColor: BAR_IDLE }}
+                    />
+                  </div>
+                ))
+              : bars.map((bar, index) => (
+                  <div key={index} className="flex h-full flex-1 flex-col justify-end">
+                    <div
+                      className="w-full rounded-lg transition-all duration-500"
+                      style={{
+                        height: `${bar.h}%`,
+                        backgroundColor: bar.active ? NAVY_BAR : BAR_IDLE,
+                      }}
+                      title={`${bar.day}: ${bar.count} shipment${bar.count === 1 ? "" : "s"}`}
+                    />
+                  </div>
+                ))}
           </div>
           {/* Day labels */}
           <div className="mt-3 flex gap-2.5 sm:gap-4">
-            {BARS.map((bar) => (
+            {(bars ?? Array.from({ length: 7 }, () => null)).map((bar, index) => (
               <span
-                key={bar.day}
+                key={index}
                 className={`flex-1 text-center text-xs ${
-                  bar.active
+                  bar?.active
                     ? "font-extrabold text-[#123E6B]"
                     : "font-semibold text-[var(--text-muted)]"
                 }`}
               >
-                {bar.day}
+                {bar?.day ?? "—"}
               </span>
             ))}
           </div>

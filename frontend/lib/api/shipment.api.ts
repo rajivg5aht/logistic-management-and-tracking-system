@@ -50,6 +50,12 @@ export type ShipmentMeta = {
   totalPages: number;
 };
 
+export type DailyVolume = {
+  date: string; // YYYY-MM-DD in Nepal local time
+  label: string; // Weekday abbreviation, e.g. "Mon"
+  count: number; // Shipments created that day
+};
+
 export type ShipmentStats = {
   total: number;
   pending: number;
@@ -58,6 +64,7 @@ export type ShipmentStats = {
   cancelled: number;
   deliveredToday: number;
   pendingCodAmount: number;
+  dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
 };
 
 export type CreateShipmentPayload = {
