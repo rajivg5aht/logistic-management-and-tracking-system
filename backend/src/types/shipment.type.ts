@@ -71,8 +71,13 @@ export const ShipmentSchema = z.object({
   amount: z.number().nonnegative("Amount must be a positive number"),
   status: z.enum(SHIPMENT_STATUSES).default("pending"),
   assignedDriver: z.string().nullable().optional(),
+  assignedDriverId: z.string().nullable().optional(),
+  driverStage: z.enum(DRIVER_STAGES).nullable().optional(),
+  timeline: z.array(TimelineEntrySchema).default([]),
 });
 
 export type ShipmentType = z.infer<typeof ShipmentSchema>;
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
+export type DriverStage = (typeof DRIVER_STAGES)[number];
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
