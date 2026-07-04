@@ -44,6 +44,8 @@ export type CustomerUpdateShipmentDTO = z.infer<
 export const AdminUpdateShipmentDTO = z.object({
   status: z.enum(SHIPMENT_STATUSES).optional(),
   assignedDriver: z.string().nullable().optional(),
+  // Real link to a driver's User account. `null`/"" clears the assignment.
+  assignedDriverId: z.string().nullable().optional(),
   paymentStatus: z.enum(["paid", "pending"]).optional(),
 });
 

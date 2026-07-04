@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { ShipmentModel, IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 
@@ -72,6 +73,19 @@ export class ShipmentMongoRepository implements IShipmentRepository {
 
   async getByCustomer(customerId: string): Promise<IShipment[]> {
     return ShipmentModel.find({ customer: customerId }).sort({ createdAt: -1 });
+  }
+
+  async getByDriver(
+    driverId: string,
+    scope?: "active" | "history",
+  ): Promise<IShipment[]> {
+    const query: any = { assignedDriverId: driverId };
+    if (scope === "active") {
+      query.status = { $in: ["pending", "in-transit"] };
+    } else if (scope === "history") {
+      query.status = { $in: ["delivered", "cancelled"] };
+    }
+    return ShipmentModel.find(query).sort({ updatedAt: -1 });
   }
 
   async getPaginated(
@@ -207,6 +221,56 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       deliveredToday,
       pendingCodAmount: pendingCodTotals[0]?.total ?? 0,
       dailyVolume,
+    };
+  }
+
+  async getDriverStats(driverId: string): Promise<DriverStats> {
+    // Reuse the same Nepal-local "today" boundary logic as getStats().
+    const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+    const nowInNepal = new Date(Date.now() + nepalOffsetMs);
+    const startOfToday = new Date(
+      Date.UTC(
+        nowInNepal.getUTCFullYear(),
+        nowInNepal.getUTCMonth(),
+        nowInNepal.getUTCDate(),
+      ) - nepalOffsetMs,
+    );
+    const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+    const match = { assignedDriverId: new mongoose.Types.ObjectId(driverId) };
+
+    const [total, active, deliveredToday, completed, codTotals] =
+      await Promise.all([
+        ShipmentModel.countDocuments(match),
+        ShipmentModel.countDocuments({
+          ...match,
+          status: { $in: ["pending", "in-transit"] },
+        }),
+        ShipmentModel.countDocuments({
+          ...match,
+          status: "delivered",
+          deliveredAt: { $gte: startOfToday, $lt: startOfTomorrow },
+        }),
+        ShipmentModel.countDocuments({ ...match, status: "delivered" }),
+        ShipmentModel.aggregate<{ total: number }>([
+          {
+            $match: {
+              ...match,
+              paymentMethod: "cod",
+              paymentStatus: "pending",
+              status: { $in: ["pending", "in-transit"] },
+            },
+          },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ]),
+      ]);
+
+    return {
+      total,
+      active,
+      deliveredToday,
+      completed,
+      codToCollect: codTotals[0]?.total ?? 0,
     };
   }
 }

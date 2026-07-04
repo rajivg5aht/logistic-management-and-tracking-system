@@ -3,6 +3,8 @@ import cors from "cors";
 import path from "path";
 import userRoutes from "./routes/user.route";
 import adminRoutes from "./routes/admin.route";
+import adminDriverRoutes from "./routes/adminDriver.route";
+import driverRoutes from "./routes/driver.route";
 import shipmentRoutes from "./routes/shipment.route";
 import adminShipmentRoutes from "./routes/adminShipment.route";
 import inquiryRoutes from "./routes/inquiry.route";
@@ -39,6 +41,8 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/v1/auth", userRoutes);
 app.use("/api/v1/admin/users", adminRoutes);
+app.use("/api/v1/admin/drivers", adminDriverRoutes);
+app.use("/api/v1/driver", driverRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/admin/shipments", adminShipmentRoutes);
 app.use("/api/v1/inquiries", inquiryRoutes);
