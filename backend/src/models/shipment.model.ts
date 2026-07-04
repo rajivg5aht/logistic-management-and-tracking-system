@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 import {
   ShipmentType,
   SHIPMENT_STATUSES,
+  DRIVER_STAGES,
   PAYMENT_METHODS,
 } from "../types/shipment.type";
 
@@ -11,6 +12,8 @@ export interface IShipment extends ShipmentType, Document {
   customer: mongoose.Types.ObjectId;
   paymentStatus: "paid" | "pending";
   deliveredAt: Date | null;
+  // Real link to the driver's User account (name is denormalized in assignedDriver).
+  assignedDriverId: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
