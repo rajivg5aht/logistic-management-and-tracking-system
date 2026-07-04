@@ -17,6 +17,13 @@ export type SafeUser = {
   role: IUser["role"];
   status?: string;
   createdAt?: Date;
+  // Driver profile (only meaningful when role === "driver")
+  licenseNumber?: string;
+  vehicleType?: IUser["vehicleType"];
+  vehicleNumber?: string;
+  branch?: string;
+  employmentStatus?: IUser["employmentStatus"];
+  availabilityStatus?: IUser["availabilityStatus"];
 };
 
 export class UserService {
@@ -30,6 +37,12 @@ export class UserService {
       role: user.role,
       status: user.status || "active",
       createdAt: user.createdAt,
+      licenseNumber: user.licenseNumber || "",
+      vehicleType: user.vehicleType,
+      vehicleNumber: user.vehicleNumber || "",
+      branch: user.branch || "",
+      employmentStatus: user.employmentStatus,
+      availabilityStatus: user.availabilityStatus,
     };
   }
 
@@ -236,5 +249,115 @@ export class UserService {
     }
 
     return userRepository.delete(userId);
+  }
+
+  // ── Driver management (admin-controlled internal staff) ────────────────────
+  async adminGetDrivers(
+    page: number,
+    limit: number,
+    search?: string,
+    availability?: string,
+  ): Promise<{ drivers: SafeUser[]; total: number }> {
+    const filter: Record<string, unknown> = { role: "driver" };
+    if (availability) {
+      filter.availabilityStatus = availability;
+    }
+
+    const { users, total } = await userRepository.getPaginatedUsers(
+      page,
+      limit,
+      search,
+      filter,
+    );
+
+    return {
+      drivers: users.map((u) => this.sanitizeUser(u)),
+      total,
+    };
+  }
+
+  async adminGetDriverById(driverId: string): Promise<SafeUser> {
+    const user = await userRepository.getUserById(driverId);
+    if (!user || user.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    return this.sanitizeUser(user);
+  }
+
+  async adminCreateDriver(driverData: any): Promise<SafeUser> {
+    const existingEmail = await userRepository.getUserByEmail(driverData.email);
+    if (existingEmail) {
+      throw new HttpException(400, "Email already exists");
+    }
+
+    const hashedPassword = await bcryptjs.hash(driverData.password, 10);
+
+    const driver = await userRepository.createUser({
+      fullName: driverData.fullName,
+      email: driverData.email,
+      password: hashedPassword,
+      phoneNumber: driverData.phoneNumber || "",
+      role: "driver",
+      status: "active",
+      licenseNumber: driverData.licenseNumber || "",
+      vehicleType: driverData.vehicleType,
+      vehicleNumber: driverData.vehicleNumber || "",
+      branch: driverData.branch || "",
+      employmentStatus: driverData.employmentStatus ?? "full-time",
+      availabilityStatus: driverData.availabilityStatus ?? "available",
+    });
+
+    return this.sanitizeUser(driver);
+  }
+
+  async adminUpdateDriver(
+    driverId: string,
+    updateData: any,
+  ): Promise<SafeUser> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+
+    if (updateData.email && updateData.email !== driver.email) {
+      const existingEmail = await userRepository.getUserByEmail(
+        updateData.email,
+      );
+      if (existingEmail) {
+        throw new HttpException(400, "Email already exists");
+      }
+    }
+
+    if (updateData.password) {
+      updateData.password = await bcryptjs.hash(updateData.password, 10);
+    }
+
+    const updated = await userRepository.update(driverId, updateData);
+    if (!updated) {
+      throw new HttpException(500, "Failed to update driver");
+    }
+    return this.sanitizeUser(updated);
+  }
+
+  async adminDeleteDriver(driverId: string): Promise<boolean> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    return userRepository.delete(driverId);
+  }
+
+  // A driver toggles their own availability from the driver console.
+  async updateAvailability(
+    driverId: string,
+    availabilityStatus: string,
+  ): Promise<SafeUser> {
+    const updated = await userRepository.update(driverId, {
+      availabilityStatus: availabilityStatus as IUser["availabilityStatus"],
+    });
+    if (!updated) {
+      throw new HttpException(404, "Driver not found");
+    }
+    return this.sanitizeUser(updated);
   }
 }
