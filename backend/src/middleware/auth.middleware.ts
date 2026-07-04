@@ -73,3 +73,27 @@ export const adminMiddleware = async (
     });
   }
 };
+
+export const driverMiddleware = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) {
+      throw new HttpException(401, "Unauthorized - Please login first");
+    }
+
+    if (req.user.role !== "driver") {
+      throw new HttpException(403, "Forbidden - Driver access required");
+    }
+
+    next();
+  } catch (error: any) {
+    return res.status(error.status || 403).json({
+      success: false,
+      message: error.message || "Forbidden",
+      status: error.status || 403,
+    });
+  }
+};
