@@ -26,6 +26,7 @@ import {
   type ShipmentStats,
   type ShipmentStatus,
 } from "@/lib/api/shipment.api";
+import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
@@ -120,11 +121,12 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<Shipment | null>(null);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [form, setForm] = useState<{
     status: ShipmentStatus;
-    assignedDriver: string;
+    assignedDriverId: string;
     paymentStatus: "paid" | "pending";
-  }>({ status: "pending", assignedDriver: "", paymentStatus: "pending" });
+  }>({ status: "pending", assignedDriverId: "", paymentStatus: "pending" });
 
   const limit = 10;
 
@@ -178,6 +180,21 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   // refresh (silent so the table doesn't flash its skeleton on every tick).
   useAutoRefresh(() => fetchData(true), { intervalMs: 10_000 });
 
+  // Load the company drivers once so the assignment dropdown can offer real
+  // driver accounts to assign a shipment to.
+  const fetchDrivers = useCallback(async () => {
+    try {
+      const res = await adminGetDrivers(token, 1, 200);
+      setDrivers(res.data);
+    } catch {
+      // Non-fatal: the dropdown just stays empty if drivers can't be loaded.
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchDrivers();
+  }, [fetchDrivers]);
+
   const handleTabChange = (idx: number) => {
     setActiveTab(idx);
     setPage(1);
@@ -187,7 +204,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     setSelected(s);
     setForm({
       status: s.status,
-      assignedDriver: s.assignedDriver ?? "",
+      assignedDriverId: s.assignedDriverId ?? "",
       paymentStatus: s.paymentStatus,
     });
     setFormError(null);
@@ -208,11 +225,13 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       setFormError(null);
       await adminUpdateShipment(token, selected.id, {
         status: form.status,
-        assignedDriver: form.assignedDriver.trim() || null,
+        // Server resolves the driver name from the id and starts the timeline.
+        assignedDriverId: form.assignedDriverId || null,
         paymentStatus: form.paymentStatus,
       });
       setIsEditOpen(false);
       fetchData(true);
+      fetchDrivers();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Failed to update shipment.");
     } finally {
@@ -646,14 +665,29 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
           <div>
             <label className="form-label" htmlFor="ship-driver">Assigned Driver</label>
-            <input
-              type="text"
+            <select
               id="ship-driver"
-              placeholder="e.g. P. Tamang (leave blank for Unassigned)"
-              value={form.assignedDriver}
-              onChange={(e) => setForm({ ...form, assignedDriver: e.target.value })}
+              value={form.assignedDriverId}
+              onChange={(e) => setForm({ ...form, assignedDriverId: e.target.value })}
               className="form-input"
-            />
+              suppressHydrationWarning
+            >
+              <option value="">Unassigned</option>
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id} disabled={d.status === "inactive"}>
+                  {d.fullName}
+                  {d.vehicleNumber ? ` · ${d.vehicleNumber}` : ""}
+                  {d.availabilityStatus && d.availabilityStatus !== "available"
+                    ? ` (${d.availabilityStatus.replace("-", " ")})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            {drivers.length === 0 && (
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                No drivers yet — add them in Fleet Management.
+              </p>
+            )}
           </div>
 
           <div>

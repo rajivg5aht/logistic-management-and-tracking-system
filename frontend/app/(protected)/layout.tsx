@@ -34,15 +34,18 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
       <Sidebar />
 
       {/* Main Content */}
-      <div 
+      <div
         className="transition-all duration-280 ease-in-out"
-        style={{ 
+        style={{
           marginLeft: isCollapsed ? '76px' : '260px',
           transitionDuration: '280ms'
         }}
       >
-        {/* Page Content */}
-        <main className="mx-auto max-w-[1180px] px-6 py-8 lg:px-8">
+        {/* Page Content.
+            Full width with responsive side padding (matching the admin layout)
+            so content fills the space evenly and the left/right gaps stay
+            consistent whether the sidebar is expanded or collapsed. */}
+        <main className="px-8 py-8 lg:px-12 xl:px-16">
           <PageBreadcrumb />
           {children}
         </main>

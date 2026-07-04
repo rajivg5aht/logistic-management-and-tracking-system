@@ -7,6 +7,21 @@ export type ShipmentStatus = "pending" | "in-transit" | "delivered" | "cancelled
 export type PaymentMethod = "esewa" | "khalti" | "cod";
 export type ServiceType = "standard" | "express" | "overnight";
 
+export type DriverStage =
+  | "assigned"
+  | "picked-up"
+  | "in-transit"
+  | "out-for-delivery"
+  | "delivered"
+  | "failed"
+  | "returned";
+
+export type TimelineEntry = {
+  stage: DriverStage;
+  at: string;
+  note?: string;
+};
+
 export type ShipmentAddress = {
   fullName?: string;
   recipientName?: string;
@@ -39,6 +54,9 @@ export type Shipment = {
   amount: number;
   status: ShipmentStatus;
   assignedDriver: string | null;
+  assignedDriverId: string | null;
+  driverStage: DriverStage | null;
+  timeline: TimelineEntry[];
   createdAt: string;
   updatedAt: string;
 };
@@ -91,6 +109,7 @@ export type CustomerUpdateShipmentPayload = {
 export type AdminUpdateShipmentPayload = {
   status?: ShipmentStatus;
   assignedDriver?: string | null;
+  assignedDriverId?: string | null;
   paymentStatus?: "paid" | "pending";
 };
 

@@ -1,0 +1,829 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  Loader2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Ban,
+  UserCheck,
+  Truck,
+  Phone,
+  MapPin,
+} from "lucide-react";
+import {
+  adminGetDrivers,
+  adminCreateDriver,
+  adminUpdateDriver,
+  adminDeleteDriver,
+  VEHICLE_TYPES,
+  EMPLOYMENT_STATUSES,
+  AVAILABILITY_STATUSES,
+  type Driver,
+  type DriverMeta,
+  type AvailabilityStatus,
+  type CreateDriverPayload,
+  type UpdateDriverPayload,
+} from "@/lib/api/driver.api";
+import Modal from "@/components/ui/Modal";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+
+const AVATAR_STYLES = [
+  "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+  "bg-[var(--teal-tint)] text-[var(--teal)]",
+  "bg-[rgba(108,99,255,0.12)] text-[#6C63FF]",
+  "bg-[rgba(95,127,53,0.12)] text-[var(--success)]",
+];
+
+const AVAILABILITY_CONFIG: Record<AvailabilityStatus, { label: string; cls: string }> = {
+  available: { label: "Available", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
+  assigned: { label: "Assigned", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
+  "on-delivery": { label: "On Delivery", cls: "bg-[#FDECD8] text-[#C77718]" },
+  "off-duty": { label: "Off Duty", cls: "bg-[#E9ECF1] text-[#5A6B82]" },
+  inactive: { label: "Inactive", cls: "bg-[#FBE4E1] text-[#D0453A]" },
+};
+
+const FILTERS: { id: AvailabilityStatus | "all"; label: string }[] = [
+  { id: "all", label: "All Drivers" },
+  { id: "available", label: "Available" },
+  { id: "on-delivery", label: "On Delivery" },
+  { id: "off-duty", label: "Off Duty" },
+];
+
+const EMPTY_FORM = {
+  fullName: "",
+  email: "",
+  password: "",
+  phoneNumber: "",
+  licenseNumber: "",
+  vehicleType: "bike" as (typeof VEHICLE_TYPES)[number],
+  vehicleNumber: "",
+  branch: "",
+  employmentStatus: "full-time" as (typeof EMPLOYMENT_STATUSES)[number],
+  availabilityStatus: "available" as AvailabilityStatus,
+  status: "active" as "active" | "inactive",
+};
+
+function getInitials(name: string) {
+  if (!name) return "?";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function getPageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "...")[] = [1];
+  if (current > 3) pages.push("...");
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push("...");
+  pages.push(total);
+  return pages;
+}
+
+export default function AdminDriverManagement({ token }: { token: string }) {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [meta, setMeta] = useState<DriverMeta | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<AvailabilityStatus | "all">("all");
+
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const [selected, setSelected] = useState<Driver | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  const limit = 10;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const fetchDrivers = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
+        const availability = filter === "all" ? "" : filter;
+        const res = await adminGetDrivers(
+          token,
+          page,
+          limit,
+          searchQuery,
+          availability,
+        );
+        setDrivers(res.data);
+        setMeta(res.meta);
+      } catch (err: any) {
+        if (!silent) {
+          setError(err.message || "Failed to load drivers.");
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token, page, searchQuery, filter],
+  );
+
+  useEffect(() => {
+    fetchDrivers();
+  }, [fetchDrivers]);
+
+  // Reflect assignment / availability changes made elsewhere without a refresh.
+  useAutoRefresh(() => fetchDrivers(true));
+
+  const handleCreateOpen = () => {
+    setForm({ ...EMPTY_FORM });
+    setFormError(null);
+    setIsCreateOpen(true);
+  };
+
+  const handleEditOpen = (driver: Driver) => {
+    setSelected(driver);
+    setForm({
+      fullName: driver.fullName,
+      email: driver.email,
+      password: "",
+      phoneNumber: driver.phoneNumber,
+      licenseNumber: driver.licenseNumber || "",
+      vehicleType: driver.vehicleType || "bike",
+      vehicleNumber: driver.vehicleNumber || "",
+      branch: driver.branch || "",
+      employmentStatus: driver.employmentStatus || "full-time",
+      availabilityStatus: driver.availabilityStatus || "available",
+      status: driver.status || "active",
+    });
+    setFormError(null);
+    setIsEditOpen(true);
+  };
+
+  const handleDeleteOpen = (driver: Driver) => {
+    setSelected(driver);
+    setFormError(null);
+    setIsDeleteOpen(true);
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!form.fullName || !form.email || !form.password || !form.phoneNumber) {
+      setFormError("Name, email, phone and password are required.");
+      return;
+    }
+    if (form.password.length < 6) {
+      setFormError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const payload: CreateDriverPayload = {
+        fullName: form.fullName,
+        email: form.email,
+        password: form.password,
+        phoneNumber: form.phoneNumber,
+        licenseNumber: form.licenseNumber,
+        vehicleType: form.vehicleType,
+        vehicleNumber: form.vehicleNumber,
+        branch: form.branch,
+        employmentStatus: form.employmentStatus,
+        availabilityStatus: form.availabilityStatus,
+      };
+      await adminCreateDriver(token, payload);
+      setIsCreateOpen(false);
+      fetchDrivers();
+    } catch (err: any) {
+      setFormError(err.message || "Failed to create driver.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected) return;
+    setFormError(null);
+
+    if (!form.fullName || !form.email) {
+      setFormError("Name and email are required.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const payload: UpdateDriverPayload = {
+        fullName: form.fullName,
+        email: form.email,
+        phoneNumber: form.phoneNumber,
+        licenseNumber: form.licenseNumber,
+        vehicleType: form.vehicleType,
+        vehicleNumber: form.vehicleNumber,
+        branch: form.branch,
+        employmentStatus: form.employmentStatus,
+        availabilityStatus: form.availabilityStatus,
+        status: form.status,
+      };
+      if (form.password) {
+        if (form.password.length < 6) {
+          setFormError("Password must be at least 6 characters long.");
+          setActionLoading(false);
+          return;
+        }
+        payload.password = form.password;
+      }
+      await adminUpdateDriver(token, selected.id, payload);
+      setIsEditOpen(false);
+      fetchDrivers();
+    } catch (err: any) {
+      setFormError(err.message || "Failed to update driver.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (!selected) return;
+    try {
+      setActionLoading(true);
+      await adminDeleteDriver(token, selected.id);
+      setIsDeleteOpen(false);
+      if (drivers.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        fetchDrivers();
+      }
+    } catch (err: any) {
+      setFormError(err.message || "Failed to delete driver.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (driver: Driver) => {
+    const nextStatus = driver.status === "inactive" ? "active" : "inactive";
+    try {
+      setActionLoading(true);
+      setError(null);
+      await adminUpdateDriver(token, driver.id, {
+        status: nextStatus,
+        // Reflect deactivation in availability too.
+        availabilityStatus: nextStatus === "inactive" ? "inactive" : "available",
+      });
+      fetchDrivers();
+    } catch (err: any) {
+      setError(err.message || "Failed to update driver status.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (meta && newPage >= 1 && newPage <= meta.totalPages) {
+      setPage(newPage);
+    }
+  };
+
+  const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
+  const rangeEnd = meta ? (meta.page - 1) * meta.limit + drivers.length : 0;
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Header */}
+      <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
+            Driver Management
+          </h1>
+          <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
+            Add and manage company drivers. Drivers are internal staff — created here, not via public signup.
+          </p>
+        </div>
+        <div className="relative sm:w-72 lg:w-80">
+          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
+            <Search size={18} />
+          </span>
+          <input
+            type="text"
+            placeholder="Search name, email, phone, vehicle…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="form-input w-full rounded-full pl-11"
+            suppressHydrationWarning
+          />
+        </div>
+      </div>
+
+      {/* Filter chips + Add */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex flex-wrap items-center gap-1 self-start rounded-xl bg-[var(--surface-muted)] p-1">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                setFilter(f.id);
+                setPage(1);
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer ${
+                filter === f.id
+                  ? "bg-[var(--surface)] text-[var(--teal)] shadow-[var(--shadow-sm)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCreateOpen}
+          className="btn-primary flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          suppressHydrationWarning
+        >
+          <Plus size={18} />
+          Add Driver
+        </button>
+      </div>
+
+      {/* Count summary */}
+      <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+            <Truck size={22} className="stroke-[2.2]" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">
+              {filter === "all" ? "Total Drivers" : FILTERS.find((f) => f.id === filter)?.label}
+            </p>
+            <p className="text-3xl font-black tracking-tight text-[var(--text)]">
+              {meta ? meta.total.toLocaleString() : "—"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <h3 className="text-sm font-extrabold text-[var(--text)]">Company Drivers</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[52rem] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
+                {["Driver", "Contact", "Vehicle", "Branch", "Availability", "Account", "Actions"].map((h) => (
+                  <th
+                    key={h}
+                    className={`px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] ${
+                      h === "Actions" ? "text-right" : ""
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-[var(--border-light)]">
+                    {Array.from({ length: 7 }).map((__, c) => (
+                      <td key={c} className="px-5 py-4">
+                        <div className="h-4 max-w-28 rounded bg-[var(--border)]" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : drivers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm font-medium text-[var(--text-muted)]">
+                    No drivers found. Click “Add Driver” to create one.
+                  </td>
+                </tr>
+              ) : (
+                drivers.map((driver, index) => {
+                  const availability =
+                    AVAILABILITY_CONFIG[driver.availabilityStatus] ??
+                    AVAILABILITY_CONFIG.available;
+                  return (
+                    <tr
+                      key={driver.id}
+                      className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
+                          >
+                            {getInitials(driver.fullName)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[var(--text)]">{driver.fullName}</p>
+                            <p className="truncate text-xs text-[var(--text-muted)]">{driver.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="flex items-center gap-1.5 text-[var(--text-soft)]">
+                          <Phone size={13} className="text-[var(--text-muted)]" />
+                          {driver.phoneNumber || "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {driver.vehicleType || driver.vehicleNumber ? (
+                          <div>
+                            <p className="font-semibold capitalize text-[var(--text)]">
+                              {driver.vehicleType || "—"}
+                            </p>
+                            <p className="text-xs text-[var(--text-muted)]">{driver.vehicleNumber || "—"}</p>
+                          </div>
+                        ) : (
+                          <span className="text-[var(--text-muted)]">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="flex items-center gap-1.5 text-[var(--text-soft)]">
+                          <MapPin size={13} className="text-[var(--text-muted)]" />
+                          {driver.branch || "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${availability.cls}`}>
+                          {availability.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                            driver.status === "inactive"
+                              ? "bg-[#FBE4E1] text-[#D0453A]"
+                              : "bg-[#DEF3E6] text-[#1E9E4C]"
+                          }`}
+                        >
+                          {driver.status === "inactive" ? "Inactive" : "Active"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleEditOpen(driver)}
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--teal)] cursor-pointer"
+                            aria-label="Edit driver"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(driver)}
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
+                            aria-label={driver.status === "inactive" ? "Activate driver" : "Deactivate driver"}
+                          >
+                            {driver.status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOpen(driver)}
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                            aria-label="Delete driver"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {meta && meta.totalPages > 1 && (
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-4 sm:flex-row">
+            <p className="text-xs font-medium text-[var(--text-muted)]">
+              Showing {rangeStart}–{rangeEnd} of {meta.total}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page <= 1}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {getPageNumbers(page, meta.totalPages).map((p, i) =>
+                p === "..." ? (
+                  <span key={`e${i}`} className="px-2 text-[var(--text-muted)]">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handlePageChange(p)}
+                    className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-bold transition-colors cursor-pointer ${
+                      p === page
+                        ? "bg-[var(--teal)] text-white"
+                        : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+              <button
+                type="button"
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= meta.totalPages}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Create / Edit modal */}
+      <Modal
+        isOpen={isCreateOpen || isEditOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setIsEditOpen(false);
+        }}
+        title={isEditOpen ? "Edit Driver" : "Add Driver"}
+      >
+        <DriverForm
+          form={form}
+          setForm={setForm}
+          isEdit={isEditOpen}
+          formError={formError}
+          actionLoading={actionLoading}
+          onSubmit={isEditOpen ? handleEditSubmit : handleCreateSubmit}
+          onCancel={() => {
+            setIsCreateOpen(false);
+            setIsEditOpen(false);
+          }}
+        />
+      </Modal>
+
+      {/* Delete confirm */}
+      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete Driver">
+        <div className="space-y-5">
+          <p className="text-sm text-[var(--text-soft)]">
+            Are you sure you want to permanently delete{" "}
+            <span className="font-bold text-[var(--text)]">{selected?.fullName}</span>? This cannot be undone.
+          </p>
+          {formError && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-[#D0453A]">
+              <AlertCircle size={15} /> {formError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(false)}
+              className="btn-secondary cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteSubmit}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#B93A30] disabled:opacity-60 cursor-pointer"
+            >
+              {actionLoading && <Loader2 size={15} className="animate-spin" />}
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+/* ── Shared create/edit form ─────────────────────────────────────────────── */
+function DriverForm({
+  form,
+  setForm,
+  isEdit,
+  formError,
+  actionLoading,
+  onSubmit,
+  onCancel,
+}: {
+  form: typeof EMPTY_FORM;
+  setForm: React.Dispatch<React.SetStateAction<typeof EMPTY_FORM>>;
+  isEdit: boolean;
+  formError: string | null;
+  actionLoading: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
+}) {
+  const set = (patch: Partial<typeof EMPTY_FORM>) => setForm((prev) => ({ ...prev, ...patch }));
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label">Full Name *</label>
+          <input
+            className="form-input"
+            value={form.fullName}
+            onChange={(e) => set({ fullName: e.target.value })}
+            placeholder="e.g. Ram Bahadur"
+            suppressHydrationWarning
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label">Phone Number *</label>
+          <input
+            className="form-input"
+            value={form.phoneNumber}
+            onChange={(e) => set({ phoneNumber: e.target.value })}
+            placeholder="98XXXXXXXX"
+            suppressHydrationWarning
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="form-label">Email *</label>
+        <input
+          type="email"
+          className="form-input"
+          value={form.email}
+          onChange={(e) => set({ email: e.target.value })}
+          placeholder="driver@cargonep.com"
+          suppressHydrationWarning
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="form-label">
+          {isEdit ? "New Password (leave blank to keep)" : "Password *"}
+        </label>
+        <input
+          type="password"
+          className="form-input"
+          value={form.password}
+          onChange={(e) => set({ password: e.target.value })}
+          placeholder="Minimum 6 characters"
+          suppressHydrationWarning
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label">License Number</label>
+          <input
+            className="form-input"
+            value={form.licenseNumber}
+            onChange={(e) => set({ licenseNumber: e.target.value })}
+            placeholder="e.g. 03-06-00123456"
+            suppressHydrationWarning
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label">Assigned Branch / Center</label>
+          <input
+            className="form-input"
+            value={form.branch}
+            onChange={(e) => set({ branch: e.target.value })}
+            placeholder="e.g. Kathmandu Hub"
+            suppressHydrationWarning
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label">Vehicle Type</label>
+          <select
+            className="form-input capitalize"
+            value={form.vehicleType}
+            onChange={(e) => set({ vehicleType: e.target.value as typeof form.vehicleType })}
+            suppressHydrationWarning
+          >
+            {VEHICLE_TYPES.map((v) => (
+              <option key={v} value={v} className="capitalize">
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label">Vehicle Number</label>
+          <input
+            className="form-input"
+            value={form.vehicleNumber}
+            onChange={(e) => set({ vehicleNumber: e.target.value })}
+            placeholder="e.g. BA 12 PA 3456"
+            suppressHydrationWarning
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="form-label">Employment</label>
+          <select
+            className="form-input capitalize"
+            value={form.employmentStatus}
+            onChange={(e) => set({ employmentStatus: e.target.value as typeof form.employmentStatus })}
+            suppressHydrationWarning
+          >
+            {EMPLOYMENT_STATUSES.map((v) => (
+              <option key={v} value={v} className="capitalize">
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="form-label">Availability</label>
+          <select
+            className="form-input capitalize"
+            value={form.availabilityStatus}
+            onChange={(e) => set({ availabilityStatus: e.target.value as AvailabilityStatus })}
+            suppressHydrationWarning
+          >
+            {AVAILABILITY_STATUSES.map((v) => (
+              <option key={v} value={v} className="capitalize">
+                {AVAILABILITY_CONFIG[v].label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {isEdit && (
+        <div className="space-y-1.5">
+          <label className="form-label">Account Status</label>
+          <select
+            className="form-input"
+            value={form.status}
+            onChange={(e) => set({ status: e.target.value as "active" | "inactive" })}
+            suppressHydrationWarning
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      )}
+
+      {formError && (
+        <p className="flex items-center gap-2 text-sm font-semibold text-[#D0453A]">
+          <AlertCircle size={15} /> {formError}
+        </p>
+      )}
+
+      <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+        <button type="button" onClick={onCancel} className="btn-secondary cursor-pointer">
+          Cancel
+        </button>
+        <button type="submit" disabled={actionLoading} className="btn-primary flex items-center gap-1.5 cursor-pointer">
+          {actionLoading && <Loader2 size={15} className="animate-spin" />}
+          {isEdit ? "Save Changes" : "Create Driver"}
+        </button>
+      </div>
+    </form>
+  );
+}
