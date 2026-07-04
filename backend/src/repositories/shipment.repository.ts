@@ -1,6 +1,12 @@
 import { ShipmentModel, IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 
+export interface DailyVolume {
+  date: string; // YYYY-MM-DD in Nepal local time
+  label: string; // Weekday abbreviation, e.g. "Mon"
+  count: number; // Shipments created that day
+}
+
 export interface ShipmentStats {
   total: number;
   pending: number;
@@ -9,6 +15,7 @@ export interface ShipmentStats {
   cancelled: number;
   deliveredToday: number;
   pendingCodAmount: number;
+  dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
 }
 
 export interface IShipmentRepository {
@@ -99,6 +106,10 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       ) - nepalOffsetMs,
     );
     const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+    // Beginning of the 7-day window (today plus the six preceding days).
+    const startOfWindow = new Date(
+      startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000,
+    );
 
     const [
       total,
@@ -108,6 +119,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       cancelled,
       deliveredToday,
       pendingCodTotals,
+      dailyCounts,
     ] = await Promise.all([
       ShipmentModel.countDocuments({}),
       ShipmentModel.countDocuments({ status: "pending" }),
@@ -134,7 +146,44 @@ export class ShipmentMongoRepository implements IShipmentRepository {
         },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
+      // Shipments created per Nepal-local day over the 7-day window.
+      ShipmentModel.aggregate<{ _id: string; count: number }>([
+        { $match: { createdAt: { $gte: startOfWindow, $lt: startOfTomorrow } } },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+                timezone: "+05:45",
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
+
+    // Fill every day in the window, defaulting to 0 where no shipments exist.
+    const countsByDate = new Map(dailyCounts.map((d) => [d._id, d.count]));
+    const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dailyVolume: DailyVolume[] = [];
+    for (let offset = 6; offset >= 0; offset--) {
+      // nowInNepal's UTC fields represent Nepal local time, so shifting by whole
+      // days and reading the UTC getters yields the correct Nepal calendar day.
+      const dayInNepal = new Date(
+        nowInNepal.getTime() - offset * 24 * 60 * 60 * 1000,
+      );
+      const year = dayInNepal.getUTCFullYear();
+      const month = String(dayInNepal.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dayInNepal.getUTCDate()).padStart(2, "0");
+      const key = `${year}-${month}-${day}`;
+      dailyVolume.push({
+        date: key,
+        label: WEEKDAYS[dayInNepal.getUTCDay()],
+        count: countsByDate.get(key) ?? 0,
+      });
+    }
 
     return {
       total,
@@ -144,6 +193,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       cancelled,
       deliveredToday,
       pendingCodAmount: pendingCodTotals[0]?.total ?? 0,
+      dailyVolume,
     };
   }
 }
