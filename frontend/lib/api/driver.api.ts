@@ -72,6 +72,19 @@ export type DriverStats = {
   codToCollect: number;
 };
 
+export type DriverVehicle = {
+  id: string;
+  registrationNumber: string;
+  type: VehicleType;
+  make: string;
+  model: string;
+  capacityKg: number | null;
+  status: string;
+};
+
+// The signed-in driver's own profile + their assigned vehicle (GET /driver/me).
+export type DriverMe = Driver & { vehicle: DriverVehicle | null };
+
 async function authFetch(
   endpoint: string,
   token: string,
@@ -149,7 +162,12 @@ export async function adminDeleteDriver(
   await authFetch(`/api/v1/admin/drivers/${id}`, token, { method: "DELETE" });
 }
 
-// ── Driver console (consumed by the driver-facing pages in Phase 2) ──────────
+// ── Driver console ───────────────────────────────────────────────────────────
+export async function driverGetMe(token: string): Promise<DriverMe> {
+  const payload = await authFetch(`/api/v1/driver/me`, token, { method: "GET" });
+  return payload.data;
+}
+
 export async function driverGetStats(token: string): Promise<DriverStats> {
   const payload = await authFetch(`/api/v1/driver/stats`, token, {
     method: "GET",
@@ -194,7 +212,7 @@ export async function driverUpdateStage(
 
 export async function driverUpdateAvailability(
   token: string,
-  availabilityStatus: AvailabilityStatus,
+  availabilityStatus: "available" | "off-duty",
 ): Promise<Driver> {
   const payload = await authFetch(`/api/v1/driver/availability`, token, {
     method: "PATCH",
