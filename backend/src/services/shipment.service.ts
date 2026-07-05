@@ -9,8 +9,9 @@ import {
   CustomerUpdateShipmentDTO,
 } from "../dtos/shipment.dto";
 import { DriverStageUpdateDTO } from "../dtos/driver.dto";
-import { IShipment } from "../models/shipment.model";
+import { IShipment, ShipmentModel } from "../models/shipment.model";
 import { UserModel } from "../models/user.model";
+import { VehicleModel } from "../models/vehicle.model";
 import { ShipmentStatus, DriverStage } from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
 
@@ -33,6 +34,8 @@ export type SafeShipment = {
   status: IShipment["status"];
   assignedDriver: string | null;
   assignedDriverId: string | null;
+  assignedVehicle: string | null;
+  assignedVehicleId: string | null;
   driverStage: DriverStage | null;
   timeline: IShipment["timeline"];
   createdAt: Date;
@@ -82,6 +85,8 @@ export class ShipmentService {
       status: shipment.status,
       assignedDriver: shipment.assignedDriver ?? null,
       assignedDriverId: shipment.assignedDriverId?.toString() ?? null,
+      assignedVehicle: shipment.assignedVehicle ?? null,
+      assignedVehicleId: shipment.assignedVehicleId?.toString() ?? null,
       driverStage: (shipment.driverStage as DriverStage) ?? null,
       timeline: shipment.timeline ?? [],
       createdAt: shipment.createdAt,
@@ -116,6 +121,7 @@ export class ShipmentService {
       paymentStatus,
       status: "pending",
       assignedDriver: null,
+      assignedVehicle: null,
     });
 
     return this.sanitize(shipment);
@@ -192,6 +198,11 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to cancel shipment");
     }
+    if (shipment.assignedDriverId) {
+      await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
+        availabilityStatus: "available",
+      });
+    }
     return this.sanitize(updated);
   }
 
@@ -266,9 +277,56 @@ export class ShipmentService {
         if (!driver || driver.role !== "driver") {
           throw new HttpException(400, "Selected driver was not found");
         }
+        if (driver.status !== "active") {
+          throw new HttpException(400, "Inactive drivers cannot receive shipments");
+        }
+        if (!driver.phoneNumber || !driver.licenseNumber) {
+          throw new HttpException(
+            400,
+            "Complete the driver's phone and license details before assignment",
+          );
+        }
+        if (previousDriverId !== assignedDriverId) {
+          const activeAssignment = await ShipmentModel.findOne({
+            _id: { $ne: shipment._id },
+            assignedDriverId: driver._id,
+            status: { $nin: ["delivered", "cancelled"] },
+          });
+          if (activeAssignment) {
+            throw new HttpException(
+              400,
+              "This driver already has an active shipment",
+            );
+          }
+          if (driver.availabilityStatus !== "available") {
+            throw new HttpException(
+              400,
+              "Only available drivers can receive shipments",
+            );
+          }
+        }
 
         updateData.assignedDriverId = driver._id;
         updateData.assignedDriver = driver.fullName;
+
+        if (driver.assignedVehicleId) {
+          const vehicle = await VehicleModel.findById(driver.assignedVehicleId);
+          if (
+            !vehicle ||
+            vehicle.assignedDriverId?.toString() !== driver._id.toString() ||
+            vehicle.status !== "assigned"
+          ) {
+            throw new HttpException(
+              400,
+              "The driver's vehicle assignment is invalid",
+            );
+          }
+          updateData.assignedVehicleId = vehicle._id;
+          updateData.assignedVehicle = vehicle.registrationNumber;
+        } else {
+          updateData.assignedVehicleId = null;
+          updateData.assignedVehicle = null;
+        }
 
         // Only (re)initialise the stage when the driver actually changes.
         if (previousDriverId !== assignedDriverId) {
@@ -280,11 +338,18 @@ export class ShipmentService {
           await UserModel.findByIdAndUpdate(driver._id, {
             availabilityStatus: "assigned",
           });
+          if (previousDriverId) {
+            await UserModel.findByIdAndUpdate(previousDriverId, {
+              availabilityStatus: "available",
+            });
+          }
         }
       } else {
         // Clearing the assignment.
         updateData.assignedDriverId = null;
         updateData.assignedDriver = null;
+        updateData.assignedVehicleId = null;
+        updateData.assignedVehicle = null;
         updateData.driverStage = null;
         if (previousDriverId) {
           await UserModel.findByIdAndUpdate(previousDriverId, {
@@ -292,6 +357,16 @@ export class ShipmentService {
           });
         }
       }
+    }
+
+    if (
+      data.status &&
+      ["delivered", "cancelled"].includes(data.status) &&
+      shipment.assignedDriverId
+    ) {
+      await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
+        availabilityStatus: "available",
+      });
     }
 
     const updated = await shipmentRepository.update(id, updateData);
@@ -306,6 +381,12 @@ export class ShipmentService {
     const shipment = await shipmentRepository.getById(id);
     if (!shipment) {
       throw new HttpException(404, "Shipment not found");
+    }
+    if (shipment.status !== "cancelled") {
+      throw new HttpException(
+        409,
+        "Only cancelled shipments can be deleted",
+      );
     }
     return shipmentRepository.delete(id);
   }

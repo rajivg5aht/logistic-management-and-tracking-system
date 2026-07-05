@@ -16,7 +16,11 @@ class AdminController {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
             const search = req.query.search || "";
-            const { users, total } = await userService.adminGetUsers(page, limit, search);
+            const requestedRole = req.query.role;
+            const role = requestedRole && ["admin", "customer", "driver"].includes(requestedRole)
+                ? requestedRole
+                : undefined;
+            const { users, total } = await userService.adminGetUsers(page, limit, search, role);
             const totalPages = Math.ceil(total / limit);
             return apihelper_util_1.ApiResponseHelper.success(res, users, "Users retrieved successfully", 200, {
                 page,
@@ -49,13 +53,12 @@ class AdminController {
             if (body.name && !body.fullName) {
                 body.fullName = body.name;
             }
+            if (body.role && body.role !== "customer") {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Drivers must be created in Driver Management", 400);
+            }
             const parsedData = admin_dto_1.AdminCreateUserDTO.safeParse(body);
             if (!parsedData.success) {
                 return apihelper_util_1.ApiResponseHelper.error(res, zod_1.z.prettifyError(parsedData.error), 400);
-            }
-            // Security: Administrators cannot create another admin account
-            if (parsedData.data.role === "admin") {
-                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot create another administrator account", 403);
             }
             const user = await userService.adminCreateUser(parsedData.data);
             return apihelper_util_1.ApiResponseHelper.success(res, user, "User created successfully", 201);
@@ -80,13 +83,12 @@ class AdminController {
             if (body.name && !body.fullName) {
                 body.fullName = body.name;
             }
+            if (body.role !== undefined) {
+                return apihelper_util_1.ApiResponseHelper.error(res, "Roles cannot be changed in User Management", 400);
+            }
             const parsedData = admin_dto_1.AdminUpdateUserDTO.safeParse(body);
             if (!parsedData.success) {
                 return apihelper_util_1.ApiResponseHelper.error(res, zod_1.z.prettifyError(parsedData.error), 400);
-            }
-            // Security: Administrators cannot promote a user to admin role
-            if (parsedData.data.role === "admin") {
-                return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot promote users to the administrator role", 403);
             }
             const updatedUser = await userService.adminUpdateUser(id, parsedData.data);
             return apihelper_util_1.ApiResponseHelper.success(res, updatedUser, "User updated successfully");
@@ -107,7 +109,7 @@ class AdminController {
                 return apihelper_util_1.ApiResponseHelper.error(res, "Forbidden - Administrators cannot delete their own accounts", 403);
             }
             await userService.adminDeleteUser(id);
-            return apihelper_util_1.ApiResponseHelper.success(res, null, "User deleted successfully");
+            return apihelper_util_1.ApiResponseHelper.success(res, null, "User deactivated successfully");
         }
         catch (error) {
             return apihelper_util_1.ApiResponseHelper.error(res, error.message || "Internal Server Error", error.status || 500);

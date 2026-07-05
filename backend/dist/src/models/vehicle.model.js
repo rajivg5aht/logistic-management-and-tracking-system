@@ -33,67 +33,60 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserModel = void 0;
+exports.VehicleModel = exports.VEHICLE_STATUSES = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const user_type_1 = require("../types/user.type");
-const UserMongoSchema = new mongoose_1.Schema({
-    fullName: {
-        type: String,
+exports.VEHICLE_STATUSES = [
+    "available",
+    "assigned",
+    "maintenance",
+    "inactive",
+];
+const AssignmentSchema = new mongoose_1.Schema({
+    driverId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
         required: true,
-        trim: true,
     },
-    email: {
+    assignedAt: { type: Date, required: true },
+    unassignedAt: { type: Date, default: null },
+}, { _id: false });
+const VehicleSchema = new mongoose_1.Schema({
+    registrationNumber: {
         type: String,
         required: true,
         unique: true,
-        lowercase: true,
+        uppercase: true,
         trim: true,
     },
-    phoneNumber: {
+    type: {
         type: String,
-        required: false,
-        default: "",
-        trim: true,
-    },
-    password: {
-        type: String,
+        enum: user_type_1.VEHICLE_TYPES,
         required: true,
     },
-    profileImage: {
-        type: String,
-        default: null,
-    },
-    role: {
-        type: String,
-        enum: ["admin", "customer", "driver"],
-        default: "customer",
-    },
+    make: { type: String, trim: true, default: "" },
+    vehicleModel: { type: String, trim: true, default: "" },
+    year: { type: Number },
+    capacityKg: { type: Number },
+    branch: { type: String, trim: true, default: "" },
     status: {
         type: String,
-        enum: ["active", "inactive"],
-        default: "active",
-    },
-    // ── Driver profile (only populated for role: "driver") ──
-    licenseNumber: { type: String, trim: true, default: "" },
-    vehicleType: { type: String, enum: user_type_1.VEHICLE_TYPES },
-    vehicleNumber: { type: String, trim: true, default: "" },
-    branch: { type: String, trim: true, default: "" },
-    employmentStatus: {
-        type: String,
-        enum: user_type_1.EMPLOYMENT_STATUSES,
-        default: "full-time",
-    },
-    availabilityStatus: {
-        type: String,
-        enum: user_type_1.AVAILABILITY_STATUSES,
+        enum: exports.VEHICLE_STATUSES,
         default: "available",
     },
-    assignedVehicleId: {
+    insuranceExpiry: { type: Date, default: null },
+    registrationExpiry: { type: Date, default: null },
+    lastServiceAt: { type: Date, default: null },
+    nextServiceAt: { type: Date, default: null },
+    odometerKm: { type: Number, min: 0, default: 0 },
+    assignedDriverId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: "Vehicle",
+        ref: "User",
         default: null,
     },
-}, {
-    timestamps: true,
-});
-exports.UserModel = mongoose_1.default.model("User", UserMongoSchema);
+    assignmentHistory: {
+        type: [AssignmentSchema],
+        default: [],
+    },
+}, { timestamps: true });
+exports.VehicleModel = mongoose_1.default.model("Vehicle", VehicleSchema);

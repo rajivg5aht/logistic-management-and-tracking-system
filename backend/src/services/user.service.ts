@@ -1,10 +1,12 @@
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
-import { IUser } from "../models/user.model";
+import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
+import { ShipmentModel } from "../models/shipment.model";
+import { VehicleModel } from "../models/vehicle.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -24,6 +26,7 @@ export type SafeUser = {
   branch?: string;
   employmentStatus?: IUser["employmentStatus"];
   availabilityStatus?: IUser["availabilityStatus"];
+  assignedVehicleId?: string | null;
 };
 
 export class UserService {
@@ -43,6 +46,7 @@ export class UserService {
       branch: user.branch || "",
       employmentStatus: user.employmentStatus,
       availabilityStatus: user.availabilityStatus,
+      assignedVehicleId: user.assignedVehicleId?.toString() ?? null,
     };
   }
 
@@ -104,6 +108,10 @@ export class UserService {
 
     if (!user) {
       throw new HttpException(401, "Invalid email or password");
+    }
+
+    if (user.status === "inactive") {
+      throw new HttpException(403, "This account is inactive");
     }
 
     const isPasswordValid = await bcryptjs.compare(
@@ -182,11 +190,13 @@ export class UserService {
     page: number,
     limit: number,
     search?: string,
+    role?: string,
   ): Promise<{ users: SafeUser[]; total: number }> {
     const { users, total } = await userRepository.getPaginatedUsers(
       page,
       limit,
       search,
+      role ? { role } : undefined,
     );
 
     return {
@@ -196,6 +206,13 @@ export class UserService {
   }
 
   async adminCreateUser(userData: any): Promise<SafeUser> {
+    if (userData.role && userData.role !== "customer") {
+      throw new HttpException(
+        400,
+        "Drivers must be created in Driver Management",
+      );
+    }
+
     const existingEmail = await userRepository.getUserByEmail(userData.email);
     if (existingEmail) {
       throw new HttpException(400, "Email already exists");
@@ -208,7 +225,7 @@ export class UserService {
       email: userData.email,
       password: hashedPassword,
       phoneNumber: userData.phoneNumber || "",
-      role: userData.role ?? "user",
+      role: "customer",
       status: userData.status ?? "active",
     });
 
@@ -219,6 +236,17 @@ export class UserService {
     const user = await userRepository.getUserById(userId);
     if (!user) {
       throw new HttpException(404, "User not found");
+    }
+
+    if (updateData.role !== undefined) {
+      throw new HttpException(400, "Roles cannot be changed in User Management");
+    }
+
+    if (user.role === "driver") {
+      throw new HttpException(
+        400,
+        "Driver accounts must be edited in Driver Management",
+      );
     }
 
     if (updateData.email && updateData.email !== user.email) {
@@ -248,7 +276,15 @@ export class UserService {
       throw new HttpException(404, "User not found");
     }
 
-    return userRepository.delete(userId);
+    if (user.role === "driver") {
+      throw new HttpException(
+        400,
+        "Driver accounts must be deactivated in Driver Management",
+      );
+    }
+
+    const updated = await userRepository.update(userId, { status: "inactive" });
+    return !!updated;
   }
 
   // ── Driver management (admin-controlled internal staff) ────────────────────
@@ -290,6 +326,16 @@ export class UserService {
       throw new HttpException(400, "Email already exists");
     }
 
+    if (driverData.licenseNumber) {
+      const existingLicense = await UserModel.findOne({
+        role: "driver",
+        licenseNumber: driverData.licenseNumber,
+      });
+      if (existingLicense) {
+        throw new HttpException(400, "Driver license already exists");
+      }
+    }
+
     const hashedPassword = await bcryptjs.hash(driverData.password, 10);
 
     const driver = await userRepository.createUser({
@@ -300,8 +346,6 @@ export class UserService {
       role: "driver",
       status: "active",
       licenseNumber: driverData.licenseNumber || "",
-      vehicleType: driverData.vehicleType,
-      vehicleNumber: driverData.vehicleNumber || "",
       branch: driverData.branch || "",
       employmentStatus: driverData.employmentStatus ?? "full-time",
       availabilityStatus: driverData.availabilityStatus ?? "available",
@@ -328,6 +372,77 @@ export class UserService {
       }
     }
 
+    if (
+      updateData.licenseNumber &&
+      updateData.licenseNumber !== driver.licenseNumber
+    ) {
+      const existingLicense = await UserModel.findOne({
+        _id: { $ne: driver._id },
+        role: "driver",
+        licenseNumber: updateData.licenseNumber,
+      });
+      if (existingLicense) {
+        throw new HttpException(400, "Driver license already exists");
+      }
+    }
+
+    if (updateData.status === "inactive") {
+      const activeShipments = await ShipmentModel.countDocuments({
+        assignedDriverId: driver._id,
+        status: { $nin: ["delivered", "cancelled"] },
+      });
+      if (activeShipments > 0) {
+        throw new HttpException(
+          400,
+          "Driver has active shipments and cannot be deactivated",
+        );
+      }
+      const assignedVehicle = await VehicleModel.findOne({
+        assignedDriverId: driver._id,
+      });
+      if (assignedVehicle) {
+        throw new HttpException(
+          400,
+          "Unassign the driver's vehicle before deactivation",
+        );
+      }
+      updateData.availabilityStatus = "inactive";
+    } else if (
+      updateData.status === "active" &&
+      driver.status === "inactive" &&
+      (!updateData.availabilityStatus ||
+        updateData.availabilityStatus === "inactive")
+    ) {
+      updateData.availabilityStatus = "available";
+    }
+
+    if (
+      updateData.status !== "inactive" &&
+      updateData.availabilityStatus &&
+      updateData.availabilityStatus !== driver.availabilityStatus
+    ) {
+      const activeShipments = await ShipmentModel.countDocuments({
+        assignedDriverId: driver._id,
+        status: { $nin: ["delivered", "cancelled"] },
+      });
+      if (activeShipments > 0) {
+        throw new HttpException(
+          400,
+          "Availability is controlled by the active shipment",
+        );
+      }
+      if (
+        ["assigned", "on-delivery", "inactive"].includes(
+          updateData.availabilityStatus,
+        )
+      ) {
+        throw new HttpException(
+          400,
+          "This availability state is controlled by the system",
+        );
+      }
+    }
+
     if (updateData.password) {
       updateData.password = await bcryptjs.hash(updateData.password, 10);
     }
@@ -344,7 +459,30 @@ export class UserService {
     if (!driver || driver.role !== "driver") {
       throw new HttpException(404, "Driver not found");
     }
-    return userRepository.delete(driverId);
+    const activeShipments = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+      status: { $nin: ["delivered", "cancelled"] },
+    });
+    if (activeShipments > 0) {
+      throw new HttpException(
+        400,
+        "Driver has active shipments and cannot be deactivated",
+      );
+    }
+    const assignedVehicle = await VehicleModel.findOne({
+      assignedDriverId: driver._id,
+    });
+    if (assignedVehicle) {
+      throw new HttpException(
+        400,
+        "Unassign the driver's vehicle before deactivation",
+      );
+    }
+    const updated = await userRepository.update(driverId, {
+      status: "inactive",
+      availabilityStatus: "inactive",
+    });
+    return !!updated;
   }
 
   // A driver toggles their own availability from the driver console.
@@ -352,6 +490,29 @@ export class UserService {
     driverId: string,
     availabilityStatus: string,
   ): Promise<SafeUser> {
+    if (!["available", "off-duty"].includes(availabilityStatus)) {
+      throw new HttpException(
+        400,
+        "Drivers can only switch between available and off-duty",
+      );
+    }
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    if (driver.status !== "active") {
+      throw new HttpException(400, "Inactive drivers cannot change availability");
+    }
+    const activeAssignments = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+      status: { $nin: ["delivered", "cancelled"] },
+    });
+    if (activeAssignments > 0) {
+      throw new HttpException(
+        400,
+        "Availability is controlled by the active shipment",
+      );
+    }
     const updated = await userRepository.update(driverId, {
       availabilityStatus: availabilityStatus as IUser["availabilityStatus"],
     });

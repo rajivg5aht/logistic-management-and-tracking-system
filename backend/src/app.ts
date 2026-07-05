@@ -9,6 +9,7 @@ import shipmentRoutes from "./routes/shipment.route";
 import adminShipmentRoutes from "./routes/adminShipment.route";
 import inquiryRoutes from "./routes/inquiry.route";
 import adminInquiryRoutes from "./routes/adminInquiry.route";
+import adminVehicleRoutes from "./routes/adminVehicle.route";
 
 const app: Application = express();
 
@@ -42,6 +43,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/v1/auth", userRoutes);
 app.use("/api/v1/admin/users", adminRoutes);
 app.use("/api/v1/admin/drivers", adminDriverRoutes);
+app.use("/api/v1/admin/vehicles", adminVehicleRoutes);
 app.use("/api/v1/driver", driverRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/admin/shipments", adminShipmentRoutes);

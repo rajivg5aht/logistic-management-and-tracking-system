@@ -71,6 +71,7 @@ export const ShipmentSchema = z.object({
   amount: z.number().nonnegative("Amount must be a positive number"),
   status: z.enum(SHIPMENT_STATUSES).default("pending"),
   assignedDriver: z.string().nullable().optional(),
+  assignedVehicle: z.string().nullable().optional(),
   driverStage: z.enum(DRIVER_STAGES).nullable().optional(),
   timeline: z.array(TimelineEntrySchema).default([]),
 });

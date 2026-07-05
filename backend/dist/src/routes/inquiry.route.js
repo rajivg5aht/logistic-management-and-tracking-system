@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const inquiry_controller_1 = require("../controllers/inquiry.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const inquiryRouter = (0, express_1.Router)();
+const inquiryController = new inquiry_controller_1.InquiryController();
+inquiryRouter.post("/", inquiryController.create);
+inquiryRouter.get("/my", auth_middleware_1.authMiddleware, inquiryController.getMy);
+inquiryRouter.post("/my", auth_middleware_1.authMiddleware, inquiryController.createMy);
+exports.default = inquiryRouter;

@@ -129,7 +129,7 @@ export class AdminDriverController {
       return ApiResponseHelper.success(
         res,
         null,
-        "Driver deleted successfully",
+        "Driver deactivated successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(

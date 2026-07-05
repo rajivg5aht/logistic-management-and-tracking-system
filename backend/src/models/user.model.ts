@@ -9,6 +9,7 @@ import {
 export interface IUser extends UserType, Document {
   _id: mongoose.Types.ObjectId;
   status?: "active" | "inactive";
+  assignedVehicleId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,6 +73,11 @@ const UserMongoSchema: Schema<IUser> = new Schema(
       type: String,
       enum: AVAILABILITY_STATUSES,
       default: "available",
+    },
+    assignedVehicleId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vehicle",
+      default: null,
     },
   },
   {

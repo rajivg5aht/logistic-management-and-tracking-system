@@ -14,6 +14,7 @@ export interface IShipment extends ShipmentType, Document {
   deliveredAt: Date | null;
   // Real link to the driver's User account (name is denormalized in assignedDriver).
   assignedDriverId: mongoose.Types.ObjectId | null;
+  assignedVehicleId: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,6 +106,17 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
     assignedDriverId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      default: null,
+    },
+
+    assignedVehicle: {
+      type: String,
+      default: null,
+    },
+
+    assignedVehicleId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vehicle",
       default: null,
     },
 
