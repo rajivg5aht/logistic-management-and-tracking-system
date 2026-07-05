@@ -29,6 +29,19 @@ export type SafeUser = {
   assignedVehicleId?: string | null;
 };
 
+// Compact view of a driver's assigned vehicle, surfaced in the driver console.
+export type DriverVehicleSummary = {
+  id: string;
+  registrationNumber: string;
+  type: string;
+  make: string;
+  model: string;
+  capacityKg: number | null;
+  status: string;
+};
+
+export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
+
 export class UserService {
   private sanitizeUser(user: IUser): SafeUser {
     return {
@@ -520,5 +533,32 @@ export class UserService {
       throw new HttpException(404, "Driver not found");
     }
     return this.sanitizeUser(updated);
+  }
+
+  // The driver's own profile plus their currently assigned vehicle (if any),
+  // used by the driver console to show live availability + vehicle details.
+  async getDriverMe(driverId: string): Promise<DriverMe> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+
+    let vehicle: DriverVehicleSummary | null = null;
+    if (driver.assignedVehicleId) {
+      const v = await VehicleModel.findById(driver.assignedVehicleId);
+      if (v) {
+        vehicle = {
+          id: v._id.toString(),
+          registrationNumber: v.registrationNumber,
+          type: v.type,
+          make: v.make,
+          model: v.vehicleModel,
+          capacityKg: v.capacityKg ?? null,
+          status: v.status,
+        };
+      }
+    }
+
+    return { ...this.sanitizeUser(driver), vehicle };
   }
 }
