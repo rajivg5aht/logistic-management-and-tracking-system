@@ -55,6 +55,8 @@ export type Shipment = {
   status: ShipmentStatus;
   assignedDriver: string | null;
   assignedDriverId: string | null;
+  assignedVehicle: string | null;
+  assignedVehicleId: string | null;
   driverStage: DriverStage | null;
   timeline: TimelineEntry[];
   createdAt: string;

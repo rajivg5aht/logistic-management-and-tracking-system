@@ -29,5 +29,5 @@ export default async function AdminAnalyticsPage() {
     redirect("/dashboard");
   }
 
-  return <AdminAnalytics />;
+  return <AdminAnalytics token={token} />;
 }

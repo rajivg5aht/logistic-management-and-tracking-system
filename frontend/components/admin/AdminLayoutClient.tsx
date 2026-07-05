@@ -19,6 +19,7 @@ import {
   Bell,
   ChevronRight,
   MessageSquareText,
+  UserRoundCog,
 } from "lucide-react";
 import { AuthUser } from "@/lib/api/auth.api";
 
@@ -26,6 +27,7 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
   "/admin/shipments": "Shipments",
   "/admin/drivers": "Driver Management",
+  "/admin/fleet": "Fleet Management",
   "/admin/analytics": "Analytics",
   "/admin/users": "User Management",
   "/admin/inquiries": "Inquiries",
@@ -47,6 +49,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   useEffect(() => {
     const savedState = localStorage.getItem("admin-sidebar-collapsed");
     if (savedState !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCollapsed(JSON.parse(savedState));
     }
     // Mark hydrated only after the persisted state is applied so the initial
@@ -85,7 +88,8 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
     { label: "Live Map", href: "#", icon: Map, active: false },
     { label: "Shipments", href: "/admin/shipments", icon: Package, active: pathname.startsWith("/admin/shipments") },
-    { label: "Fleet Management", href: "/admin/drivers", icon: Truck, active: pathname.startsWith("/admin/drivers") },
+    { label: "Driver Management", href: "/admin/drivers", icon: UserRoundCog, active: pathname.startsWith("/admin/drivers") },
+    { label: "Fleet Management", href: "/admin/fleet", icon: Truck, active: pathname.startsWith("/admin/fleet") },
     { label: "Warehouse", href: "#", icon: Warehouse, active: false },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },

@@ -5,7 +5,7 @@ import AdminDriverManagement from "@/components/admin/AdminDriverManagement";
 
 export const metadata = {
   title: "Driver Management - CargoNep",
-  description: "Add and manage company drivers, vehicles, and availability.",
+  description: "Add and manage company drivers and availability.",
 };
 
 export default async function AdminDriversPage() {

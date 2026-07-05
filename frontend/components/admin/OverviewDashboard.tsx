@@ -28,6 +28,10 @@ import {
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import {
+  adminGetFleetStats,
+  type FleetStats,
+} from "@/lib/api/fleet.api";
 
 /* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
@@ -55,30 +59,6 @@ function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
     active: d.count > 0 && i === peakIndex,
   }));
 }
-
-const FLEET = [
-  {
-    label: "Ready to Dispatch",
-    sub: "48 Vehicles",
-    Icon: CheckCircle2,
-    accent: "#1F9D57",
-    tint: "bg-[#E6F4EC] text-[#1F9D57]",
-  },
-  {
-    label: "Maintenance",
-    sub: "12 Vehicles",
-    Icon: Wrench,
-    accent: "#C99A3D",
-    tint: "bg-[#FBF1DC] text-[#C99A3D]",
-  },
-  {
-    label: "Alerts / Issues",
-    sub: "3 Critical",
-    Icon: AlertTriangle,
-    accent: "#D0453A",
-    tint: "bg-[#FBE4E1] text-[#D0453A]",
-  },
-];
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   "in-transit": "bg-[#FDECD8] text-[#C77718]",
@@ -120,17 +100,20 @@ function getDestination(shipment: Shipment): string {
 export default function OverviewDashboard({ token }: { token: string }) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [shipmentStats, setShipmentStats] = useState<ShipmentStats | null>(null);
+  const [fleetStats, setFleetStats] = useState<FleetStats | null>(null);
   const [loadingShipments, setLoadingShipments] = useState(true);
   const [shipmentError, setShipmentError] = useState<string | null>(null);
 
   const loadRecentShipments = useCallback(async () => {
     try {
-      const [result, stats] = await Promise.all([
+      const [result, stats, fleet] = await Promise.all([
         adminGetShipments(token, 1, 4),
         adminGetShipmentStats(token),
+        adminGetFleetStats(token),
       ]);
       setShipments(result.data);
       setShipmentStats(stats);
+      setFleetStats(fleet);
       setShipmentError(null);
     } catch (error) {
       setShipmentError(
@@ -142,6 +125,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
   }, [token]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRecentShipments();
   }, [loadRecentShipments]);
 
@@ -179,6 +163,29 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const weekTotal = shipmentStats
     ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
     : 0;
+  const fleetHealth = [
+    {
+      label: "Ready to Dispatch",
+      sub: `${fleetStats?.available ?? 0} Vehicles`,
+      Icon: CheckCircle2,
+      accent: "#1F9D57",
+      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+    },
+    {
+      label: "Maintenance",
+      sub: `${fleetStats?.maintenance ?? 0} Vehicles`,
+      Icon: Wrench,
+      accent: "#C99A3D",
+      tint: "bg-[#FBF1DC] text-[#C99A3D]",
+    },
+    {
+      label: "Inactive",
+      sub: `${fleetStats?.inactive ?? 0} Vehicles`,
+      Icon: AlertTriangle,
+      accent: "#D0453A",
+      tint: "bg-[#FBE4E1] text-[#D0453A]",
+    },
+  ];
 
   return (
     <div className="space-y-6 font-sans">
@@ -313,15 +320,14 @@ export default function OverviewDashboard({ token }: { token: string }) {
           </h3>
 
           <div className="mt-4 space-y-3">
-            {FLEET.map((item) => {
+            {fleetHealth.map((item) => {
               const Icon = item.Icon;
               return (
-                <button
+                <Link
                   key={item.label}
-                  type="button"
+                  href="/admin/fleet"
                   className="flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-3 pr-3 text-left transition-all hover:bg-[var(--surface-soft)] cursor-pointer"
                   style={{ borderLeft: `3px solid ${item.accent}` }}
-                  suppressHydrationWarning
                 >
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${item.tint}`}>
                     <Icon size={17} className="stroke-[2.4]" />
@@ -331,7 +337,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     <p className="text-xs font-medium text-[var(--text-muted)]">{item.sub}</p>
                   </div>
                   <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
-                </button>
+                </Link>
               );
             })}
           </div>

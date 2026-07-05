@@ -35,8 +35,7 @@ export type Driver = {
   role: "driver";
   status: "active" | "inactive";
   licenseNumber: string;
-  vehicleType?: VehicleType;
-  vehicleNumber: string;
+  assignedVehicleId?: string | null;
   branch: string;
   employmentStatus: EmploymentStatus;
   availabilityStatus: AvailabilityStatus;
@@ -56,8 +55,6 @@ export type CreateDriverPayload = {
   password: string;
   phoneNumber: string;
   licenseNumber?: string;
-  vehicleType?: VehicleType;
-  vehicleNumber?: string;
   branch?: string;
   employmentStatus?: EmploymentStatus;
   availabilityStatus?: AvailabilityStatus;

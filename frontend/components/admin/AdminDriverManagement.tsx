@@ -5,7 +5,6 @@ import {
   Search,
   Plus,
   Edit2,
-  Trash2,
   Loader2,
   AlertCircle,
   ChevronLeft,
@@ -20,8 +19,6 @@ import {
   adminGetDrivers,
   adminCreateDriver,
   adminUpdateDriver,
-  adminDeleteDriver,
-  VEHICLE_TYPES,
   EMPLOYMENT_STATUSES,
   AVAILABILITY_STATUSES,
   type Driver,
@@ -30,6 +27,7 @@ import {
   type CreateDriverPayload,
   type UpdateDriverPayload,
 } from "@/lib/api/driver.api";
+import { adminGetVehicles } from "@/lib/api/fleet.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
@@ -61,8 +59,6 @@ const EMPTY_FORM = {
   password: "",
   phoneNumber: "",
   licenseNumber: "",
-  vehicleType: "bike" as (typeof VEHICLE_TYPES)[number],
-  vehicleNumber: "",
   branch: "",
   employmentStatus: "full-time" as (typeof EMPLOYMENT_STATUSES)[number],
   availabilityStatus: "available" as AvailabilityStatus,
@@ -107,7 +103,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [vehicleByDriver, setVehicleByDriver] = useState<Record<string, string>>({});
 
   const [selected, setSelected] = useState<Driver | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -130,18 +126,27 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           setError(null);
         }
         const availability = filter === "all" ? "" : filter;
-        const res = await adminGetDrivers(
-          token,
-          page,
-          limit,
-          searchQuery,
-          availability,
-        );
+        const [res, fleet] = await Promise.all([
+          adminGetDrivers(token, page, limit, searchQuery, availability),
+          adminGetVehicles(token, 1, 200),
+        ]);
         setDrivers(res.data);
         setMeta(res.meta);
-      } catch (err: any) {
+        setVehicleByDriver(
+          Object.fromEntries(
+            fleet.data
+              .filter((vehicle) => vehicle.assignedDriverId)
+              .map((vehicle) => [
+                vehicle.assignedDriverId as string,
+                vehicle.registrationNumber,
+              ]),
+          ),
+        );
+      } catch (err: unknown) {
         if (!silent) {
-          setError(err.message || "Failed to load drivers.");
+          setError(
+            err instanceof Error ? err.message : "Failed to load drivers.",
+          );
         }
       } finally {
         if (!silent) setLoading(false);
@@ -151,6 +156,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDrivers();
   }, [fetchDrivers]);
 
@@ -171,8 +177,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       password: "",
       phoneNumber: driver.phoneNumber,
       licenseNumber: driver.licenseNumber || "",
-      vehicleType: driver.vehicleType || "bike",
-      vehicleNumber: driver.vehicleNumber || "",
       branch: driver.branch || "",
       employmentStatus: driver.employmentStatus || "full-time",
       availabilityStatus: driver.availabilityStatus || "available",
@@ -182,18 +186,18 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     setIsEditOpen(true);
   };
 
-  const handleDeleteOpen = (driver: Driver) => {
-    setSelected(driver);
-    setFormError(null);
-    setIsDeleteOpen(true);
-  };
-
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!form.fullName || !form.email || !form.password || !form.phoneNumber) {
-      setFormError("Name, email, phone and password are required.");
+    if (
+      !form.fullName ||
+      !form.email ||
+      !form.password ||
+      !form.phoneNumber ||
+      !form.licenseNumber
+    ) {
+      setFormError("Name, email, phone, license and password are required.");
       return;
     }
     if (form.password.length < 6) {
@@ -209,8 +213,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         password: form.password,
         phoneNumber: form.phoneNumber,
         licenseNumber: form.licenseNumber,
-        vehicleType: form.vehicleType,
-        vehicleNumber: form.vehicleNumber,
         branch: form.branch,
         employmentStatus: form.employmentStatus,
         availabilityStatus: form.availabilityStatus,
@@ -218,8 +220,10 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       await adminCreateDriver(token, payload);
       setIsCreateOpen(false);
       fetchDrivers();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to create driver.");
+    } catch (err: unknown) {
+      setFormError(
+        err instanceof Error ? err.message : "Failed to create driver.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -242,8 +246,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         email: form.email,
         phoneNumber: form.phoneNumber,
         licenseNumber: form.licenseNumber,
-        vehicleType: form.vehicleType,
-        vehicleNumber: form.vehicleNumber,
         branch: form.branch,
         employmentStatus: form.employmentStatus,
         availabilityStatus: form.availabilityStatus,
@@ -260,26 +262,10 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       await adminUpdateDriver(token, selected.id, payload);
       setIsEditOpen(false);
       fetchDrivers();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to update driver.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteSubmit = async () => {
-    if (!selected) return;
-    try {
-      setActionLoading(true);
-      await adminDeleteDriver(token, selected.id);
-      setIsDeleteOpen(false);
-      if (drivers.length === 1 && page > 1) {
-        setPage((prev) => prev - 1);
-      } else {
-        fetchDrivers();
-      }
-    } catch (err: any) {
-      setFormError(err.message || "Failed to delete driver.");
+    } catch (err: unknown) {
+      setFormError(
+        err instanceof Error ? err.message : "Failed to update driver.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -296,8 +282,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         availabilityStatus: nextStatus === "inactive" ? "inactive" : "available",
       });
       fetchDrivers();
-    } catch (err: any) {
-      setError(err.message || "Failed to update driver status.");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update driver status.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -330,7 +320,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </span>
           <input
             type="text"
-            placeholder="Search name, email, phone, vehicle…"
+            placeholder="Search name, email, phone…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="form-input w-full rounded-full pl-11"
@@ -406,7 +396,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           <table className="w-full min-w-[52rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
-                {["Driver", "Contact", "Vehicle", "Branch", "Availability", "Account", "Actions"].map((h) => (
+                {["Driver", "Contact", "Assigned Vehicle", "Branch", "Availability", "Account", "Actions"].map((h) => (
                   <th
                     key={h}
                     className={`px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] ${
@@ -465,16 +455,9 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        {driver.vehicleType || driver.vehicleNumber ? (
-                          <div>
-                            <p className="font-semibold capitalize text-[var(--text)]">
-                              {driver.vehicleType || "—"}
-                            </p>
-                            <p className="text-xs text-[var(--text-muted)]">{driver.vehicleNumber || "—"}</p>
-                          </div>
-                        ) : (
-                          <span className="text-[var(--text-muted)]">—</span>
-                        )}
+                        <span className="font-semibold text-[var(--text)]">
+                          {vehicleByDriver[driver.id] || "Unassigned"}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
                         <span className="flex items-center gap-1.5 text-[var(--text-soft)]">
@@ -515,14 +498,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             aria-label={driver.status === "inactive" ? "Activate driver" : "Deactivate driver"}
                           >
                             {driver.status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteOpen(driver)}
-                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
-                            aria-label="Delete driver"
-                          >
-                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -603,38 +578,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         />
       </Modal>
 
-      {/* Delete confirm */}
-      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete Driver">
-        <div className="space-y-5">
-          <p className="text-sm text-[var(--text-soft)]">
-            Are you sure you want to permanently delete{" "}
-            <span className="font-bold text-[var(--text)]">{selected?.fullName}</span>? This cannot be undone.
-          </p>
-          {formError && (
-            <p className="flex items-center gap-2 text-sm font-semibold text-[#D0453A]">
-              <AlertCircle size={15} /> {formError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(false)}
-              className="btn-secondary cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDeleteSubmit}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#B93A30] disabled:opacity-60 cursor-pointer"
-            >
-              {actionLoading && <Loader2 size={15} className="animate-spin" />}
-              Delete
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
@@ -733,32 +676,8 @@ function DriverForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="form-label">Vehicle Type</label>
-          <select
-            className="form-input capitalize"
-            value={form.vehicleType}
-            onChange={(e) => set({ vehicleType: e.target.value as typeof form.vehicleType })}
-            suppressHydrationWarning
-          >
-            {VEHICLE_TYPES.map((v) => (
-              <option key={v} value={v} className="capitalize">
-                {v}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <label className="form-label">Vehicle Number</label>
-          <input
-            className="form-input"
-            value={form.vehicleNumber}
-            onChange={(e) => set({ vehicleNumber: e.target.value })}
-            placeholder="e.g. BA 12 PA 3456"
-            suppressHydrationWarning
-          />
-        </div>
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-sm text-[var(--text-soft)]">
+        Assign vehicles from Fleet Management after saving the driver.
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

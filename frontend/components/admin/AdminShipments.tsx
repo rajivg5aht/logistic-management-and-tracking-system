@@ -173,6 +173,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   // Initial load + refetch whenever filters/page/search change.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -192,6 +193,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   }, [token]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDrivers();
   }, [fetchDrivers]);
 
@@ -548,15 +550,17 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             >
                               <Edit2 size={16} />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteOpen(s)}
-                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
-                              title="Delete shipment"
-                              suppressHydrationWarning
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            {s.status === "cancelled" && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteOpen(s)}
+                                className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                                title="Delete cancelled shipment"
+                                suppressHydrationWarning
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -674,9 +678,17 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             >
               <option value="">Unassigned</option>
               {drivers.map((d) => (
-                <option key={d.id} value={d.id} disabled={d.status === "inactive"}>
+                <option
+                  key={d.id}
+                  value={d.id}
+                  disabled={
+                    d.status === "inactive" ||
+                    (d.availabilityStatus !== "available" &&
+                      d.id !== form.assignedDriverId)
+                  }
+                >
                   {d.fullName}
-                  {d.vehicleNumber ? ` · ${d.vehicleNumber}` : ""}
+                  {d.assignedVehicleId ? " · vehicle assigned" : ""}
                   {d.availabilityStatus && d.availabilityStatus !== "available"
                     ? ` (${d.availabilityStatus.replace("-", " ")})`
                     : ""}
@@ -685,7 +697,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             </select>
             {drivers.length === 0 && (
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                No drivers yet — add them in Fleet Management.
+                No drivers yet — add them in Driver Management.
               </p>
             )}
           </div>
