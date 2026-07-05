@@ -31,7 +31,7 @@ export default async function DriverLayout({
 
   return (
     <AuthProvider initialUser={user} role="driver">
-      <DriverLayoutClient user={user}>
+      <DriverLayoutClient user={user} token={token}>
         {children}
       </DriverLayoutClient>
     </AuthProvider>
