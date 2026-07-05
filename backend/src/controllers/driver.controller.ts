@@ -11,6 +11,28 @@ const shipmentService = new ShipmentService();
 const userService = new UserService();
 
 export class DriverController {
+  // ── Driver: my profile + assigned vehicle ────────────────────────────────
+  async getMe(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const me = await userService.getDriverMe(req.user.id);
+      return ApiResponseHelper.success(
+        res,
+        me,
+        "Driver profile retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   // ── Driver: list shipments assigned to me ────────────────────────────────
   async getMyAssignments(req: AuthRequest, res: Response) {
     try {

@@ -9,6 +9,7 @@ const driverController = new DriverController();
 driverRouter.use(authMiddleware);
 driverRouter.use(driverMiddleware);
 
+driverRouter.get("/me", driverController.getMe);
 driverRouter.get("/stats", driverController.getStats);
 driverRouter.patch("/availability", driverController.updateAvailability);
 driverRouter.get("/shipments", driverController.getMyAssignments);
