@@ -1,14 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/lib/api/auth.api";
-import DriverDashboard from "@/components/driver/DriverDashboard";
+import DriverRoute from "@/components/driver/DriverRoute";
 
 export const metadata = {
-  title: "Driver Dashboard - CargoNep",
-  description: "Your assigned delivery, vehicle, and status updates.",
+  title: "Route - CargoNep",
+  description: "Your active delivery route and status updates.",
 };
 
-export default async function DriverDashboardPage() {
+export default async function DriverRoutePage() {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_driver")?.value;
   const token = cookieStore.get("token_driver")?.value;
@@ -28,5 +28,5 @@ export default async function DriverDashboardPage() {
     redirect("/dashboard");
   }
 
-  return <DriverDashboard user={user} token={token} />;
+  return <DriverRoute token={token} />;
 }

@@ -13,11 +13,12 @@ import {
   AlertTriangle,
   Undo2,
 } from "lucide-react";
-import {
-  driverUpdateStage,
-  type DriverStage,
-} from "@/lib/api/driver.api";
-import type { Shipment, ShipmentAddress } from "@/lib/api/shipment.api";
+import { driverUpdateStage } from "@/lib/api/driver.api";
+import type {
+  Shipment,
+  ShipmentAddress,
+  DriverStage,
+} from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {

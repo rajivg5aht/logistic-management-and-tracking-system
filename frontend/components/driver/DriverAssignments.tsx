@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ClipboardList, Clock } from "lucide-react";
-import {
-  driverGetAssignments,
-  type DriverStage,
-} from "@/lib/api/driver.api";
-import type { Shipment, ShipmentStatus } from "@/lib/api/shipment.api";
+import { driverGetAssignments } from "@/lib/api/driver.api";
+import type {
+  Shipment,
+  ShipmentStatus,
+  DriverStage,
+} from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { ActiveAssignmentCard, STAGE_LABEL, shortLoc } from "@/components/driver/shared";
 
