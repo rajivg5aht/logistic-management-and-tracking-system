@@ -343,6 +343,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                   ? "bg-[var(--surface)] text-[var(--teal)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text)]"
               }`}
+              suppressHydrationWarning
             >
               {tab.label}
             </button>

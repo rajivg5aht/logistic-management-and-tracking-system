@@ -13,16 +13,21 @@ import {
   UserCheck,
   Truck,
   Phone,
-  MapPin,
+  Mail,
+  Users,
+  Wrench,
+  Package,
 } from "lucide-react";
 import {
   adminGetDrivers,
+  adminGetDriverStats,
   adminCreateDriver,
   adminUpdateDriver,
   EMPLOYMENT_STATUSES,
   AVAILABILITY_STATUSES,
   type Driver,
   type DriverMeta,
+  type AdminDriverStats,
   type AvailabilityStatus,
   type CreateDriverPayload,
   type UpdateDriverPayload,
@@ -46,12 +51,28 @@ const AVAILABILITY_CONFIG: Record<AvailabilityStatus, { label: string; cls: stri
   inactive: { label: "Inactive", cls: "bg-[#FBE4E1] text-[#D0453A]" },
 };
 
-const FILTERS: { id: AvailabilityStatus | "all"; label: string }[] = [
-  { id: "all", label: "All Drivers" },
-  { id: "available", label: "Available" },
-  { id: "on-delivery", label: "On Delivery" },
-  { id: "off-duty", label: "Off Duty" },
+// Availability options for the "Status" filter dropdown.
+const STATUS_OPTIONS: { value: AvailabilityStatus | "all"; label: string }[] = [
+  { value: "all", label: "All Statuses" },
+  { value: "available", label: "Available" },
+  { value: "assigned", label: "Assigned" },
+  { value: "on-delivery", label: "On Delivery" },
+  { value: "off-duty", label: "Off Duty" },
+  { value: "inactive", label: "Inactive" },
 ];
+
+// Denormalized vehicle detail keyed by driver id, for the assignment column.
+type VehicleAssignmentInfo = {
+  registrationNumber: string;
+  type: string;
+  make: string;
+  model: string;
+};
+
+// A short, human-friendly driver code derived from the real record id.
+function driverCode(id: string): string {
+  return `LN-DR-${id.slice(-4).toUpperCase()}`;
+}
 
 const EMPTY_FORM = {
   fullName: "",
@@ -91,10 +112,14 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
 export default function AdminDriverManagement({ token }: { token: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [meta, setMeta] = useState<DriverMeta | null>(null);
+  const [stats, setStats] = useState<AdminDriverStats | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<AvailabilityStatus | "all">("all");
+  const [vehicleFilter, setVehicleFilter] = useState<
+    "any" | "assigned" | "unassigned"
+  >("any");
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -103,7 +128,9 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [vehicleByDriver, setVehicleByDriver] = useState<Record<string, string>>({});
+  const [vehicleByDriver, setVehicleByDriver] = useState<
+    Record<string, VehicleAssignmentInfo>
+  >({});
 
   const [selected, setSelected] = useState<Driver | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -126,22 +153,26 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           setError(null);
         }
         const availability = filter === "all" ? "" : filter;
-        const [res, fleet] = await Promise.all([
+        const [res, fleet, driverStats] = await Promise.all([
           adminGetDrivers(token, page, limit, searchQuery, availability),
           adminGetVehicles(token, 1, 200),
+          adminGetDriverStats(token),
         ]);
+        const vehicleMap: Record<string, VehicleAssignmentInfo> = {};
+        for (const vehicle of fleet.data) {
+          if (vehicle.assignedDriverId) {
+            vehicleMap[vehicle.assignedDriverId] = {
+              registrationNumber: vehicle.registrationNumber,
+              type: vehicle.type,
+              make: vehicle.make,
+              model: vehicle.model,
+            };
+          }
+        }
         setDrivers(res.data);
         setMeta(res.meta);
-        setVehicleByDriver(
-          Object.fromEntries(
-            fleet.data
-              .filter((vehicle) => vehicle.assignedDriverId)
-              .map((vehicle) => [
-                vehicle.assignedDriverId as string,
-                vehicle.registrationNumber,
-              ]),
-          ),
-        );
+        setStats(driverStats);
+        setVehicleByDriver(vehicleMap);
       } catch (err: unknown) {
         if (!silent) {
           setError(
@@ -299,13 +330,25 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     }
   };
 
+  // Client-side "has a vehicle?" filter, applied to the current page.
+  const visibleDrivers = drivers.filter((driver) => {
+    if (vehicleFilter === "assigned") return !!vehicleByDriver[driver.id];
+    if (vehicleFilter === "unassigned") return !vehicleByDriver[driver.id];
+    return true;
+  });
+
+  const onDeliveryPct =
+    stats && stats.total > 0
+      ? Math.round((stats.onDelivery / stats.total) * 100)
+      : 0;
+
   const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
-  const rangeEnd = meta ? (meta.page - 1) * meta.limit + drivers.length : 0;
+  const rangeEnd = meta ? (meta.page - 1) * meta.limit + visibleDrivers.length : 0;
 
   return (
     <div className="space-y-6 font-sans">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
             Driver Management
@@ -314,48 +357,10 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             Add and manage company drivers. Drivers are internal staff — created here, not via public signup.
           </p>
         </div>
-        <div className="relative sm:w-72 lg:w-80">
-          <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
-            <Search size={18} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search name, email, phone…"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="form-input w-full rounded-full pl-11"
-            suppressHydrationWarning
-          />
-        </div>
-      </div>
-
-      {/* Filter chips + Add */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex flex-wrap items-center gap-1 self-start rounded-xl bg-[var(--surface-muted)] p-1">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              suppressHydrationWarning
-              onClick={() => {
-                setFilter(f.id);
-                setPage(1);
-              }}
-              className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer ${
-                filter === f.id
-                  ? "bg-[var(--surface)] text-[var(--teal)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
         <button
           type="button"
           onClick={handleCreateOpen}
-          className="btn-primary flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          className="btn-primary flex items-center gap-1.5 self-start cursor-pointer"
           suppressHydrationWarning
         >
           <Plus size={18} />
@@ -363,20 +368,84 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         </button>
       </div>
 
-      {/* Count summary */}
-      <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-            <Truck size={22} className="stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">
-              {filter === "all" ? "Total Drivers" : FILTERS.find((f) => f.id === filter)?.label}
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total drivers */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Total Drivers
             </p>
-            <p className="text-3xl font-black tracking-tight text-[var(--text)]">
-              {meta ? meta.total.toLocaleString() : "—"}
-            </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-muted)] text-[var(--teal)]">
+              <Users size={16} />
+            </span>
           </div>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.total.toLocaleString() : "—"}
+          </p>
+          <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
+            Company drivers
+          </p>
+        </div>
+
+        {/* On delivery */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              On Delivery
+            </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DEF3E6] text-[#1E9E4C]">
+              <Truck size={16} />
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.onDelivery.toLocaleString() : "—"}
+          </p>
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
+            <div
+              className="h-full rounded-full bg-[#1E9E4C] transition-all"
+              style={{ width: `${onDeliveryPct}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-xs font-semibold text-[var(--text-muted)]">
+            {onDeliveryPct}% of drivers currently active
+          </p>
+        </div>
+
+        {/* Off duty / inactive */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Off Duty / Inactive
+            </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FBE4E1] text-[#D0453A]">
+              <Wrench size={16} />
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? (stats.offDuty + stats.inactive).toLocaleString() : "—"}
+          </p>
+          <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
+            Currently unavailable
+          </p>
+        </div>
+
+        {/* Available */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <div className="flex items-start justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Available
+            </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DEF3E6] text-[#1E9E4C]">
+              <UserCheck size={16} />
+            </span>
+          </div>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.available.toLocaleString() : "—"}
+          </p>
+          <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
+            Ready to assign
+          </p>
         </div>
       </div>
 
@@ -389,15 +458,59 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
       {/* Table */}
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-          <h3 className="text-sm font-extrabold text-[var(--text)]">Company Drivers</h3>
+        {/* Toolbar: search + filters */}
+        <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative w-full lg:max-w-md">
+            <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
+              <Search size={18} />
+            </span>
+            <input
+              type="text"
+              placeholder="Filter by name, ID or vehicle…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="form-input w-full rounded-full pl-11"
+              suppressHydrationWarning
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value as AvailabilityStatus | "all");
+                setPage(1);
+              }}
+              className="form-input h-10 w-auto rounded-lg text-sm"
+              suppressHydrationWarning
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  Status: {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={vehicleFilter}
+              onChange={(e) =>
+                setVehicleFilter(
+                  e.target.value as "any" | "assigned" | "unassigned",
+                )
+              }
+              className="form-input h-10 w-auto rounded-lg text-sm"
+              suppressHydrationWarning
+            >
+              <option value="any">Vehicle: Any</option>
+              <option value="assigned">Vehicle: Assigned</option>
+              <option value="unassigned">Vehicle: Unassigned</option>
+            </select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[52rem] border-collapse text-left text-sm">
+          <table className="w-full min-w-[60rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
-                {["Driver", "Contact", "Assigned Vehicle", "Branch", "Availability", "Account", "Actions"].map((h) => (
+                {["Driver Profile", "Status", "Vehicle Assignment", "Deliveries", "Contact", "Actions"].map((h) => (
                   <th
                     key={h}
                     className={`px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] ${
@@ -413,75 +526,94 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse border-b border-[var(--border-light)]">
-                    {Array.from({ length: 7 }).map((__, c) => (
+                    {Array.from({ length: 6 }).map((__, c) => (
                       <td key={c} className="px-5 py-4">
                         <div className="h-4 max-w-28 rounded bg-[var(--border)]" />
                       </td>
                     ))}
                   </tr>
                 ))
-              ) : drivers.length === 0 ? (
+              ) : visibleDrivers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm font-medium text-[var(--text-muted)]">
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm font-medium text-[var(--text-muted)]">
                     No drivers found. Click “Add Driver” to create one.
                   </td>
                 </tr>
               ) : (
-                drivers.map((driver, index) => {
+                visibleDrivers.map((driver, index) => {
                   const availability =
                     AVAILABILITY_CONFIG[driver.availabilityStatus] ??
                     AVAILABILITY_CONFIG.available;
+                  const vehicle = vehicleByDriver[driver.id];
                   return (
                     <tr
                       key={driver.id}
                       className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
                     >
+                      {/* Driver profile */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
                           >
                             {getInitials(driver.fullName)}
                           </span>
                           <div className="min-w-0">
                             <p className="font-semibold text-[var(--text)]">{driver.fullName}</p>
-                            <p className="truncate text-xs text-[var(--text-muted)]">{driver.email}</p>
+                            <p className="truncate text-xs text-[var(--text-muted)]">
+                              ID: {driverCode(driver.id)}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className="flex items-center gap-1.5 text-[var(--text-soft)]">
-                          <Phone size={13} className="text-[var(--text-muted)]" />
-                          {driver.phoneNumber || "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="font-semibold text-[var(--text)]">
-                          {vehicleByDriver[driver.id] || "Unassigned"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="flex items-center gap-1.5 text-[var(--text-soft)]">
-                          <MapPin size={13} className="text-[var(--text-muted)]" />
-                          {driver.branch || "—"}
-                        </span>
-                      </td>
+                      {/* Status (availability) */}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${availability.cls}`}>
                           {availability.label}
                         </span>
                       </td>
+                      {/* Vehicle assignment */}
                       <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                            driver.status === "inactive"
-                              ? "bg-[#FBE4E1] text-[#D0453A]"
-                              : "bg-[#DEF3E6] text-[#1E9E4C]"
-                          }`}
-                        >
-                          {driver.status === "inactive" ? "Inactive" : "Active"}
+                        {vehicle ? (
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[var(--text)]">
+                              <span className="capitalize">{vehicle.type}</span>: {vehicle.registrationNumber}
+                            </p>
+                            <p className="truncate text-xs text-[var(--text-muted)]">
+                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "—"}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="italic text-[var(--text-muted)]">Unassigned</span>
+                        )}
+                      </td>
+                      {/* Deliveries */}
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--text)]">
+                          <Package size={14} className="text-[var(--text-muted)]" />
+                          {(driver.deliveriesCount ?? 0).toLocaleString()}
                         </span>
                       </td>
+                      {/* Contact */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-1">
+                          <a
+                            href={`tel:${driver.phoneNumber}`}
+                            className="flex items-center gap-1.5 text-[var(--text-soft)] hover:text-[var(--teal)]"
+                          >
+                            <Phone size={13} className="text-[var(--text-muted)]" />
+                            {driver.phoneNumber || "—"}
+                          </a>
+                          <a
+                            href={`mailto:${driver.email}`}
+                            className="flex items-center gap-1.5 truncate text-xs text-[var(--text-muted)] hover:text-[var(--teal)]"
+                          >
+                            <Mail size={13} />
+                            {driver.email}
+                          </a>
+                        </div>
+                      </td>
+                      {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -489,6 +621,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             onClick={() => handleEditOpen(driver)}
                             className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--teal)] cursor-pointer"
                             aria-label="Edit driver"
+                            suppressHydrationWarning
                           >
                             <Edit2 size={16} />
                           </button>
@@ -497,6 +630,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             onClick={() => handleToggleStatus(driver)}
                             className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
                             aria-label={driver.status === "inactive" ? "Activate driver" : "Deactivate driver"}
+                            suppressHydrationWarning
                           >
                             {driver.status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
                           </button>
@@ -511,11 +645,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         </div>
 
         {/* Pagination */}
-        {meta && meta.totalPages > 1 && (
+        {meta && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-4 sm:flex-row">
             <p className="text-xs font-medium text-[var(--text-muted)]">
-              Showing {rangeStart}–{rangeEnd} of {meta.total}
+              Showing {rangeStart} to {rangeEnd} of {meta.total.toLocaleString()} entries
             </p>
+            {meta.totalPages > 1 && (
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -552,6 +687,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                 <ChevronRight size={16} />
               </button>
             </div>
+            )}
           </div>
         )}
       </div>

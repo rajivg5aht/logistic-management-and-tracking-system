@@ -23,6 +23,7 @@ export type Vehicle = {
   year?: number;
   capacityKg?: number;
   branch: string;
+  imageUrl: string | null;
   status: VehicleStatus;
   insuranceExpiry: string | null;
   registrationExpiry: string | null;
@@ -153,4 +154,29 @@ export async function adminDeactivateVehicle(
   await authFetch(`/api/v1/admin/vehicles/${id}`, token, {
     method: "DELETE",
   });
+}
+
+// Multipart upload — leaves Content-Type unset so the browser adds the
+// multipart boundary itself (authFetch always forces JSON, so we can't use it).
+export async function adminUploadVehicleImage(
+  token: string,
+  id: string,
+  file: File,
+): Promise<Vehicle> {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/admin/vehicles/${id}/image`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      credentials: "include",
+    },
+  );
+  const payload = await response.json();
+  if (!payload.success) {
+    throw new Error(payload.message || "Failed to upload vehicle image");
+  }
+  return payload.data;
 }

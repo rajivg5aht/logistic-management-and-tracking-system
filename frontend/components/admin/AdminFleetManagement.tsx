@@ -3,17 +3,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
+  AlertTriangle,
   Ban,
+  Bike,
+  Car,
   ChevronLeft,
   ChevronRight,
   Edit2,
   Gauge,
+  Image as ImageIcon,
   Loader2,
+  MoreVertical,
   Plus,
   Search,
+  TrendingUp,
   Truck,
   UserRoundCheck,
-  Wrench,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import {
@@ -23,6 +28,7 @@ import {
   adminGetFleetStats,
   adminGetVehicles,
   adminUpdateVehicle,
+  adminUploadVehicleImage,
   type FleetMeta,
   type FleetStats,
   type Vehicle,
@@ -33,6 +39,7 @@ import {
   adminGetDrivers,
   VEHICLE_TYPES,
   type Driver,
+  type VehicleType,
 } from "@/lib/api/driver.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
@@ -52,27 +59,85 @@ const EMPTY_FORM = {
   odometerKm: "0",
 };
 
-const STATUS_CONFIG: Record<
+// Card presentation per operational status: the badge on the hero, the hero
+// gradient, and the tint of the vehicle glyph.
+const CARD_STATUS: Record<
   VehicleStatus,
-  { label: string; className: string }
+  { label: string; badge: string; hero: string; iconColor: string }
 > = {
-  available: {
-    label: "Available",
-    className: "bg-[#DEF3E6] text-[#1E9E4C]",
-  },
   assigned: {
-    label: "Assigned",
-    className: "bg-[#E8F0FB] text-[#2E6FD6]",
+    label: "Active",
+    badge: "bg-[#DEF3E6] text-[#1E9E4C]",
+    hero: "from-[#E9F6EE] to-[#CFE9D9]",
+    iconColor: "text-[#1E9E4C]",
   },
   maintenance: {
     label: "Maintenance",
-    className: "bg-[#FBF1DC] text-[#C99A3D]",
+    badge: "bg-[#FBF1DC] text-[#C99A3D]",
+    hero: "from-[#FBF2DE] to-[#F3E2BC]",
+    iconColor: "text-[#C99A3D]",
+  },
+  available: {
+    label: "Idle",
+    badge: "bg-[#EDF1F6] text-[#5A6B82]",
+    hero: "from-[#EFF2F7] to-[#DBE2EC]",
+    iconColor: "text-[#5A6B82]",
   },
   inactive: {
     label: "Inactive",
-    className: "bg-[#FBE4E1] text-[#D0453A]",
+    badge: "bg-[#FBE4E1] text-[#D0453A]",
+    hero: "from-[#FBE7E3] to-[#F3CEC8]",
+    iconColor: "text-[#D0453A]",
   },
 };
+
+// Friendlier labels than the raw enum for the card "Type" field.
+const TYPE_LABELS: Record<VehicleType, string> = {
+  bike: "Bike",
+  scooter: "Scooter",
+  car: "Car",
+  van: "Van",
+  pickup: "Pickup Truck",
+  truck: "Heavy Truck",
+};
+
+const TYPE_ICONS: Record<VehicleType, typeof Truck> = {
+  bike: Bike,
+  scooter: Bike,
+  car: Car,
+  van: Truck,
+  pickup: Truck,
+  truck: Truck,
+};
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString();
+}
+
+// The second detail column on a card adapts to what matters for that status:
+// who's driving it, when it's next serviced, or that it's ready to dispatch.
+function secondaryDetail(vehicle: Vehicle): {
+  label: string;
+  value: string;
+  tone?: string;
+} {
+  switch (vehicle.status) {
+    case "assigned":
+      return { label: "Driver", value: vehicle.assignedDriverName || "Unassigned" };
+    case "maintenance":
+      return {
+        label: "Service Due",
+        value: vehicle.nextServiceAt
+          ? formatDate(vehicle.nextServiceAt)
+          : "Not scheduled",
+        tone: "text-[#C99A3D]",
+      };
+    case "inactive":
+      return { label: "Status", value: "Retired" };
+    default:
+      return { label: "Status", value: "Ready" };
+  }
+}
 
 const FILTERS: Array<{ id: VehicleStatus | "all"; label: string }> = [
   { id: "all", label: "All Vehicles" },
@@ -105,6 +170,10 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // Vehicle photo staged in the create/edit form; uploaded after the record saves.
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -167,6 +236,8 @@ export default function AdminFleetManagement({ token }: { token: string }) {
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM });
+    setImageFile(null);
+    setImagePreview(null);
     setFormError(null);
     setIsCreateOpen(true);
   };
@@ -188,8 +259,20 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       nextServiceAt: toDateInput(vehicle.nextServiceAt),
       odometerKm: vehicle.odometerKm.toString(),
     });
+    setImageFile(null);
+    setImagePreview(vehicle.imageUrl);
     setFormError(null);
     setIsEditOpen(true);
+  };
+
+  // Stage a chosen photo and show a local preview until it's uploaded on save.
+  const handleImageChange = (file: File | null) => {
+    setImageFile(file);
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview(isEditOpen ? selected?.imageUrl ?? null : null);
+    }
   };
 
   const openAssignment = (vehicle: Vehicle) => {
@@ -225,6 +308,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       setSaving(true);
       setFormError(null);
       const payload = buildPayload();
+      let vehicleId: string;
       if (isEditOpen && selected) {
         await adminUpdateVehicle(token, selected.id, {
           type: payload.type,
@@ -240,11 +324,17 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           nextServiceAt: payload.nextServiceAt,
           odometerKm: payload.odometerKm,
         });
-        setIsEditOpen(false);
+        vehicleId = selected.id;
       } else {
-        await adminCreateVehicle(token, payload);
-        setIsCreateOpen(false);
+        const created = await adminCreateVehicle(token, payload);
+        vehicleId = created.id;
       }
+      // Upload the staged photo once the vehicle exists (needs its id).
+      if (imageFile) {
+        await adminUploadVehicleImage(token, vehicleId, imageFile);
+      }
+      setIsCreateOpen(false);
+      setIsEditOpen(false);
       await loadData(true);
     } catch (err) {
       setFormError(
@@ -330,31 +420,69 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        {[
-          ["Total", stats?.total, Truck],
-          ["Available", stats?.available, Gauge],
-          ["Assigned", stats?.assigned, UserRoundCheck],
-          ["Maintenance", stats?.maintenance, Wrench],
-          ["Inactive", stats?.inactive, Ban],
-        ].map(([label, value, Icon]) => {
-          const StatIcon = Icon as typeof Truck;
-          return (
-            <div key={label as string} className="card p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">
-                    {label as string}
-                  </p>
-                  <p className="mt-1 text-2xl font-black text-[var(--text)]">
-                    {value === undefined ? "—" : String(value)}
-                  </p>
-                </div>
-                <StatIcon size={20} className="text-[var(--teal)]" />
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total vehicles — with an operational-utilisation bar */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            Total Vehicles
+          </p>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.total : "—"}
+          </p>
+          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
+            <div
+              className="h-full rounded-full bg-[var(--teal)] transition-all"
+              style={{
+                width: `${
+                  stats && stats.total > 0
+                    ? Math.round(
+                        ((stats.available + stats.assigned) / stats.total) * 100,
+                      )
+                    : 0
+                }%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Active units — vehicles currently assigned/in service */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            Active Units
+          </p>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.assigned : "—"}
+          </p>
+          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
+            <TrendingUp size={14} /> In active service
+          </p>
+        </div>
+
+        {/* In maintenance */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            In Maintenance
+          </p>
+          <p className="mt-2 text-3xl font-black text-[#C99A3D]">
+            {stats ? stats.maintenance : "—"}
+          </p>
+          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#D0453A]">
+            <AlertTriangle size={14} /> Needs attention
+          </p>
+        </div>
+
+        {/* Inactive — retired / out of service */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            Inactive
+          </p>
+          <p className="mt-2 text-3xl font-black text-[var(--text)]">
+            {stats ? stats.inactive : "—"}
+          </p>
+          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
+            <Ban size={14} /> Out of service
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -384,147 +512,241 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         </div>
       )}
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[62rem] text-left text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
-                {[
-                  "Registration",
-                  "Vehicle",
-                  "Capacity",
-                  "Branch",
-                  "Driver",
-                  "Status",
-                  "Service",
-                  "Actions",
-                ].map((heading) => (
-                  <th
-                    key={heading}
-                    className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
+      {/* ============ Asset Details (vehicle cards) ============ */}
+      <div>
+        <h2 className="mb-4 text-lg font-black tracking-tight text-[var(--text)]">
+          Asset Details
+        </h2>
+
+        {loading ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="animate-pulse overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
+              >
+                <div className="h-36 bg-[var(--surface-muted)]" />
+                <div className="space-y-3 p-4">
+                  <div className="h-4 w-1/2 rounded bg-[var(--surface-muted)]" />
+                  <div className="h-3 w-2/3 rounded bg-[var(--surface-muted)]" />
+                  <div className="h-9 w-full rounded bg-[var(--surface-muted)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : vehicles.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-12 text-center text-[var(--text-muted)]">
+            No vehicles found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {vehicles.map((vehicle) => {
+              const cfg = CARD_STATUS[vehicle.status];
+              const TypeIcon = TYPE_ICONS[vehicle.type];
+              const detail = secondaryDetail(vehicle);
+              const canAssign = !["maintenance", "inactive"].includes(
+                vehicle.status,
+              );
+              const isAssignPrimary =
+                vehicle.status === "available" || vehicle.status === "assigned";
+              const primaryLabel =
+                vehicle.status === "available"
+                  ? "Assign Driver"
+                  : vehicle.status === "assigned"
+                    ? "Reassign"
+                    : vehicle.status === "maintenance"
+                      ? "Service Log"
+                      : "Edit Details";
+
+              return (
+                <div
+                  key={vehicle.id}
+                  className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
+                >
+                  {/* Hero */}
+                  <div
+                    className={`relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br ${cfg.hero}`}
                   >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center">
-                    <Loader2 className="mx-auto animate-spin text-[var(--teal)]" />
-                  </td>
-                </tr>
-              ) : vehicles.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-12 text-center text-[var(--text-muted)]"
-                  >
-                    No vehicles found.
-                  </td>
-                </tr>
-              ) : (
-                vehicles.map((vehicle) => (
-                  <tr
-                    key={vehicle.id}
-                    className="border-b border-[var(--border-light)] last:border-0"
-                  >
-                    <td className="px-5 py-4 font-black text-[var(--text)]">
-                      {vehicle.registrationNumber}
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="font-semibold capitalize text-[var(--text)]">
-                        {vehicle.type}
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {[vehicle.make, vehicle.model, vehicle.year]
-                          .filter(Boolean)
-                          .join(" ") || "Details not set"}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 text-[var(--text-soft)]">
-                      {vehicle.capacityKg
-                        ? `${vehicle.capacityKg.toLocaleString()} kg`
-                        : "—"}
-                    </td>
-                    <td className="px-5 py-4 text-[var(--text-soft)]">
-                      {vehicle.branch || "—"}
-                    </td>
-                    <td className="px-5 py-4">
-                      {vehicle.assignedDriverName || "Unassigned"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${STATUS_CONFIG[vehicle.status].className}`}
-                      >
-                        {STATUS_CONFIG[vehicle.status].label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-xs text-[var(--text-soft)]">
-                      {vehicle.nextServiceAt
-                        ? new Date(vehicle.nextServiceAt).toLocaleDateString()
-                        : "Not scheduled"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex gap-1">
+                    {vehicle.imageUrl ? (
+                      <img
+                        src={vehicle.imageUrl}
+                        alt={vehicle.registrationNumber}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <TypeIcon
+                        size={56}
+                        strokeWidth={1.5}
+                        className={`${cfg.iconColor} opacity-80`}
+                      />
+                    )}
+                    <span
+                      className={`absolute left-3 top-3 rounded-full px-3 py-1 text-[11px] font-bold ${cfg.badge}`}
+                    >
+                      {cfg.label}
+                    </span>
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-bold text-[var(--text)] backdrop-blur">
+                      <Gauge size={13} />
+                      {vehicle.odometerKm > 0
+                        ? `${vehicle.odometerKm.toLocaleString()} km`
+                        : "New"}
+                    </span>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-black text-[var(--text)]">
+                          {vehicle.registrationNumber}
+                        </p>
+                        <p className="mt-0.5 truncate text-sm text-[var(--text-muted)]">
+                          {[vehicle.make, vehicle.model, vehicle.year]
+                            .filter(Boolean)
+                            .join(" ") || "Details not set"}
+                        </p>
+                      </div>
+
+                      {/* Kebab menu */}
+                      <div className="relative shrink-0">
                         <button
                           type="button"
-                          onClick={() => openEdit(vehicle)}
-                          className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--teal)]"
-                          aria-label="Edit vehicle"
+                          suppressHydrationWarning
+                          onClick={() =>
+                            setMenuOpenId(
+                              menuOpenId === vehicle.id ? null : vehicle.id,
+                            )
+                          }
+                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]"
+                          aria-label="More actions"
                         >
-                          <Edit2 size={16} />
+                          <MoreVertical size={18} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => openAssignment(vehicle)}
-                          disabled={["maintenance", "inactive"].includes(
-                            vehicle.status,
-                          )}
-                          className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[#2E6FD6] disabled:opacity-35"
-                          aria-label="Assign driver"
-                        >
-                          <UserRoundCheck size={16} />
-                        </button>
-                        {vehicle.status !== "inactive" && (
-                          <button
-                            type="button"
-                            onClick={() => deactivateVehicle(vehicle)}
-                            disabled={saving || !!vehicle.assignedDriverId}
-                            className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[#FBE4E1] hover:text-[#D0453A] disabled:opacity-35"
-                            aria-label="Deactivate vehicle"
-                          >
-                            <Ban size={16} />
-                          </button>
+                        {menuOpenId === vehicle.id && (
+                          <>
+                            <button
+                              type="button"
+                              aria-hidden
+                              tabIndex={-1}
+                              className="fixed inset-0 z-10 cursor-default"
+                              onClick={() => setMenuOpenId(null)}
+                            />
+                            <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] py-1 shadow-[var(--shadow-md)]">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  openEdit(vehicle);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[var(--text)] hover:bg-[var(--surface-soft)]"
+                              >
+                                <Edit2 size={15} /> Edit Details
+                              </button>
+                              <button
+                                type="button"
+                                disabled={!canAssign}
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  openAssignment(vehicle);
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[var(--text)] hover:bg-[var(--surface-soft)] disabled:opacity-40 disabled:hover:bg-transparent"
+                              >
+                                <UserRoundCheck size={15} /> Assign Driver
+                              </button>
+                              {vehicle.status !== "inactive" && (
+                                <button
+                                  type="button"
+                                  disabled={saving || !!vehicle.assignedDriverId}
+                                  onClick={() => {
+                                    setMenuOpenId(null);
+                                    void deactivateVehicle(vehicle);
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1] disabled:opacity-40 disabled:hover:bg-transparent"
+                                >
+                                  <Ban size={15} /> Deactivate
+                                </button>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+
+                    {/* Detail columns */}
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                          Type
+                        </p>
+                        <p className="mt-0.5 truncate text-sm font-semibold text-[var(--text)]">
+                          {TYPE_LABELS[vehicle.type]}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                          {detail.label}
+                        </p>
+                        <p
+                          className={`mt-0.5 truncate text-sm font-semibold ${
+                            detail.tone ?? "text-[var(--text)]"
+                          }`}
+                        >
+                          {detail.value}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <button
+                        type="button"
+                        suppressHydrationWarning
+                        onClick={() =>
+                          isAssignPrimary
+                            ? openAssignment(vehicle)
+                            : openEdit(vehicle)
+                        }
+                        className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                      >
+                        {primaryLabel}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(vehicle)}
+                        className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-bold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
+                      >
+                        Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
         {meta && meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-4">
+          <div className="mt-6 flex items-center justify-between">
             <span className="text-xs text-[var(--text-muted)]">
               Page {meta.page} of {meta.totalPages}
             </span>
             <div className="flex gap-1">
               <button
                 type="button"
+                suppressHydrationWarning
                 disabled={page <= 1}
                 onClick={() => setPage((current) => current - 1)}
-                className="rounded-lg p-2 disabled:opacity-35"
+                className="rounded-lg border border-[var(--border)] p-2 disabled:opacity-35"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 type="button"
+                suppressHydrationWarning
                 disabled={page >= meta.totalPages}
                 onClick={() => setPage((current) => current + 1)}
-                className="rounded-lg p-2 disabled:opacity-35"
+                className="rounded-lg border border-[var(--border)] p-2 disabled:opacity-35"
               >
                 <ChevronRight size={16} />
               </button>
@@ -547,6 +769,8 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           isEdit={isEditOpen}
           error={formError}
           saving={saving}
+          imagePreview={imagePreview}
+          onImageChange={handleImageChange}
           onSubmit={submitVehicle}
           onCancel={() => {
             setIsCreateOpen(false);
@@ -614,6 +838,8 @@ function VehicleForm({
   isEdit,
   error,
   saving,
+  imagePreview,
+  onImageChange,
   onSubmit,
   onCancel,
 }: {
@@ -622,6 +848,8 @@ function VehicleForm({
   isEdit: boolean;
   error: string | null;
   saving: boolean;
+  imagePreview: string | null;
+  onImageChange: (file: File | null) => void;
   onSubmit: (event: React.FormEvent) => void;
   onCancel: () => void;
 }) {
@@ -630,6 +858,36 @@ function VehicleForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <div>
+        <label className="form-label">Vehicle Photo</label>
+        <div className="flex items-center gap-4">
+          <div className="flex h-20 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Vehicle preview"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ImageIcon size={22} className="text-[var(--text-muted)]" />
+            )}
+          </div>
+          <div className="min-w-0 space-y-1">
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif"
+              onChange={(event) =>
+                onImageChange(event.target.files?.[0] ?? null)
+              }
+              className="block w-full text-sm text-[var(--text-soft)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--surface-muted)] file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[var(--text)] hover:file:bg-[var(--border)]"
+            />
+            <p className="text-xs text-[var(--text-muted)]">
+              JPG, PNG or GIF, up to 5MB.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="form-label">Registration Number *</label>
@@ -663,7 +921,7 @@ function VehicleForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="form-label">Make</label>
           <input
@@ -678,17 +936,6 @@ function VehicleForm({
             className="form-input"
             value={form.model}
             onChange={(event) => set({ model: event.target.value })}
-          />
-        </div>
-        <div>
-          <label className="form-label">Year</label>
-          <input
-            type="number"
-            min="1900"
-            max="2200"
-            className="form-input"
-            value={form.year}
-            onChange={(event) => set({ year: event.target.value })}
           />
         </div>
       </div>
@@ -716,37 +963,27 @@ function VehicleForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="form-label">Branch / Hub</label>
-          <input
-            className="form-input"
-            value={form.branch}
-            onChange={(event) => set({ branch: event.target.value })}
-          />
-        </div>
-        <div>
-          <label className="form-label">Operational Status</label>
-          <select
-            className="form-input capitalize"
-            value={form.status}
-            onChange={(event) =>
-              set({ status: event.target.value as VehicleStatus })
-            }
-            disabled={form.status === "assigned"}
-          >
-            {(["available", "maintenance", "inactive"] as VehicleStatus[]).map(
-              (status) => (
-                <option key={status} value={status} className="capitalize">
-                  {status}
-                </option>
-              ),
-            )}
-            {form.status === "assigned" && (
-              <option value="assigned">Assigned</option>
-            )}
-          </select>
-        </div>
+      <div>
+        <label className="form-label">Operational Status</label>
+        <select
+          className="form-input capitalize"
+          value={form.status}
+          onChange={(event) =>
+            set({ status: event.target.value as VehicleStatus })
+          }
+          disabled={form.status === "assigned"}
+        >
+          {(["available", "maintenance", "inactive"] as VehicleStatus[]).map(
+            (status) => (
+              <option key={status} value={status} className="capitalize">
+                {status}
+              </option>
+            ),
+          )}
+          {form.status === "assigned" && (
+            <option value="assigned">Assigned</option>
+          )}
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

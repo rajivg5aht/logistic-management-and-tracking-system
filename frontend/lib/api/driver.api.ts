@@ -39,7 +39,16 @@ export type Driver = {
   branch: string;
   employmentStatus: EmploymentStatus;
   availabilityStatus: AvailabilityStatus;
+  deliveriesCount?: number;
   createdAt?: string;
+};
+
+export type AdminDriverStats = {
+  total: number;
+  onDelivery: number;
+  offDuty: number;
+  available: number;
+  inactive: number;
 };
 
 export type DriverMeta = {
@@ -120,6 +129,15 @@ export async function adminGetDrivers(
 
   const payload = await authFetch(endpoint, token, { method: "GET" });
   return { data: payload.data, meta: payload.meta };
+}
+
+export async function adminGetDriverStats(
+  token: string,
+): Promise<AdminDriverStats> {
+  const payload = await authFetch(`/api/v1/admin/drivers/stats`, token, {
+    method: "GET",
+  });
+  return payload.data;
 }
 
 export async function adminGetDriverById(
