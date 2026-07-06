@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import { IUser, UserModel } from "../models/user.model";
@@ -27,6 +28,7 @@ export type SafeUser = {
   employmentStatus?: IUser["employmentStatus"];
   availabilityStatus?: IUser["availabilityStatus"];
   assignedVehicleId?: string | null;
+  deliveriesCount?: number;
 };
 
 // Compact view of a driver's assigned vehicle, surfaced in the driver console.
@@ -319,10 +321,54 @@ export class UserService {
       filter,
     );
 
+    // Count each driver's completed deliveries in one grouped query so the
+    // admin list can show lifetime delivery totals without N extra requests.
+    const driverIds = users.map((u) => u._id);
+    const deliveryCounts = await ShipmentModel.aggregate<{
+      _id: mongoose.Types.ObjectId;
+      count: number;
+    }>([
+      { $match: { assignedDriverId: { $in: driverIds }, status: "delivered" } },
+      { $group: { _id: "$assignedDriverId", count: { $sum: 1 } } },
+    ]);
+    const countByDriver = new Map(
+      deliveryCounts.map((entry) => [entry._id.toString(), entry.count]),
+    );
+
     return {
-      drivers: users.map((u) => this.sanitizeUser(u)),
+      drivers: users.map((u) => ({
+        ...this.sanitizeUser(u),
+        deliveriesCount: countByDriver.get(u._id.toString()) ?? 0,
+      })),
       total,
     };
+  }
+
+  // Aggregate counts for the driver-management KPI cards.
+  async adminGetDriverStats(): Promise<{
+    total: number;
+    onDelivery: number;
+    offDuty: number;
+    available: number;
+    inactive: number;
+  }> {
+    const [total, onDelivery, offDuty, available, inactive] = await Promise.all([
+      UserModel.countDocuments({ role: "driver" }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "on-delivery",
+      }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "off-duty",
+      }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "available",
+      }),
+      UserModel.countDocuments({ role: "driver", status: "inactive" }),
+    ]);
+    return { total, onDelivery, offDuty, available, inactive };
   }
 
   async adminGetDriverById(driverId: string): Promise<SafeUser> {

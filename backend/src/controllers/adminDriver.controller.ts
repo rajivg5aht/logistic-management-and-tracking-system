@@ -46,6 +46,24 @@ export class AdminDriverController {
     }
   }
 
+  // ── Aggregate KPI counts for the driver-management cards ───────────────────
+  async getStats(_req: Request, res: Response) {
+    try {
+      const stats = await userService.adminGetDriverStats();
+      return ApiResponseHelper.success(
+        res,
+        stats,
+        "Driver stats retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   async getDriverById(req: Request, res: Response) {
     try {
       const id = req.params.id as string;

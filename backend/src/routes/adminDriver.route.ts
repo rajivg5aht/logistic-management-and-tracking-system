@@ -10,6 +10,7 @@ adminDriverRouter.use(authMiddleware);
 adminDriverRouter.use(adminMiddleware);
 
 adminDriverRouter.get("/", adminDriverController.getDrivers);
+adminDriverRouter.get("/stats", adminDriverController.getStats);
 adminDriverRouter.get("/:id", adminDriverController.getDriverById);
 adminDriverRouter.post("/", adminDriverController.createDriver);
 adminDriverRouter.put("/:id", adminDriverController.updateDriver);
