@@ -137,6 +137,31 @@ export class AdminVehicleController {
     }
   }
 
+  async uploadVehicleImage(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid vehicle ID", 400);
+      }
+      if (!req.file) {
+        return ApiResponseHelper.error(res, "No image file provided", 400);
+      }
+      const imageUrl = `/uploads/vehicles/${req.file.filename}`;
+      const vehicle = await vehicleService.setVehicleImage(id, imageUrl);
+      return ApiResponseHelper.success(
+        res,
+        vehicle,
+        "Vehicle image updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   async assignDriver(req: Request, res: Response) {
     try {
       const id = req.params.id as string;

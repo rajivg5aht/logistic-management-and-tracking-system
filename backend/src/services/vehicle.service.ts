@@ -23,6 +23,7 @@ export type SafeVehicle = {
   year?: number;
   capacityKg?: number;
   branch: string;
+  imageUrl: string | null;
   status: VehicleStatus;
   insuranceExpiry: Date | null;
   registrationExpiry: Date | null;
@@ -75,6 +76,7 @@ export class VehicleService {
       year: vehicle.year,
       capacityKg: vehicle.capacityKg,
       branch: vehicle.branch,
+      imageUrl: vehicle.imageUrl ?? null,
       status: vehicle.status,
       insuranceExpiry: vehicle.insuranceExpiry,
       registrationExpiry: vehicle.registrationExpiry,
@@ -202,6 +204,15 @@ export class VehicleService {
     }
 
     vehicle.set(this.normalizeInput(input));
+    await vehicle.save();
+    const [safeVehicle] = await this.withDriverNames([vehicle]);
+    return safeVehicle;
+  }
+
+  async setVehicleImage(id: string, imageUrl: string): Promise<SafeVehicle> {
+    const vehicle = await VehicleModel.findById(id);
+    if (!vehicle) throw new HttpException(404, "Vehicle not found");
+    vehicle.imageUrl = imageUrl;
     await vehicle.save();
     const [safeVehicle] = await this.withDriverNames([vehicle]);
     return safeVehicle;

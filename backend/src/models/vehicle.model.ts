@@ -25,6 +25,7 @@ export interface IVehicle extends Document {
   year?: number;
   capacityKg?: number;
   branch: string;
+  imageUrl: string | null;
   status: VehicleStatus;
   insuranceExpiry: Date | null;
   registrationExpiry: Date | null;
@@ -69,6 +70,7 @@ const VehicleSchema = new Schema<IVehicle>(
     year: { type: Number },
     capacityKg: { type: Number },
     branch: { type: String, trim: true, default: "" },
+    imageUrl: { type: String, default: null },
     status: {
       type: String,
       enum: VEHICLE_STATUSES,
