@@ -12,7 +12,13 @@ import { DriverStageUpdateDTO } from "../dtos/driver.dto";
 import { IShipment, ShipmentModel } from "../models/shipment.model";
 import { UserModel } from "../models/user.model";
 import { VehicleModel } from "../models/vehicle.model";
-import { ShipmentStatus, DriverStage } from "../types/shipment.type";
+import {
+  DriverStage,
+  ShipmentStatus,
+  CUSTOMER_HISTORY_STATUSES,
+  DRIVER_STAGE_TO_SHIPMENT_STATUS,
+  SHIPMENT_STATUS_TO_DRIVER_STAGE,
+} from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
 
 const shipmentRepository = new ShipmentMongoRepository();
@@ -40,19 +46,6 @@ export type SafeShipment = {
   timeline: IShipment["timeline"];
   createdAt: Date;
   updatedAt: Date;
-};
-
-// A driver's granular stage maps onto the canonical 4-state status that the
-// KPIs, 7-day chart, customer badges and filters all depend on. Keeping this in
-// one place means the rest of the app never needs to know about driver stages.
-const STAGE_TO_STATUS: Record<DriverStage, ShipmentStatus> = {
-  assigned: "pending",
-  "picked-up": "in-transit",
-  "in-transit": "in-transit",
-  "out-for-delivery": "in-transit",
-  delivered: "delivered",
-  failed: "in-transit",
-  returned: "cancelled",
 };
 
 // Allowed forward transitions for a driver-driven delivery.
@@ -206,20 +199,32 @@ export class ShipmentService {
     return this.sanitize(updated);
   }
 
-  // Permanent deletion is limited to cancelled shipments so delivered and
-  // in-transit records can never be erased by a customer.
+  // Customers may remove completed history, but never pending/in-progress
+  // shipments that are still part of an active delivery operation.
   async customerDeleteShipment(
     customerId: string,
     id: string,
   ): Promise<boolean> {
     const shipment = await this.getOwnedShipment(customerId, id);
-    if (shipment.status !== "cancelled") {
+    if (
+      !CUSTOMER_HISTORY_STATUSES.includes(
+        shipment.status as (typeof CUSTOMER_HISTORY_STATUSES)[number],
+      )
+    ) {
       throw new HttpException(
         409,
-        "Only cancelled shipments can be deleted. Cancel the shipment first.",
+        "Only delivered or cancelled shipments can be deleted from history.",
       );
     }
     return shipmentRepository.delete(id);
+  }
+
+  async customerDeleteHistory(customerId: string): Promise<number> {
+    const result = await ShipmentModel.deleteMany({
+      customer: customerId,
+      status: { $in: CUSTOMER_HISTORY_STATUSES },
+    });
+    return result.deletedCount;
   }
 
   async adminGetShipments(
@@ -258,12 +263,23 @@ export class ShipmentService {
       throw new HttpException(404, "Shipment not found");
     }
 
-    const { assignedDriverId, ...rest } = data;
+    const {
+      assignedDriverId,
+      driverStage: requestedDriverStage,
+      ...rest
+    } = data;
     const updateData: Partial<IShipment> = { ...rest };
+    const requestedStatus = requestedDriverStage
+      ? DRIVER_STAGE_TO_SHIPMENT_STATUS[requestedDriverStage]
+      : data.status;
 
-    if (data.status === "delivered" && shipment.status !== "delivered") {
+    if (requestedStatus) {
+      updateData.status = requestedStatus;
+    }
+
+    if (requestedStatus === "delivered" && shipment.status !== "delivered") {
       updateData.deliveredAt = new Date();
-    } else if (data.status && data.status !== "delivered") {
+    } else if (requestedStatus && requestedStatus !== "delivered") {
       updateData.deliveredAt = null;
     }
 
@@ -359,13 +375,66 @@ export class ShipmentService {
       }
     }
 
+    // Admin updates and driver updates must never leave two contradictory
+    // states behind. Preserve an existing granular stage when it already maps
+    // to the selected status (for example "picked-up" -> "in-transit").
+    const effectiveDriverId =
+      assignedDriverId === undefined
+        ? shipment.assignedDriverId?.toString() ?? null
+        : assignedDriverId || null;
+    const effectiveStatus = updateData.status ?? shipment.status;
+    let plannedStage =
+      (updateData.driverStage as DriverStage | null | undefined) ??
+      (shipment.driverStage as DriverStage | null);
+
+    if (requestedDriverStage) {
+      if (!effectiveDriverId) {
+        throw new HttpException(
+          400,
+          "Assign a driver before updating the delivery status",
+        );
+      }
+
+      if (plannedStage !== requestedDriverStage) {
+        updateData.driverStage = requestedDriverStage;
+        updateData.timeline = [
+          ...((updateData.timeline ?? shipment.timeline) || []),
+          {
+            stage: requestedDriverStage,
+            at: new Date(),
+            note: "Delivery status updated by admin",
+          },
+        ];
+        plannedStage = requestedDriverStage;
+      }
+    }
+
     if (
-      data.status &&
-      ["delivered", "cancelled"].includes(data.status) &&
-      shipment.assignedDriverId
+      effectiveDriverId &&
+      (!plannedStage ||
+        DRIVER_STAGE_TO_SHIPMENT_STATUS[plannedStage] !== effectiveStatus)
     ) {
-      await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
-        availabilityStatus: "available",
+      const syncedStage = SHIPMENT_STATUS_TO_DRIVER_STAGE[effectiveStatus];
+      updateData.driverStage = syncedStage;
+      updateData.timeline = [
+        ...((updateData.timeline ?? shipment.timeline) || []),
+        {
+          stage: syncedStage,
+          at: new Date(),
+          note: "Shipment status updated by admin",
+        },
+      ];
+    }
+
+    if (effectiveDriverId) {
+      const availabilityStatus =
+        effectiveStatus === "pending"
+          ? "assigned"
+          : effectiveStatus === "in-transit"
+            ? "on-delivery"
+            : "available";
+      await UserModel.findByIdAndUpdate(effectiveDriverId, {
+        availabilityStatus,
       });
     }
 
@@ -382,11 +451,13 @@ export class ShipmentService {
     if (!shipment) {
       throw new HttpException(404, "Shipment not found");
     }
-    if (shipment.status !== "cancelled") {
-      throw new HttpException(
-        409,
-        "Only cancelled shipments can be deleted",
-      );
+    if (
+      shipment.assignedDriverId &&
+      !["delivered", "cancelled"].includes(shipment.status)
+    ) {
+      await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
+        availabilityStatus: "available",
+      });
     }
     return shipmentRepository.delete(id);
   }
@@ -451,7 +522,13 @@ export class ShipmentService {
       }
     }
 
-    const nextStatus = STAGE_TO_STATUS[next];
+    // Repeating the same request is idempotent. This prevents double-clicks or
+    // network retries from adding duplicate timeline entries.
+    if (next === current) {
+      return this.sanitize(shipment);
+    }
+
+    const nextStatus = DRIVER_STAGE_TO_SHIPMENT_STATUS[next];
     const updateData: Partial<IShipment> = {
       driverStage: next,
       status: nextStatus,

@@ -6,6 +6,12 @@ import {
   AdminAssignVehicleDTO,
   AdminCreateVehicleDTO,
 } from "../dtos/vehicle.dto";
+import {
+  DRIVER_STAGE_TO_SHIPMENT_STATUS,
+  SHIPMENT_STATUS_TO_DRIVER_STAGE,
+  CUSTOMER_HISTORY_STATUSES,
+} from "../types/shipment.type";
+import { AdminUpdateShipmentDTO } from "../dtos/shipment.dto";
 
 test("generic user creation only accepts customer accounts", () => {
   const base = {
@@ -68,4 +74,52 @@ test("fleet validates vehicle creation and nullable assignments", () => {
     false,
   );
   assert.equal(AdminAssignVehicleDTO.safeParse({ driverId: null }).success, true);
+});
+
+test("driver milestones map to the status shown to admin and customer", () => {
+  assert.deepEqual(DRIVER_STAGE_TO_SHIPMENT_STATUS, {
+    assigned: "pending",
+    "picked-up": "in-transit",
+    "in-transit": "in-transit",
+    "out-for-delivery": "in-transit",
+    delivered: "delivered",
+    failed: "in-transit",
+    returned: "cancelled",
+  });
+});
+
+test("admin statuses map back to a compatible driver milestone", () => {
+  assert.deepEqual(SHIPMENT_STATUS_TO_DRIVER_STAGE, {
+    pending: "assigned",
+    "in-transit": "in-transit",
+    delivered: "delivered",
+    cancelled: "returned",
+  });
+});
+
+test("admin shipment updates accept only operational delivery stages", () => {
+  for (const driverStage of [
+    "picked-up",
+    "in-transit",
+    "out-for-delivery",
+    "delivered",
+  ]) {
+    assert.equal(
+      AdminUpdateShipmentDTO.safeParse({ driverStage }).success,
+      true,
+    );
+  }
+
+  assert.equal(
+    AdminUpdateShipmentDTO.safeParse({ driverStage: "assigned" }).success,
+    false,
+  );
+  assert.equal(
+    AdminUpdateShipmentDTO.safeParse({ driverStage: "cancelled" }).success,
+    false,
+  );
+});
+
+test("customer history deletion is limited to terminal shipments", () => {
+  assert.deepEqual(CUSTOMER_HISTORY_STATUSES, ["delivered", "cancelled"]);
 });

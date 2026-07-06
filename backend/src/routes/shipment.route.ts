@@ -10,6 +10,7 @@ shipmentRouter.use(authMiddleware);
 
 shipmentRouter.post("/", shipmentController.createShipment);
 shipmentRouter.get("/my", shipmentController.getMyShipments);
+shipmentRouter.delete("/history", shipmentController.customerDeleteHistory);
 shipmentRouter.patch("/:id", shipmentController.customerUpdateShipment);
 shipmentRouter.patch("/:id/cancel", shipmentController.customerCancelShipment);
 shipmentRouter.delete("/:id", shipmentController.customerDeleteShipment);

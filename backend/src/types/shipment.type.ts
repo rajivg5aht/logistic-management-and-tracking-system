@@ -37,6 +37,8 @@ export const SHIPMENT_STATUSES = [
   "cancelled",
 ] as const;
 
+export const CUSTOMER_HISTORY_STATUSES = ["delivered", "cancelled"] as const;
+
 // Granular delivery step owned by the driver. Layered on top of the canonical
 // 4-state status (which the KPIs/chart/customer badges depend on) so it can be
 // as detailed as the operational flow needs without rippling through the app.
@@ -49,6 +51,37 @@ export const DRIVER_STAGES = [
   "failed",
   "returned",
 ] as const;
+
+export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
+export type DriverStage = (typeof DRIVER_STAGES)[number];
+
+// Driver stages are intentionally more detailed than the four statuses used by
+// admin lists, customer badges, filters, and statistics. This is the single
+// contract used whenever a driver milestone changes a shipment.
+export const DRIVER_STAGE_TO_SHIPMENT_STATUS: Record<
+  DriverStage,
+  ShipmentStatus
+> = {
+  assigned: "pending",
+  "picked-up": "in-transit",
+  "in-transit": "in-transit",
+  "out-for-delivery": "in-transit",
+  delivered: "delivered",
+  failed: "in-transit",
+  returned: "cancelled",
+};
+
+// When an admin changes the four-state status, keep the driver's operational
+// stage compatible with it as well.
+export const SHIPMENT_STATUS_TO_DRIVER_STAGE: Record<
+  ShipmentStatus,
+  DriverStage
+> = {
+  pending: "assigned",
+  "in-transit": "in-transit",
+  delivered: "delivered",
+  cancelled: "returned",
+};
 
 export const PAYMENT_METHODS = ["esewa", "khalti", "cod"] as const;
 
@@ -77,7 +110,5 @@ export const ShipmentSchema = z.object({
 });
 
 export type ShipmentType = z.infer<typeof ShipmentSchema>;
-export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
-export type DriverStage = (typeof DRIVER_STAGES)[number];
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;

@@ -43,6 +43,9 @@ export type CustomerUpdateShipmentDTO = z.infer<
 // DTO used by an admin to update a shipment (status / driver assignment).
 export const AdminUpdateShipmentDTO = z.object({
   status: z.enum(SHIPMENT_STATUSES).optional(),
+  driverStage: z
+    .enum(["picked-up", "in-transit", "out-for-delivery", "delivered"])
+    .optional(),
   assignedDriver: z.string().nullable().optional(),
   // Real link to a driver's User account. `null`/"" clears the assignment.
   assignedDriverId: z.string().nullable().optional(),

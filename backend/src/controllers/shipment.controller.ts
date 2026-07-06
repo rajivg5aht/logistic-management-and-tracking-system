@@ -161,6 +161,31 @@ export class ShipmentController {
     }
   }
 
+  // Customer: clear delivered/cancelled shipment history while retaining all
+  // active operational records.
+  async customerDeleteHistory(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const deletedCount = await shipmentService.customerDeleteHistory(
+        req.user.id,
+      );
+      return ApiResponseHelper.success(
+        res,
+        { deletedCount },
+        "Shipment history deleted successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   // ── Admin: paginated list ────────────────────────────────────────────────
   async adminGetShipments(req: Request, res: Response) {
     try {
