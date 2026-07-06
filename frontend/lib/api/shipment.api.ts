@@ -16,6 +16,36 @@ export type DriverStage =
   | "failed"
   | "returned";
 
+export const DRIVER_STAGE_LABELS: Record<DriverStage, string> = {
+  assigned: "Assigned",
+  "picked-up": "Picked Up",
+  "in-transit": "In Transit",
+  "out-for-delivery": "Out for Delivery",
+  delivered: "Delivered",
+  failed: "Delivery Failed",
+  returned: "Returned",
+};
+
+// Keep grouped database statuses for filters/statistics, but show users the
+// exact operational phase currently reported by the driver.
+export function getShipmentDisplayStatus(shipment: {
+  status: ShipmentStatus;
+  driverStage: DriverStage | null;
+}): string {
+  if (shipment.driverStage) {
+    if (shipment.driverStage === "assigned") return "Pending";
+    return DRIVER_STAGE_LABELS[shipment.driverStage];
+  }
+
+  const labels: Record<ShipmentStatus, string> = {
+    pending: "Pending",
+    "in-transit": "In Transit",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  };
+  return labels[shipment.status];
+}
+
 export type TimelineEntry = {
   stage: DriverStage;
   at: string;
@@ -110,6 +140,11 @@ export type CustomerUpdateShipmentPayload = {
 
 export type AdminUpdateShipmentPayload = {
   status?: ShipmentStatus;
+  driverStage?:
+    | "picked-up"
+    | "in-transit"
+    | "out-for-delivery"
+    | "delivered";
   assignedDriver?: string | null;
   assignedDriverId?: string | null;
   paymentStatus?: "paid" | "pending";
@@ -217,6 +252,25 @@ export async function deleteMyShipment(
   if (!data.success) {
     throw new Error(data.message || "Failed to delete shipment");
   }
+}
+
+// Clears the customer's completed history (delivered + cancelled). Active
+// shipments are retained server-side. Returns how many were removed.
+export async function deleteMyShipmentHistory(token: string): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/history`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete shipment history");
+  }
+  return data.data?.deletedCount ?? 0;
 }
 
 // ── Admin ────────────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { driverUpdateStage } from "@/lib/api/driver.api";
+import { DRIVER_STAGE_LABELS } from "@/lib/api/shipment.api";
 import type {
   Shipment,
   ShipmentAddress,
@@ -22,13 +23,8 @@ import type {
 import { formatNPR } from "@/lib/pricing";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {
-  assigned: "Assigned",
-  "picked-up": "Picked Up",
-  "in-transit": "In Transit",
-  "out-for-delivery": "Out for Delivery",
-  delivered: "Delivered",
+  ...DRIVER_STAGE_LABELS,
   failed: "Failed",
-  returned: "Returned",
 };
 
 // The happy-path milestones shown in the stepper (side states handled apart).
@@ -154,7 +150,7 @@ export function ActiveAssignmentCard({
 }: {
   shipment: Shipment;
   token: string;
-  onChanged: () => void;
+  onChanged: (shipment: Shipment) => void | Promise<void>;
   withMap?: boolean;
 }) {
   const [busy, setBusy] = useState<DriverStage | null>(null);
@@ -169,8 +165,8 @@ export function ActiveAssignmentCard({
     setBusy(stage);
     setError(null);
     try {
-      await driverUpdateStage(token, shipment.id, stage);
-      onChanged();
+      const updated = await driverUpdateStage(token, shipment.id, stage);
+      await onChanged(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update stage");
     } finally {

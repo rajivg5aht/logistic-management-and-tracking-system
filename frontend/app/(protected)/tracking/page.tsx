@@ -9,8 +9,9 @@ export default async function TrackingPage({
 }) {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_customer")?.value;
+  const token = cookieStore.get("token_customer")?.value;
 
-  if (!userCookie) {
+  if (!userCookie || !token) {
     redirect("/login");
   }
 
@@ -19,5 +20,7 @@ export default async function TrackingPage({
     ? params.trackingId[0]
     : params.trackingId;
 
-  return <TrackingPanel initialTrackingId={trackingId ?? ""} />;
+  return (
+    <TrackingPanel token={token} initialTrackingId={trackingId ?? ""} />
+  );
 }

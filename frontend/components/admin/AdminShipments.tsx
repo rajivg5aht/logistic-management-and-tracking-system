@@ -21,10 +21,12 @@ import {
   adminGetShipmentStats,
   adminUpdateShipment,
   adminDeleteShipment,
+  getShipmentDisplayStatus,
   type Shipment,
   type ShipmentMeta,
   type ShipmentStats,
   type ShipmentStatus,
+  type DriverStage,
 } from "@/lib/api/shipment.api";
 import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
@@ -53,12 +55,34 @@ const STATUS_STYLES: Record<ShipmentStatus, string> = {
   cancelled: "bg-[#FBE4E1] text-[#D0453A]",
 };
 
-const STATUS_LABELS: Record<ShipmentStatus, string> = {
-  pending: "Pending",
-  "in-transit": "In Transit",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
+type AdminDeliveryStage = Extract<
+  DriverStage,
+  "picked-up" | "in-transit" | "out-for-delivery" | "delivered"
+>;
+
+const ADMIN_DELIVERY_STAGE_OPTIONS: {
+  value: AdminDeliveryStage;
+  label: string;
+}[] = [
+  { value: "picked-up", label: "Picked Up" },
+  { value: "in-transit", label: "In Transit" },
+  { value: "out-for-delivery", label: "Out for Delivery" },
+  { value: "delivered", label: "Delivered" },
+];
+
+function editableDeliveryStage(
+  shipment: Shipment,
+): AdminDeliveryStage | "" {
+  if (
+    shipment.driverStage === "picked-up" ||
+    shipment.driverStage === "in-transit" ||
+    shipment.driverStage === "out-for-delivery" ||
+    shipment.driverStage === "delivered"
+  ) {
+    return shipment.driverStage;
+  }
+  return shipment.status === "delivered" ? "delivered" : "";
+}
 
 const PAYMENT_STYLES: Record<string, string> = {
   cod: "bg-[#EEF1F4] text-[#5A6B82]",
@@ -123,10 +147,10 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [selected, setSelected] = useState<Shipment | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [form, setForm] = useState<{
-    status: ShipmentStatus;
+    driverStage: AdminDeliveryStage | "";
     assignedDriverId: string;
     paymentStatus: "paid" | "pending";
-  }>({ status: "pending", assignedDriverId: "", paymentStatus: "pending" });
+  }>({ driverStage: "", assignedDriverId: "", paymentStatus: "pending" });
 
   const limit = 10;
 
@@ -205,7 +229,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   const handleEditOpen = (s: Shipment) => {
     setSelected(s);
     setForm({
-      status: s.status,
+      driverStage: editableDeliveryStage(s),
       assignedDriverId: s.assignedDriverId ?? "",
       paymentStatus: s.paymentStatus,
     });
@@ -225,8 +249,12 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     try {
       setActionLoading(true);
       setFormError(null);
+      if (!form.driverStage) {
+        setFormError("Select a delivery status.");
+        return;
+      }
       await adminUpdateShipment(token, selected.id, {
-        status: form.status,
+        driverStage: form.driverStage,
         // Server resolves the driver name from the id and starts the timeline.
         assignedDriverId: form.assignedDriverId || null,
         paymentStatus: form.paymentStatus,
@@ -281,7 +309,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       locLine(s.delivery.city, s.delivery.district),
       s.paymentMethod === "cod" ? "COD" : "PREPAID",
       s.amount,
-      STATUS_LABELS[s.status],
+      getShipmentDisplayStatus(s),
       s.assignedDriver ?? "Unassigned",
       new Date(s.createdAt).toISOString(),
     ]);
@@ -519,7 +547,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[s.status]}`}
                           >
-                            {STATUS_LABELS[s.status]}
+                            {getShipmentDisplayStatus(s)}
                           </span>
                         </td>
                         {/* Driver */}
@@ -550,17 +578,15 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             >
                               <Edit2 size={16} />
                             </button>
-                            {s.status === "cancelled" && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteOpen(s)}
-                                className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
-                                title="Delete cancelled shipment"
-                                suppressHydrationWarning
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOpen(s)}
+                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                              title="Delete shipment"
+                              suppressHydrationWarning
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -653,17 +679,25 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           )}
 
           <div>
-            <label className="form-label" htmlFor="ship-status">Status *</label>
+            <label className="form-label" htmlFor="ship-status">Delivery Status *</label>
             <select
               id="ship-status"
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value as ShipmentStatus })}
+              value={form.driverStage}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  driverStage: e.target.value as AdminDeliveryStage | "",
+                })
+              }
               className="form-input"
+              required
             >
-              <option value="pending">Pending</option>
-              <option value="in-transit">In Transit</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="" disabled>Select delivery status</option>
+              {ADMIN_DELIVERY_STAGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 

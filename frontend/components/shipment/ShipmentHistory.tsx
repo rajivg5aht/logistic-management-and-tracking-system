@@ -21,6 +21,8 @@ import {
   getMyShipments,
   cancelMyShipment,
   deleteMyShipment,
+  deleteMyShipmentHistory,
+  getShipmentDisplayStatus,
   type Shipment,
   type ShipmentStatus,
   type ServiceType,
@@ -124,6 +126,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   const [editing, setEditing] = useState<Shipment | null>(null);
   const [cancelling, setCancelling] = useState<Shipment | null>(null);
   const [deleting, setDeleting] = useState<Shipment | null>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -155,6 +158,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHistory();
   }, [fetchHistory]);
 
@@ -196,6 +200,28 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
     }
   };
 
+  const handleClearHistoryConfirm = async () => {
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await deleteMyShipmentHistory(token);
+      setClearingHistory(false);
+      setCurrentPage(1);
+      await fetchHistory();
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Failed to clear shipment history.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delivered/cancelled shipments are the only ones the customer may clear.
+  const historyCount = shipments.filter(
+    (s) => s.status === "delivered" || s.status === "cancelled",
+  ).length;
+
   const totalPages = Math.max(1, Math.ceil(shipments.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const pageItems = shipments.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -215,6 +241,21 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {historyCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setActionError(null);
+                setClearingHistory(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border)] text-[var(--danger)] text-sm font-bold hover:bg-[rgba(181,71,59,0.08)] hover:border-[var(--danger)]/40 transition-colors cursor-pointer"
+              title="Delete all delivered and cancelled shipments"
+              suppressHydrationWarning
+            >
+              <Trash2 size={16} />
+              Clear History
+            </button>
+          )}
           <Link
             href="/shipments"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1D7A8C] text-white text-sm font-bold hover:bg-[#15656e] transition-colors"
@@ -339,7 +380,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${meta.bg} ${meta.color}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                            {meta.text}
+                            {getShipmentDisplayStatus(shipment)}
                           </span>
                         </div>
                       </div>
@@ -560,6 +601,63 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
             >
               {actionLoading && <Loader2 size={16} className="animate-spin" />}
               Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Clear-all-history confirmation */}
+      <Modal
+        isOpen={clearingHistory}
+        onClose={() => {
+          setClearingHistory(false);
+          setActionError(null);
+        }}
+        title="Clear Shipment History"
+      >
+        <div className="space-y-4">
+          {actionError && <div className="form-error">{actionError}</div>}
+
+          <div className="flex gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(181,71,59,0.1)] text-[var(--danger)]">
+              <Trash2 size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--text)]">
+                Delete all shipment history?
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-soft)]">
+                This permanently removes your{" "}
+                <span className="font-bold text-[var(--text)]">
+                  {historyCount}
+                </span>{" "}
+                delivered and cancelled{" "}
+                {historyCount === 1 ? "shipment" : "shipments"} from your
+                history. Active shipments (pending or in transit) are kept. This
+                action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setClearingHistory(false);
+                setActionError(null);
+              }}
+              className="btn-secondary btn-sm cursor-pointer"
+            >
+              Keep History
+            </button>
+            <button
+              type="button"
+              onClick={handleClearHistoryConfirm}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading && <Loader2 size={16} className="animate-spin" />}
+              Delete All
             </button>
           </div>
         </div>

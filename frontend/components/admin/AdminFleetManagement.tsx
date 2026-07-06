@@ -312,6 +312,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
             />
             <input
+              suppressHydrationWarning
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Search registration, make, branch…"
@@ -320,6 +321,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
           <button
             type="button"
+            suppressHydrationWarning
             onClick={openCreate}
             className="btn-primary flex items-center justify-center gap-1.5"
           >
@@ -360,6 +362,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           <button
             key={item.id}
             type="button"
+            suppressHydrationWarning
             onClick={() => {
               setFilter(item.id);
               setPage(1);

@@ -32,6 +32,7 @@ export default function DriverRoute({ token }: { token: string }) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -65,7 +66,19 @@ export default function DriverRoute({ token }: { token: string }) {
         <div className="h-[28rem] animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
       ) : active ? (
         <div className="max-w-3xl">
-          <ActiveAssignmentCard shipment={active} token={token} onChanged={() => load(true)} withMap />
+          <ActiveAssignmentCard
+            shipment={active}
+            token={token}
+            onChanged={(updated) => {
+              setActive(
+                updated.status === "pending" || updated.status === "in-transit"
+                  ? updated
+                  : null,
+              );
+              void load(true);
+            }}
+            withMap
+          />
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-10 text-center">

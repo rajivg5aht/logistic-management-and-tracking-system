@@ -7,17 +7,11 @@ import { Bell, Plus, Building2, FileText, HelpCircle, Package, MapPin } from "lu
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   getMyShipments,
+  getShipmentDisplayStatus,
   type Shipment as CustomerShipment,
 } from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { AiAssistant } from "@/components/assistant/AiAssistant";
-
-const RECENT_STATUS_LABELS: Record<CustomerShipment["status"], string> = {
-  pending: "Pending",
-  "in-transit": "In Transit",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
 
 const RECENT_STATUS_STYLES: Record<CustomerShipment["status"], string> = {
   pending: "bg-[#FFF3DD] text-[#A96512]",
@@ -61,6 +55,7 @@ export default function DashboardOverview({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRecentShipments(true);
   }, [loadRecentShipments]);
 
@@ -100,6 +95,7 @@ export default function DashboardOverview({
         <div className="flex items-center gap-3">
           <button
             type="button"
+            suppressHydrationWarning
             className="p-2.5 rounded-xl bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] transition-colors"
             aria-label="Notifications"
           >
@@ -284,7 +280,7 @@ export default function DashboardOverview({
                             : "bg-[#A96512]"
                         }`}
                       />
-                      {RECENT_STATUS_LABELS[shipment.status]}
+                      {getShipmentDisplayStatus(shipment)}
                     </span>
                   </div>
 
@@ -450,7 +446,7 @@ export default function DashboardOverview({
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase ${RECENT_STATUS_STYLES[shipment.status]}`}
                       >
-                        {RECENT_STATUS_LABELS[shipment.status]}
+                        {getShipmentDisplayStatus(shipment)}
                       </span>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--text-muted)]">

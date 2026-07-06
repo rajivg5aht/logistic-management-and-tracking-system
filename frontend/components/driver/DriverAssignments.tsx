@@ -47,6 +47,7 @@ export default function DriverAssignments({ token }: { token: string }) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -75,7 +76,18 @@ export default function DriverAssignments({ token }: { token: string }) {
         {loading ? (
           <div className="h-64 animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
         ) : active ? (
-          <ActiveAssignmentCard shipment={active} token={token} onChanged={() => load(true)} />
+          <ActiveAssignmentCard
+            shipment={active}
+            token={token}
+            onChanged={(updated) => {
+              setActive(
+                updated.status === "pending" || updated.status === "in-transit"
+                  ? updated
+                  : null,
+              );
+              void load(true);
+            }}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center">
             <ClipboardList size={26} className="text-[var(--text-muted)]" />

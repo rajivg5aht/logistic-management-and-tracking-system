@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   adminGetShipments,
   adminGetShipmentStats,
+  getShipmentDisplayStatus,
   type DailyVolume,
   type Shipment,
   type ShipmentStats,
@@ -65,13 +66,6 @@ const STATUS_STYLES: Record<ShipmentStatus, string> = {
   delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
   pending: "bg-[#FBF1DC] text-[#C99A3D]",
   cancelled: "bg-[#FBE4E1] text-[#D0453A]",
-};
-
-const STATUS_LABELS: Record<ShipmentStatus, string> = {
-  "in-transit": "In Transit",
-  delivered: "Delivered",
-  pending: "Pending",
-  cancelled: "Cancelled",
 };
 
 const AVATAR_STYLES = [
@@ -465,7 +459,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[shipment.status]}`}
                         >
-                          {STATUS_LABELS[shipment.status]}
+                          {getShipmentDisplayStatus(shipment)}
                         </span>
                       </td>
                       <td className="py-4">
