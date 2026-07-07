@@ -15,5 +15,6 @@ driverRouter.patch("/availability", driverController.updateAvailability);
 driverRouter.get("/shipments", driverController.getMyAssignments);
 driverRouter.get("/shipments/:id", driverController.getAssignmentById);
 driverRouter.patch("/shipments/:id/stage", driverController.updateStage);
+driverRouter.patch("/shipments/:id/cod", driverController.collectCod);
 
 export default driverRouter;

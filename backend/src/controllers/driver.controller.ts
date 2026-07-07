@@ -3,7 +3,11 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { ShipmentService } from "../services/shipment.service";
 import { UserService } from "../services/user.service";
-import { DriverStageUpdateDTO, DriverAvailabilityDTO } from "../dtos/driver.dto";
+import {
+  DriverStageUpdateDTO,
+  DriverAvailabilityDTO,
+  DriverCodUpdateDTO,
+} from "../dtos/driver.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
 
@@ -120,6 +124,42 @@ export class DriverController {
         res,
         updated,
         "Delivery stage updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // ── Driver: record COD cash collection ───────────────────────────────────
+  async collectCod(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid shipment ID", 400);
+      }
+
+      const parsed = DriverCodUpdateDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const updated = await shipmentService.driverCollectCod(
+        req.user.id,
+        id,
+        parsed.data.collected,
+      );
+      return ApiResponseHelper.success(
+        res,
+        updated,
+        "COD payment updated successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(

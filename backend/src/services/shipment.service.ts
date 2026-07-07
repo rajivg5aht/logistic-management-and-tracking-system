@@ -528,6 +528,19 @@ export class ShipmentService {
       return this.sanitize(shipment);
     }
 
+    // The driver is responsible for collecting COD cash, so a COD parcel cannot
+    // be closed out as delivered until that money has been recorded.
+    if (
+      next === "delivered" &&
+      shipment.paymentMethod === "cod" &&
+      shipment.paymentStatus === "pending"
+    ) {
+      throw new HttpException(
+        400,
+        "Collect the COD payment before marking this shipment delivered",
+      );
+    }
+
     const nextStatus = DRIVER_STAGE_TO_SHIPMENT_STATUS[next];
     const updateData: Partial<IShipment> = {
       driverStage: next,
@@ -558,6 +571,34 @@ export class ShipmentService {
       await UserModel.findByIdAndUpdate(driverId, {
         availabilityStatus: availability,
       });
+    }
+
+    return this.sanitize(updated);
+  }
+
+  // Driver records the COD cash collection for one of their assignments. Only
+  // COD shipments can be settled here; the flip drives the admin Paid/Pending
+  // badge and the outstanding-COD stats.
+  async driverCollectCod(
+    driverId: string,
+    id: string,
+    collected: boolean,
+  ): Promise<SafeShipment> {
+    const shipment = await this.getOwnedAssignment(driverId, id);
+    if (shipment.paymentMethod !== "cod") {
+      throw new HttpException(400, "This shipment is not cash on delivery");
+    }
+
+    const nextStatus = collected ? "paid" : "pending";
+    if (shipment.paymentStatus === nextStatus) {
+      return this.sanitize(shipment);
+    }
+
+    const updated = await shipmentRepository.update(id, {
+      paymentStatus: nextStatus,
+    });
+    if (!updated) {
+      throw new HttpException(500, "Failed to update payment status");
     }
 
     return this.sanitize(updated);

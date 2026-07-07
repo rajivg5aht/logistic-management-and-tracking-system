@@ -41,6 +41,14 @@ export const DriverStageUpdateDTO = z.object({
 
 export type DriverStageUpdateDTO = z.infer<typeof DriverStageUpdateDTO>;
 
+// A driver records whether they collected the COD cash for a shipment. Boolean
+// so an accidental tap can be undone (paid -> pending).
+export const DriverCodUpdateDTO = z.object({
+  collected: z.boolean(),
+});
+
+export type DriverCodUpdateDTO = z.infer<typeof DriverCodUpdateDTO>;
+
 // A driver toggles their own availability (available / off-duty).
 export const DriverAvailabilityDTO = z.object({
   availabilityStatus: z.enum(["available", "off-duty"]),
