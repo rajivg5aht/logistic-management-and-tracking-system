@@ -5,9 +5,10 @@ import DashboardOverview from "@/components/dashboard/DashboardOverview";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
+  const token = cookieStore.get("token_customer")?.value;
   const userCookie = cookieStore.get("user_customer")?.value;
 
-  if (!userCookie) {
+  if (!token || !userCookie) {
     redirect("/login");
   }
 
@@ -18,5 +19,5 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return <DashboardOverview user={user} />;
+  return <DashboardOverview user={user} token={token} />;
 }

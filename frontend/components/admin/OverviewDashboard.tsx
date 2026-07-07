@@ -1,419 +1,498 @@
 "use client";
 
-import { useState } from "react";
 import {
-  DollarSign,
-  Truck,
-  Timer,
-  ClipboardList,
-  MoreVertical,
-  MapPin,
-  Plus,
-  Minus
+  Calendar,
+  SlidersHorizontal,
+  Package,
+  Radio,
+  CircleCheckBig,
+  Wallet,
+  MoreHorizontal,
+  CheckCircle2,
+  Wrench,
+  AlertTriangle,
+  ChevronRight,
+  Info,
+  Eye,
+  User as UserIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import {
+  adminGetShipments,
+  adminGetShipmentStats,
+  getShipmentDisplayStatus,
+  type DailyVolume,
+  type Shipment,
+  type ShipmentStats,
+  type ShipmentStatus,
+} from "@/lib/api/shipment.api";
+import { formatNPR } from "@/lib/pricing";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import {
+  adminGetFleetStats,
+  type FleetStats,
+} from "@/lib/api/fleet.api";
 
-export default function OverviewDashboard() {
-  const [chartMode, setChartMode] = useState<"week" | "month">("month");
+/* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
+const NAVY = "#0C3B67"; // headings + KPI values
+const NAVY_BAR = "#123E6B"; // highlighted chart column
+const BAR_IDLE = "#DCE5EE"; // inactive chart columns
 
-  // Mock data for the bar chart
-  const barData = [
-    { tealHeight: 35, greyHeight: 65, isGold: false },
-    { tealHeight: 55, greyHeight: 45, isGold: false },
-    { tealHeight: 45, greyHeight: 55, isGold: false },
-    { tealHeight: 75, greyHeight: 25, isGold: false },
-    { tealHeight: 65, greyHeight: 35, isGold: false },
-    { tealHeight: 85, greyHeight: 15, isGold: false },
-    { tealHeight: 85, greyHeight: 15, isGold: false }, // Bar 7: Teal column
-    { tealHeight: 70, greyHeight: 30, isGold: true }  // Bar 8: Gold column
-  ];
+type ChartBar = { day: string; count: number; h: number; active: boolean };
 
-  // Drivers list
-  const drivers = [
-    {
-      name: "Marcus Jensen",
-      rating: 4.9,
-      deliveries: 124,
-      status: "Active",
-      isActive: true,
-      initials: "MJ",
-      avatarBg: "bg-[#E5F1F3] text-[#1D7A8C]"
-    },
-    {
-      name: "Sarah Williams",
-      rating: 4.8,
-      deliveries: 118,
-      status: "Active",
-      isActive: true,
-      initials: "SW",
-      avatarBg: "bg-[#F3EBF9] text-[#6C63FF]"
-    },
-    {
-      name: "David Chen",
-      rating: 4.7,
-      deliveries: 92,
-      status: "Idle",
-      isActive: false,
-      initials: "DC",
-      avatarBg: "bg-[#FDF6E2] text-[#D59B28]"
-    },
-    {
-      name: "Elena Rodriguez",
-      rating: 4.9,
-      deliveries: 142,
-      status: "Active",
-      isActive: true,
-      initials: "ER",
-      avatarBg: "bg-[#EAE8EF] text-[#2D2D2D]"
+/**
+ * Turns the raw 7-day volume series into chart bars: heights are scaled so the
+ * busiest day fills the column, and that peak day is highlighted. Zero-volume
+ * days keep a thin sliver so the axis stays readable.
+ */
+function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
+  const maxCount = Math.max(1, ...dailyVolume.map((d) => d.count));
+  let peakIndex = 0;
+  dailyVolume.forEach((d, i) => {
+    if (d.count > dailyVolume[peakIndex].count) peakIndex = i;
+  });
+
+  return dailyVolume.map((d, i) => ({
+    day: d.label,
+    count: d.count,
+    h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 100)),
+    active: d.count > 0 && i === peakIndex,
+  }));
+}
+
+const STATUS_STYLES: Record<ShipmentStatus, string> = {
+  "in-transit": "bg-[#FDECD8] text-[#C77718]",
+  delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
+  pending: "bg-[#FBF1DC] text-[#C99A3D]",
+  cancelled: "bg-[#FBE4E1] text-[#D0453A]",
+};
+
+const AVATAR_STYLES = [
+  "bg-[#E8F0FB] text-[#2E6FD6]",
+  "bg-[#E5F1F3] text-[#1D7A8C]",
+  "bg-[#FBF1DC] text-[#C99A3D]",
+  "bg-[#F0ECFB] text-[#6C63FF]",
+];
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "CU";
+}
+
+function getDestination(shipment: Shipment): string {
+  return [shipment.delivery.city, shipment.delivery.district]
+    .filter(Boolean)
+    .join(", ") || "—";
+}
+
+export default function OverviewDashboard({ token }: { token: string }) {
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [shipmentStats, setShipmentStats] = useState<ShipmentStats | null>(null);
+  const [fleetStats, setFleetStats] = useState<FleetStats | null>(null);
+  const [loadingShipments, setLoadingShipments] = useState(true);
+  const [shipmentError, setShipmentError] = useState<string | null>(null);
+
+  const loadRecentShipments = useCallback(async () => {
+    try {
+      const [result, stats, fleet] = await Promise.all([
+        adminGetShipments(token, 1, 4),
+        adminGetShipmentStats(token),
+        adminGetFleetStats(token),
+      ]);
+      setShipments(result.data);
+      setShipmentStats(stats);
+      setFleetStats(fleet);
+      setShipmentError(null);
+    } catch (error) {
+      setShipmentError(
+        error instanceof Error ? error.message : "Failed to load recent shipments",
+      );
+    } finally {
+      setLoadingShipments(false);
     }
+  }, [token]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadRecentShipments();
+  }, [loadRecentShipments]);
+
+  // Keep the KPIs and recent-shipments table in sync as customers place orders.
+  useAutoRefresh(loadRecentShipments, { intervalMs: 15_000 });
+
+  const kpis = [
+    {
+      label: "Total Shipments",
+      value: shipmentStats?.total.toLocaleString("en-IN") ?? "—",
+      Icon: Package,
+      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+    },
+    {
+      label: "Active Now",
+      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "—",
+      Icon: Radio,
+      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+    },
+    {
+      label: "Delivered Today",
+      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "—",
+      Icon: CircleCheckBig,
+      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+    },
+    {
+      label: "Pending COD",
+      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "—",
+      Icon: Wallet,
+      tint: "bg-[#FBE9E5] text-[#D0533F]",
+    },
   ];
 
-  // Recent shipments
-  const shipments = [
-    { id: "#SH-8842", destination: "Chicago, IL", status: "In Transit", statusType: "in-transit", eta: "14:20 PM" },
-    { id: "#SH-8841", destination: "Austin, TX", status: "Pending", statusType: "pending", eta: "18:15 PM" },
-    { id: "#SH-8840", destination: "Phoenix, AZ", status: "Delivered", statusType: "delivered", eta: "Completed" },
-    { id: "#SH-8839", destination: "Denver, CO", status: "In Transit", statusType: "in-transit", eta: "Tomorrow" }
+  const bars = shipmentStats ? buildBars(shipmentStats.dailyVolume) : null;
+  const weekTotal = shipmentStats
+    ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
+    : 0;
+  const fleetHealth = [
+    {
+      label: "Ready to Dispatch",
+      sub: `${fleetStats?.available ?? 0} Vehicles`,
+      Icon: CheckCircle2,
+      accent: "#1F9D57",
+      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+    },
+    {
+      label: "Maintenance",
+      sub: `${fleetStats?.maintenance ?? 0} Vehicles`,
+      Icon: Wrench,
+      accent: "#C99A3D",
+      tint: "bg-[#FBF1DC] text-[#C99A3D]",
+    },
+    {
+      label: "Inactive",
+      sub: `${fleetStats?.inactive ?? 0} Vehicles`,
+      Icon: AlertTriangle,
+      accent: "#D0453A",
+      tint: "bg-[#FBE4E1] text-[#D0453A]",
+    },
   ];
 
   return (
     <div className="space-y-6 font-sans">
-      {/* 4 Stats Cards Row */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Monthly Revenue */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 transition-all relative overflow-hidden group" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                Monthly Revenue
-              </span>
-              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">
-                $428,900
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[var(--danger)] bg-[rgba(181,71,59,0.1)] px-2 py-0.5 rounded-full">
-                +12.4%
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <DollarSign size={18} className="stroke-[2.5]" />
-              </div>
-            </div>
-          </div>
+      {/* ============ Page title + actions ============ */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight sm:text-3xl" style={{ color: NAVY }}>
+            Logistics Overview
+          </h1>
+          <p className="mt-1 text-sm font-medium text-[var(--text-soft)]">
+            Real-time monitoring of your delivery ecosystem across Nepal.
+          </p>
         </div>
-
-        {/* Card 2: Active Shipments */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 transition-all relative overflow-hidden group" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                Active Shipments
-              </span>
-              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">
-                1,284
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[var(--success)] bg-[rgba(95,127,53,0.1)] px-2 py-0.5 rounded-full">
-                +4.2%
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Truck size={18} className="stroke-[2.5]" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Avg. Delivery Time */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 transition-all relative overflow-hidden group" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                Avg. Delivery Time
-              </span>
-              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">
-                22.4 hrs
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#3E80E5] bg-[#EAF1FC] px-2 py-0.5 rounded-full">
-                -2.1%
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Timer size={18} className="stroke-[2.5]" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Warehouse Capacity */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 transition-all relative overflow-hidden group" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                Warehouse Capacity
-              </span>
-              <h3 className="text-xl font-black text-[var(--text)] tracking-tight">
-                84%
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[var(--text-muted)] bg-[var(--surface-muted)] px-2 py-0.5 rounded-full">
-                Stable
-              </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <ClipboardList size={18} className="stroke-[2.5]" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Middle Row: Revenue Chart & Top Drivers */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue & Shipments Chart Card */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 lg:col-span-2 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-extrabold text-[var(--text)]">
-                Revenue & Shipments
-              </h3>
-              <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">
-                Real-time performance metrics
-              </p>
-            </div>
-            {/* Week / Month Toggle */}
-            <div className="flex bg-[var(--surface-muted)] p-1 rounded-xl border border-[var(--border)]">
-              <button
-                type="button"
-                onClick={() => setChartMode("week")}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  chartMode === "week"
-                    ? "bg-[var(--surface)] text-[var(--text)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                }`}
-              >
-                WEEK
-              </button>
-              <button
-                type="button"
-                onClick={() => setChartMode("month")}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  chartMode === "month"
-                    ? "bg-[var(--accent)] text-[var(--accent-strong)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                }`}
-              >
-                MONTH
-              </button>
-            </div>
-          </div>
-
-          {/* Stylized Bar Chart */}
-          <div className="h-64 flex items-end justify-between px-4 pb-2 border-b border-[var(--border)] gap-2 relative">
-            {/* Horizontal Grid lines */}
-            <div className="absolute inset-x-0 top-1/4 border-t border-dashed border-[var(--border-light)] pointer-events-none" />
-            <div className="absolute inset-x-0 top-2/4 border-t border-dashed border-[var(--border-light)] pointer-events-none" />
-            <div className="absolute inset-x-0 top-3/4 border-t border-dashed border-[var(--border-light)] pointer-events-none" />
-
-            {barData.map((bar, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full max-w-[42px]">
-                {/* Column wrapper */}
-                <div className="w-full rounded-md overflow-hidden flex flex-col justify-end h-full">
-                   {/* Top segment (grey or light gold) */}
-                   <div
-                     style={{ height: `${bar.greyHeight}%` }}
-                     className={`w-full transition-all duration-500 ${
-                       bar.isGold ? "bg-[var(--accent-soft)]" : "bg-[var(--surface-muted)]"
-                     }`}
-                   />
-                   {/* Bottom segment (teal or gold) */}
-                   <div
-                     style={{ height: `${bar.tealHeight}%` }}
-                     className={`w-full transition-all duration-500 ${
-                       bar.isGold
-                         ? "bg-[var(--accent)]"
-                         : "bg-[var(--teal)]"
-                     }`}
-                   />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Month/Week Labels */}
-          <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-bold px-5 pt-3">
-            <span>Jan</span>
-            <span>Feb</span>
-            <span>Mar</span>
-            <span>Apr</span>
-            <span>May</span>
-            <span>Jun</span>
-            <span>Jul</span>
-            <span>Aug</span>
-          </div>
-        </div>
-
-        {/* Top Drivers Card */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 flex flex-col justify-between" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-extrabold text-[var(--text)]">
-              Top Drivers
-            </h3>
-            <button type="button" className="text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer">
-              <MoreVertical size={20} />
-            </button>
-          </div>
-
-          {/* Driver List */}
-          <div className="space-y-4 flex-1 flex flex-col justify-center">
-            {drivers.map((driver) => (
-              <div key={driver.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${driver.avatarBg}`}>
-                    {driver.initials}
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-bold text-[var(--text)] leading-tight">
-                      {driver.name}
-                    </span>
-                    <span className="text-xs text-[var(--text-muted)] font-semibold flex items-center gap-1 mt-0.5">
-                      <span className="text-[var(--accent)] font-bold">★</span> {driver.rating} • {driver.deliveries} Deliveries
-                    </span>
-                  </div>
-                </div>
-                <span className={`text-xs font-extrabold ${
-                  driver.isActive ? "text-[var(--teal)]" : "text-[var(--gold-dark)]"
-                }`}>
-                  {driver.status}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* View All button */}
-          <button
-            type="button"
-            className="w-full mt-5 border border-[var(--border)] text-[var(--accent-strong)] font-bold py-2.5 rounded-[var(--radius-md)] hover:bg-[var(--surface-muted)] transition-all cursor-pointer text-sm"
-          >
-            View All Fleet
+        <div className="flex items-center gap-2.5">
+          <button type="button" className="btn-secondary btn-sm cursor-pointer" suppressHydrationWarning>
+            <Calendar size={15} />
+            Last 7 Days
+          </button>
+          <button type="button" className="btn-secondary btn-sm cursor-pointer" suppressHydrationWarning>
+            <SlidersHorizontal size={15} />
+            Filters
           </button>
         </div>
       </div>
 
-      {/* Bottom Row: Recent Shipments & Live Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Shipments Table Card */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 lg:col-span-2" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-extrabold text-[var(--text)]">
-              Recent Shipments
-            </h3>
+      {/* ============ KPI cards ============ */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((kpi) => {
+          const Icon = kpi.Icon;
+          return (
+            <div
+              key={kpi.label}
+              className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+              style={{ boxShadow: "var(--shadow-sm)" }}
+            >
+              <div className="flex items-start justify-between">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${kpi.tint}`}>
+                  <Icon size={19} className="stroke-[2.4]" />
+                </div>
+                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#1F9D57]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#1F9D57]" />
+                  Live
+                </span>
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[#5A6B82]">
+                {kpi.label}
+              </p>
+              <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
+                {kpi.value}
+              </h3>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ============ Chart + Fleet Health ============ */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Bar chart */}
+        <div
+          className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2"
+          style={{ boxShadow: "var(--shadow-sm)" }}
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-base font-extrabold" style={{ color: NAVY }}>
+                Shipments over last 7 days
+              </h3>
+              <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
+                {shipmentStats
+                  ? `${weekTotal.toLocaleString("en-IN")} shipment${weekTotal === 1 ? "" : "s"} in the last 7 days`
+                  : "Daily volume analysis from current hub"}
+              </p>
+            </div>
             <button
               type="button"
-              className="text-xs font-extrabold text-[var(--accent)] hover:underline cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
+              aria-label="More options"
+              suppressHydrationWarning
             >
-              Download CSV
+              <MoreHorizontal size={20} />
             </button>
           </div>
 
-          {/* Data Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="pb-3 font-bold text-[var(--text)] w-24">ID</th>
-                  <th className="pb-3 font-bold text-[var(--text-muted)]">DESTINATION</th>
-                  <th className="pb-3 font-bold text-[var(--text-muted)] text-center w-32">STATUS</th>
-                  <th className="pb-3 font-bold text-[var(--text-muted)] text-right w-24">ETA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shipments.map((shipment) => (
-                  <tr key={shipment.id} className="border-b border-[var(--border-light)] last:border-b-0 hover:bg-[var(--surface-soft)] transition-colors">
-                    <td className="py-3.5 font-bold text-[var(--text)]">{shipment.id}</td>
-                    <td className="py-3.5 text-[var(--text)] font-medium">{shipment.destination}</td>
-                    <td className="py-3.5 text-center">
-                      <span className={`inline-block text-xs font-extrabold px-3 py-1 rounded-full ${
-                        shipment.statusType === "delivered"
-                          ? "bg-[rgba(95,127,53,0.1)] text-[var(--success)]"
-                          : shipment.statusType === "pending"
-                          ? "bg-[var(--accent-soft)] text-[var(--gold-dark)]"
-                          : "bg-[#EAF1FC] text-[#3E80E5]"
-                      }`}>
-                        {shipment.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-right font-semibold text-[var(--text)]">{shipment.eta}</td>
-                  </tr>
+          {/* Bars */}
+          <div className="mt-8 flex h-52 items-end gap-2.5 sm:gap-4">
+            {bars === null
+              ? Array.from({ length: 7 }).map((_, index) => (
+                  <div key={index} className="flex h-full flex-1 flex-col justify-end">
+                    <div
+                      className="w-full animate-pulse rounded-lg"
+                      style={{ height: `${30 + ((index * 37) % 55)}%`, backgroundColor: BAR_IDLE }}
+                    />
+                  </div>
+                ))
+              : bars.map((bar, index) => (
+                  <div key={index} className="flex h-full flex-1 flex-col justify-end">
+                    <div
+                      className="w-full rounded-lg transition-all duration-500"
+                      style={{
+                        height: `${bar.h}%`,
+                        backgroundColor: bar.active ? NAVY_BAR : BAR_IDLE,
+                      }}
+                      title={`${bar.day}: ${bar.count} shipment${bar.count === 1 ? "" : "s"}`}
+                    />
+                  </div>
                 ))}
-              </tbody>
-            </table>
+          </div>
+          {/* Day labels */}
+          <div className="mt-3 flex gap-2.5 sm:gap-4">
+            {(bars ?? Array.from({ length: 7 }, () => null)).map((bar, index) => (
+              <span
+                key={index}
+                className={`flex-1 text-center text-xs ${
+                  bar?.active
+                    ? "font-extrabold text-[#123E6B]"
+                    : "font-semibold text-[var(--text-muted)]"
+                }`}
+              >
+                {bar?.day ?? "—"}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* Fleet Live Map Card */}
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 flex flex-col justify-between relative overflow-hidden group" style={{ boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-extrabold text-[var(--text)]">
-              Fleet Live Map
-            </h3>
-            {/* Live pulsing updates */}
-            <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-bold">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
-              </span>
-              Live Updates
-            </div>
+        {/* Fleet Health + System Status */}
+        <div
+          className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
+          style={{ boxShadow: "var(--shadow-sm)" }}
+        >
+          <h3 className="text-base font-extrabold" style={{ color: NAVY }}>
+            Fleet Health
+          </h3>
+
+          <div className="mt-4 space-y-3">
+            {fleetHealth.map((item) => {
+              const Icon = item.Icon;
+              return (
+                <Link
+                  key={item.label}
+                  href="/admin/fleet"
+                  className="flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-3 pr-3 text-left transition-all hover:bg-[var(--surface-soft)] cursor-pointer"
+                  style={{ borderLeft: `3px solid ${item.accent}` }}
+                >
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${item.tint}`}>
+                    <Icon size={17} className="stroke-[2.4]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold leading-tight text-[var(--text)]">{item.label}</p>
+                    <p className="text-xs font-medium text-[var(--text-muted)]">{item.sub}</p>
+                  </div>
+                  <ChevronRight size={16} className="text-[var(--text-muted)] shrink-0" />
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Map Preview Graphic */}
-          <div className="relative flex-1 h-48 bg-[var(--surface-dark)] rounded-[var(--radius-md)] overflow-hidden border border-[var(--border)] select-none flex items-center justify-center">
-            {/* Grid street layout styled with pure SVG overlay */}
-            <svg className="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="street-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--app-bg)" strokeWidth="0.8" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#street-grid)" />
-              {/* Highlight routes */}
-              <path d="M -10 90 Q 120 40 220 130 T 400 80" fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="5,5" />
-              <path d="M 60 -20 L 150 200" fill="none" stroke="var(--teal)" strokeWidth="1.5" />
-            </svg>
+          {/* System status dark card */}
+          <div
+            className="mt-4 rounded-[var(--radius-md)] p-4"
+            style={{ background: "linear-gradient(150deg, #0C2E4E, #123A5E)" }}
+          >
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white">
+                <Info size={15} />
+              </div>
+              <span className="text-sm font-bold text-white">System Status</span>
+            </div>
+            <p className="mt-2.5 text-xs font-medium leading-relaxed text-white/70">
+              All delivery hubs are operating within optimal parameters.
+            </p>
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+              <div className="h-full rounded-full bg-[#6FA8DC]" style={{ width: "78%" }} />
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Map markers (pins) absolute positioned */}
-            <div className="absolute top-[45%] left-[28%] text-[var(--accent)] animate-bounce duration-1000">
-              <MapPin size={22} className="fill-[var(--accent)]/20" />
-            </div>
-            <div className="absolute top-[25%] left-[65%] text-[var(--teal)]">
-              <MapPin size={22} className="fill-[var(--teal)]/20" />
-            </div>
-            <div className="absolute top-[60%] left-[55%] text-[var(--accent)]">
-              <MapPin size={22} className="fill-[var(--accent)]/20" />
-            </div>
-
-            {/* Map zoom controls */}
-            <div className="absolute top-3 right-3 bg-[var(--surface-dark-2)] rounded-lg border border-[var(--border-dark)] flex flex-col p-0.5" style={{ boxShadow: 'var(--shadow-sm)' }}>
-              <button type="button" className="p-1.5 hover:bg-[var(--app-bg)]/10 text-white rounded-md cursor-pointer transition-all">
-                <Plus size={14} className="stroke-[2.5]" />
-              </button>
-              <div className="h-px bg-[var(--border-dark)] mx-1" />
-              <button type="button" className="p-1.5 hover:bg-[var(--app-bg)]/10 text-white rounded-md cursor-pointer transition-all">
-                <Minus size={14} className="stroke-[2.5]" />
-              </button>
-            </div>
-
-            {/* Map floating Action button */}
+      {/* ============ Recent Shipments ============ */}
+      <div
+        className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
+        style={{ boxShadow: "var(--shadow-sm)" }}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-extrabold" style={{ color: NAVY }}>
+            Recent Shipments
+          </h3>
+          <div className="flex items-center gap-4">
             <button
               type="button"
-              className="absolute bottom-3 right-3 h-9 w-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-strong)] rounded-[var(--radius-md)] flex items-center justify-center transition-all cursor-pointer group-hover:scale-105"
-              aria-label="Add location"
-              style={{ boxShadow: 'var(--shadow-md)' }}
+              className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
+              suppressHydrationWarning
             >
-              <Plus size={18} className="stroke-[2.5]" />
+              Export CSV
             </button>
+            <Link
+              href="/admin/shipments"
+              className="text-xs font-bold text-[#123E6B] hover:underline"
+            >
+              View All
+            </Link>
           </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[46rem] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--border)]">
+                <th className="pb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  ID
+                </th>
+                <th className="pb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Customer
+                </th>
+                <th className="pb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Status
+                </th>
+                <th className="pb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Assigned Driver
+                </th>
+                <th className="pb-3 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Destination
+                </th>
+                <th className="pb-3 text-right text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingShipments ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <tr key={index} className="animate-pulse border-b border-[var(--border-light)]">
+                    {Array.from({ length: 6 }).map((__, cell) => (
+                      <td key={cell} className="py-4 pr-4">
+                        <div className="h-4 max-w-28 rounded bg-[var(--border)]" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : shipmentError ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-red-600">
+                    {shipmentError}
+                  </td>
+                </tr>
+              ) : shipments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-[var(--text-muted)]">
+                    No customer shipments have been placed yet.
+                  </td>
+                </tr>
+              ) : (
+                shipments.map((shipment, index) => {
+                  const customer = shipment.pickup.fullName || "Customer";
+                  const assigned = Boolean(shipment.assignedDriver);
+
+                  return (
+                    <tr
+                      key={shipment.id}
+                      className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
+                    >
+                      <td className="py-4 font-bold" style={{ color: NAVY }}>
+                        #{shipment.trackingId}
+                      </td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
+                          >
+                            {getInitials(customer)}
+                          </span>
+                          <span className="font-semibold text-[var(--text)]">
+                            {customer}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[shipment.status]}`}
+                        >
+                          {getShipmentDisplayStatus(shipment)}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        {assigned ? (
+                          <span className="flex items-center gap-1.5 font-semibold text-[var(--text)]">
+                            <UserIcon size={14} className="text-[var(--text-muted)]" />
+                            {shipment.assignedDriver}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 font-medium italic text-[var(--text-muted)]">
+                            <UserIcon size={14} />
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 font-medium text-[var(--text-soft)]">
+                        {getDestination(shipment)}
+                      </td>
+                      <td className="py-4 text-right">
+                        <Link
+                          href="/admin/shipments"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B]"
+                          aria-label={`View ${shipment.trackingId}`}
+                        >
+                          <Eye size={16} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -1,18 +1,19 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/lib/api/auth.api";
-import DriverConsole from "@/components/driver/DriverConsole";
+import DriverDashboard from "@/components/driver/DriverDashboard";
 
 export const metadata = {
   title: "Driver Dashboard - CargoNep",
-  description: "Driver console for tracking assigned routes and delivery updates.",
+  description: "Your assigned delivery, vehicle, and status updates.",
 };
 
 export default async function DriverDashboardPage() {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_driver")?.value;
+  const token = cookieStore.get("token_driver")?.value;
 
-  if (!userCookie) {
+  if (!userCookie || !token) {
     redirect("/login");
   }
 
@@ -23,10 +24,9 @@ export default async function DriverDashboardPage() {
     redirect("/login");
   }
 
-  // Double check role authorization
   if (user.role !== "driver") {
     redirect("/dashboard");
   }
 
-  return <DriverConsole user={user} />;
+  return <DriverDashboard user={user} token={token} />;
 }

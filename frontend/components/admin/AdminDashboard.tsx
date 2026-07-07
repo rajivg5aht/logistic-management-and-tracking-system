@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, UserCheck, UserX, Shield } from "lucide-react";
 import { adminGetUsers } from "@/lib/api/admin.api";
 import { AuthUser } from "@/lib/api/auth.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import AdminUserManagement from "./AdminUserManagement";
 
 interface AdminDashboardProps {
@@ -21,31 +22,45 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
   const [loadingStats, setLoadingStats] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
 
-  const fetchStats = async () => {
-    try {
-      setLoadingStats(true);
-      // Fetch a large number of users to compute high-level system metrics
-      const res = await adminGetUsers(token, 1, 10000);
-      const allUsers = res.data;
-      
-      const total = allUsers.length;
-      const active = allUsers.filter(u => u.status === "active").length;
-      const inactive = allUsers.filter(u => u.status === "inactive").length;
-      const admin = allUsers.filter(u => u.role === "admin").length;
+  // `silent` refreshes recompute the metrics in place without the loading
+  // skeleton (used by auto-refresh and after user mutations).
+  const fetchStats = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) setLoadingStats(true);
+        // Fetch a large number of users to compute high-level system metrics
+        const res = await adminGetUsers(token, 1, 10000);
+        const allUsers = res.data;
 
-      setStats({ total, active, inactive, admin });
-      setStatsError(null);
-    } catch (err: any) {
-      console.error("Failed to load dashboard stats:", err);
-      setStatsError("Failed to load statistics.");
-    } finally {
-      setLoadingStats(false);
-    }
-  };
+        const total = allUsers.length;
+        const active = allUsers.filter(u => u.status === "active").length;
+        const inactive = allUsers.filter(u => u.status === "inactive").length;
+        const admin = allUsers.filter(u => u.role === "admin").length;
+
+        setStats({ total, active, inactive, admin });
+        setStatsError(null);
+      } catch (err: any) {
+        console.error("Failed to load dashboard stats:", err);
+        if (!silent) setStatsError("Failed to load statistics.");
+      } finally {
+        if (!silent) setLoadingStats(false);
+      }
+    },
+    [token],
+  );
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+
+  // Keep platform metrics live as users register / change status.
+  useAutoRefresh(() => fetchStats(true));
+
+  // Stable callback so the embedded user table can refresh these stats after a
+  // mutation without re-creating its own fetch loop.
+  const handleUsersChanged = useCallback(() => {
+    void fetchStats(true);
+  }, [fetchStats]);
 
   return (
     <div className="space-y-8 font-sans">
@@ -161,10 +176,10 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
 
       {/* Embedded User Management */}
       <div className="pt-2">
-        <AdminUserManagement 
-          token={token} 
-          currentUser={currentUser} 
-          onMutationFinished={fetchStats}
+        <AdminUserManagement
+          token={token}
+          currentUser={currentUser}
+          onMutationFinished={handleUsersChanged}
         />
       </div>
     </div>

@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
+const user_type_1 = require("../types/user.type");
 const UserMongoSchema = new mongoose_1.Schema({
     fullName: {
         type: String,
@@ -71,6 +72,26 @@ const UserMongoSchema = new mongoose_1.Schema({
         type: String,
         enum: ["active", "inactive"],
         default: "active",
+    },
+    // ── Driver profile (only populated for role: "driver") ──
+    licenseNumber: { type: String, trim: true, default: "" },
+    vehicleType: { type: String, enum: user_type_1.VEHICLE_TYPES },
+    vehicleNumber: { type: String, trim: true, default: "" },
+    branch: { type: String, trim: true, default: "" },
+    employmentStatus: {
+        type: String,
+        enum: user_type_1.EMPLOYMENT_STATUSES,
+        default: "full-time",
+    },
+    availabilityStatus: {
+        type: String,
+        enum: user_type_1.AVAILABILITY_STATUSES,
+        default: "available",
+    },
+    assignedVehicleId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Vehicle",
+        default: null,
     },
 }, {
     timestamps: true,

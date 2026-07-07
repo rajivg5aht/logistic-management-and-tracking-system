@@ -72,7 +72,7 @@ export function PickupAddressCard() {
         {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
-            DELIVERY ADDRESS <span className="text-red-500">*</span>
+            PICKUP ADDRESS <span className="text-red-500">*</span>
           </label>
           <input
             type="text"

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Search,
   Plus,
   Edit2,
-  Trash2,
   Loader2,
   AlertCircle,
   RefreshCw,
@@ -25,12 +25,12 @@ import {
   adminGetUsers,
   adminCreateUser,
   adminUpdateUser,
-  adminDeleteUser,
   AdminUserMeta,
   AdminUserPayload,
 } from "@/lib/api/admin.api";
 import { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 interface AdminUserManagementProps {
   token: string;
@@ -111,7 +111,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Form payload states
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -134,25 +133,49 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Fetch users on query change
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await adminGetUsers(token, page, limit, searchQuery);
-      setUsers(res.data);
-      setMeta(res.meta);
-      onMutationFinished?.();
-    } catch (err: any) {
-      setError(err.message || "Failed to load users. Please check your connection.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch users on query change. `silent` refreshes update the table in place
+  // without the loading skeleton or a transient error (used by auto-refresh).
+  const fetchUsers = useCallback(
+    async (silent = false) => {
+      try {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
+        const role = activeTab === "all" ? undefined : activeTab;
+        const res = await adminGetUsers(
+          token,
+          page,
+          limit,
+          searchQuery,
+          role,
+        );
+        setUsers(res.data);
+        setMeta(res.meta);
+        onMutationFinished?.();
+      } catch (err: unknown) {
+        if (!silent) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load users. Please check your connection.",
+          );
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token, page, searchQuery, activeTab, onMutationFinished],
+  );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
-  }, [page, searchQuery]);
+  }, [fetchUsers]);
+
+  // Reflect new customer/driver registrations and status changes made elsewhere
+  // without a manual page refresh.
+  useAutoRefresh(() => fetchUsers(true));
 
   // Form handlers
   const handleCreateOpen = () => {
@@ -180,12 +203,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     setIsEditOpen(true);
   };
 
-  const handleDeleteOpen = (user: AuthUser) => {
-    setSelectedUser(user);
-    setFormError(null);
-    setIsDeleteOpen(true);
-  };
-
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -206,12 +223,14 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
-        role: formData.role,
+        role: "customer",
       });
       setIsCreateOpen(false);
       fetchUsers();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to create user.");
+    } catch (err: unknown) {
+      setFormError(
+        err instanceof Error ? err.message : "Failed to create user.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -232,7 +251,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       const payload: Partial<AdminUserPayload> = {
         fullName: formData.fullName,
         email: formData.email,
-        role: formData.role,
         status: formData.status,
       };
 
@@ -248,27 +266,10 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       await adminUpdateUser(token, selectedUser.id, payload);
       setIsEditOpen(false);
       fetchUsers();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to update user.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteSubmit = async () => {
-    if (!selectedUser) return;
-    try {
-      setActionLoading(true);
-      await adminDeleteUser(token, selectedUser.id);
-      setIsDeleteOpen(false);
-      // If we deleted the last user on the page, go to previous page
-      if (users.length === 1 && page > 1) {
-        setPage((prev) => prev - 1);
-      } else {
-        fetchUsers();
-      }
-    } catch (err: any) {
-      setFormError(err.message || "Failed to delete user.");
+    } catch (err: unknown) {
+      setFormError(
+        err instanceof Error ? err.message : "Failed to update user.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -283,12 +284,13 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       await adminUpdateUser(token, user.id, {
         fullName: user.fullName,
         email: user.email,
-        role: user.role,
         status: nextStatus,
       });
       fetchUsers();
-    } catch (err: any) {
-      setError(err.message || "Failed to update user status.");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update user status.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -301,7 +303,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     }
   };
 
-  const visibleUsers = activeTab === "all" ? users : users.filter((u) => u.role === activeTab);
+  const visibleUsers = users;
   const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
   const rangeEnd = meta ? (meta.page - 1) * meta.limit + users.length : 0;
 
@@ -332,12 +334,16 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPage(1);
+              }}
               className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer ${
                 activeTab === tab.id
                   ? "bg-[var(--surface)] text-[var(--teal)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text)]"
               }`}
+              suppressHydrationWarning
             >
               {tab.label}
             </button>
@@ -351,7 +357,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           suppressHydrationWarning
         >
           <Plus size={18} />
-          Add User
+          Add Customer
         </button>
       </div>
 
@@ -411,7 +417,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             <p className="text-sm font-semibold text-[var(--text)]">{error}</p>
             <button
               type="button"
-              onClick={fetchUsers}
+              onClick={() => fetchUsers()}
               className="btn-secondary btn-sm mt-4 inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw size={16} />
@@ -452,7 +458,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                 ) : visibleUsers.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center font-medium text-[var(--text-muted)]">
-                      {activeTab === "all" ? "No users found." : `No ${activeTab}s on this page.`}
+                      {activeTab === "all" ? "No users found." : `No ${activeTab}s found.`}
                     </td>
                   </tr>
                 ) : (
@@ -500,7 +506,14 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                         </td>
                         <td>
                           <div className="flex items-center justify-end gap-1">
-                            {!isSelf ? (
+                            {user.role === "driver" ? (
+                              <Link
+                                href="/admin/drivers"
+                                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--teal)] hover:bg-[var(--teal-tint)]"
+                              >
+                                Manage driver
+                              </Link>
+                            ) : !isSelf ? (
                               <>
                                 <button
                                   type="button"
@@ -522,14 +535,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                                   title={status === "inactive" ? "Unblock user" : "Block user"}
                                 >
                                   {status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteOpen(user)}
-                                  className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[rgba(181,71,59,0.1)] hover:text-[var(--danger)] cursor-pointer"
-                                  title="Delete user"
-                                >
-                                  <Trash2 size={16} />
                                 </button>
                               </>
                             ) : (
@@ -630,7 +635,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       </div>
 
       {/* CREATE MODAL */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New User">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Customer Account">
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
 
@@ -673,17 +678,8 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             />
           </div>
 
-          <div>
-            <label className="form-label" htmlFor="role">User Role *</label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as "customer" | "driver" })}
-              className="form-input"
-            >
-              <option value="customer">Customer</option>
-              <option value="driver">Driver</option>
-            </select>
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-sm text-[var(--text-soft)]">
+            This creates a customer account. Drivers are onboarded from Driver Management.
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
@@ -751,16 +747,8 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="form-label" htmlFor="edit-role">Role *</label>
-              <select
-                id="edit-role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as "customer" | "driver" })}
-                className="form-input"
-              >
-                <option value="customer">Customer</option>
-                <option value="driver">Driver</option>
-              </select>
+              <label className="form-label">Role</label>
+              <div className="form-input capitalize">{formData.role}</div>
             </div>
             <div>
               <label className="form-label" htmlFor="edit-status">Status *</label>
@@ -796,45 +784,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </form>
       </Modal>
 
-      {/* DELETE CONFIRMATION MODAL */}
-      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Confirm Delete">
-        <div className="space-y-4">
-          {formError && <div className="form-error">{formError}</div>}
-
-          <div className="flex gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(181,71,59,0.1)] text-[var(--danger)]">
-              <AlertCircle size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[var(--text)]">
-                Are you sure you want to delete this user?
-              </p>
-              <p className="mt-1 text-sm text-[var(--text-soft)]">
-                This action cannot be undone. User <span className="font-bold text-[var(--text)]">&quot;{selectedUser?.fullName}&quot;</span> ({selectedUser?.email}) will be permanently deleted from the database.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(false)}
-              className="btn-secondary btn-sm cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDeleteSubmit}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#9a382d] cursor-pointer disabled:opacity-50"
-            >
-              {actionLoading && <Loader2 size={16} className="animate-spin" />}
-              Delete
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface IUserRepository {
     page: number,
     limit: number,
     search?: string,
+    filter?: Record<string, unknown>,
   ): Promise<{ users: IUser[]; total: number }>;
 }
 
@@ -54,12 +55,15 @@ export class UserMongoRepository implements IUserRepository {
     page: number,
     limit: number,
     search?: string,
+    filter?: Record<string, unknown>,
   ): Promise<{ users: IUser[]; total: number }> {
-    const query: any = {};
+    const query: any = { ...(filter ?? {}) };
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
+        { phoneNumber: { $regex: search, $options: "i" } },
+        { vehicleNumber: { $regex: search, $options: "i" } },
       ];
     }
 

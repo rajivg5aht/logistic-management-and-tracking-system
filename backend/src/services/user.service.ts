@@ -1,10 +1,13 @@
+import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
-import { IUser } from "../models/user.model";
+import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
+import { ShipmentModel } from "../models/shipment.model";
+import { VehicleModel } from "../models/vehicle.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -17,7 +20,29 @@ export type SafeUser = {
   role: IUser["role"];
   status?: string;
   createdAt?: Date;
+  // Driver profile (only meaningful when role === "driver")
+  licenseNumber?: string;
+  vehicleType?: IUser["vehicleType"];
+  vehicleNumber?: string;
+  branch?: string;
+  employmentStatus?: IUser["employmentStatus"];
+  availabilityStatus?: IUser["availabilityStatus"];
+  assignedVehicleId?: string | null;
+  deliveriesCount?: number;
 };
+
+// Compact view of a driver's assigned vehicle, surfaced in the driver console.
+export type DriverVehicleSummary = {
+  id: string;
+  registrationNumber: string;
+  type: string;
+  make: string;
+  model: string;
+  capacityKg: number | null;
+  status: string;
+};
+
+export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
 
 export class UserService {
   private sanitizeUser(user: IUser): SafeUser {
@@ -30,6 +55,13 @@ export class UserService {
       role: user.role,
       status: user.status || "active",
       createdAt: user.createdAt,
+      licenseNumber: user.licenseNumber || "",
+      vehicleType: user.vehicleType,
+      vehicleNumber: user.vehicleNumber || "",
+      branch: user.branch || "",
+      employmentStatus: user.employmentStatus,
+      availabilityStatus: user.availabilityStatus,
+      assignedVehicleId: user.assignedVehicleId?.toString() ?? null,
     };
   }
 
@@ -91,6 +123,10 @@ export class UserService {
 
     if (!user) {
       throw new HttpException(401, "Invalid email or password");
+    }
+
+    if (user.status === "inactive") {
+      throw new HttpException(403, "This account is inactive");
     }
 
     const isPasswordValid = await bcryptjs.compare(
@@ -169,11 +205,13 @@ export class UserService {
     page: number,
     limit: number,
     search?: string,
+    role?: string,
   ): Promise<{ users: SafeUser[]; total: number }> {
     const { users, total } = await userRepository.getPaginatedUsers(
       page,
       limit,
       search,
+      role ? { role } : undefined,
     );
 
     return {
@@ -183,6 +221,13 @@ export class UserService {
   }
 
   async adminCreateUser(userData: any): Promise<SafeUser> {
+    if (userData.role && userData.role !== "customer") {
+      throw new HttpException(
+        400,
+        "Drivers must be created in Driver Management",
+      );
+    }
+
     const existingEmail = await userRepository.getUserByEmail(userData.email);
     if (existingEmail) {
       throw new HttpException(400, "Email already exists");
@@ -195,7 +240,7 @@ export class UserService {
       email: userData.email,
       password: hashedPassword,
       phoneNumber: userData.phoneNumber || "",
-      role: userData.role ?? "user",
+      role: "customer",
       status: userData.status ?? "active",
     });
 
@@ -206,6 +251,17 @@ export class UserService {
     const user = await userRepository.getUserById(userId);
     if (!user) {
       throw new HttpException(404, "User not found");
+    }
+
+    if (updateData.role !== undefined) {
+      throw new HttpException(400, "Roles cannot be changed in User Management");
+    }
+
+    if (user.role === "driver") {
+      throw new HttpException(
+        400,
+        "Driver accounts must be edited in Driver Management",
+      );
     }
 
     if (updateData.email && updateData.email !== user.email) {
@@ -235,6 +291,320 @@ export class UserService {
       throw new HttpException(404, "User not found");
     }
 
-    return userRepository.delete(userId);
+    if (user.role === "driver") {
+      throw new HttpException(
+        400,
+        "Driver accounts must be deactivated in Driver Management",
+      );
+    }
+
+    const updated = await userRepository.update(userId, { status: "inactive" });
+    return !!updated;
+  }
+
+  // ── Driver management (admin-controlled internal staff) ────────────────────
+  async adminGetDrivers(
+    page: number,
+    limit: number,
+    search?: string,
+    availability?: string,
+  ): Promise<{ drivers: SafeUser[]; total: number }> {
+    const filter: Record<string, unknown> = { role: "driver" };
+    if (availability) {
+      filter.availabilityStatus = availability;
+    }
+
+    const { users, total } = await userRepository.getPaginatedUsers(
+      page,
+      limit,
+      search,
+      filter,
+    );
+
+    // Count each driver's completed deliveries in one grouped query so the
+    // admin list can show lifetime delivery totals without N extra requests.
+    const driverIds = users.map((u) => u._id);
+    const deliveryCounts = await ShipmentModel.aggregate<{
+      _id: mongoose.Types.ObjectId;
+      count: number;
+    }>([
+      { $match: { assignedDriverId: { $in: driverIds }, status: "delivered" } },
+      { $group: { _id: "$assignedDriverId", count: { $sum: 1 } } },
+    ]);
+    const countByDriver = new Map(
+      deliveryCounts.map((entry) => [entry._id.toString(), entry.count]),
+    );
+
+    return {
+      drivers: users.map((u) => ({
+        ...this.sanitizeUser(u),
+        deliveriesCount: countByDriver.get(u._id.toString()) ?? 0,
+      })),
+      total,
+    };
+  }
+
+  // Aggregate counts for the driver-management KPI cards.
+  async adminGetDriverStats(): Promise<{
+    total: number;
+    onDelivery: number;
+    offDuty: number;
+    available: number;
+    inactive: number;
+  }> {
+    const [total, onDelivery, offDuty, available, inactive] = await Promise.all([
+      UserModel.countDocuments({ role: "driver" }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "on-delivery",
+      }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "off-duty",
+      }),
+      UserModel.countDocuments({
+        role: "driver",
+        availabilityStatus: "available",
+      }),
+      UserModel.countDocuments({ role: "driver", status: "inactive" }),
+    ]);
+    return { total, onDelivery, offDuty, available, inactive };
+  }
+
+  async adminGetDriverById(driverId: string): Promise<SafeUser> {
+    const user = await userRepository.getUserById(driverId);
+    if (!user || user.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    return this.sanitizeUser(user);
+  }
+
+  async adminCreateDriver(driverData: any): Promise<SafeUser> {
+    const existingEmail = await userRepository.getUserByEmail(driverData.email);
+    if (existingEmail) {
+      throw new HttpException(400, "Email already exists");
+    }
+
+    if (driverData.licenseNumber) {
+      const existingLicense = await UserModel.findOne({
+        role: "driver",
+        licenseNumber: driverData.licenseNumber,
+      });
+      if (existingLicense) {
+        throw new HttpException(400, "Driver license already exists");
+      }
+    }
+
+    const hashedPassword = await bcryptjs.hash(driverData.password, 10);
+
+    const driver = await userRepository.createUser({
+      fullName: driverData.fullName,
+      email: driverData.email,
+      password: hashedPassword,
+      phoneNumber: driverData.phoneNumber || "",
+      role: "driver",
+      status: "active",
+      licenseNumber: driverData.licenseNumber || "",
+      branch: driverData.branch || "",
+      employmentStatus: driverData.employmentStatus ?? "full-time",
+      availabilityStatus: driverData.availabilityStatus ?? "available",
+    });
+
+    return this.sanitizeUser(driver);
+  }
+
+  async adminUpdateDriver(
+    driverId: string,
+    updateData: any,
+  ): Promise<SafeUser> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+
+    if (updateData.email && updateData.email !== driver.email) {
+      const existingEmail = await userRepository.getUserByEmail(
+        updateData.email,
+      );
+      if (existingEmail) {
+        throw new HttpException(400, "Email already exists");
+      }
+    }
+
+    if (
+      updateData.licenseNumber &&
+      updateData.licenseNumber !== driver.licenseNumber
+    ) {
+      const existingLicense = await UserModel.findOne({
+        _id: { $ne: driver._id },
+        role: "driver",
+        licenseNumber: updateData.licenseNumber,
+      });
+      if (existingLicense) {
+        throw new HttpException(400, "Driver license already exists");
+      }
+    }
+
+    if (updateData.status === "inactive") {
+      const activeShipments = await ShipmentModel.countDocuments({
+        assignedDriverId: driver._id,
+        status: { $nin: ["delivered", "cancelled"] },
+      });
+      if (activeShipments > 0) {
+        throw new HttpException(
+          400,
+          "Driver has active shipments and cannot be deactivated",
+        );
+      }
+      const assignedVehicle = await VehicleModel.findOne({
+        assignedDriverId: driver._id,
+      });
+      if (assignedVehicle) {
+        throw new HttpException(
+          400,
+          "Unassign the driver's vehicle before deactivation",
+        );
+      }
+      updateData.availabilityStatus = "inactive";
+    } else if (
+      updateData.status === "active" &&
+      driver.status === "inactive" &&
+      (!updateData.availabilityStatus ||
+        updateData.availabilityStatus === "inactive")
+    ) {
+      updateData.availabilityStatus = "available";
+    }
+
+    if (
+      updateData.status !== "inactive" &&
+      updateData.availabilityStatus &&
+      updateData.availabilityStatus !== driver.availabilityStatus
+    ) {
+      const activeShipments = await ShipmentModel.countDocuments({
+        assignedDriverId: driver._id,
+        status: { $nin: ["delivered", "cancelled"] },
+      });
+      if (activeShipments > 0) {
+        throw new HttpException(
+          400,
+          "Availability is controlled by the active shipment",
+        );
+      }
+      if (
+        ["assigned", "on-delivery", "inactive"].includes(
+          updateData.availabilityStatus,
+        )
+      ) {
+        throw new HttpException(
+          400,
+          "This availability state is controlled by the system",
+        );
+      }
+    }
+
+    if (updateData.password) {
+      updateData.password = await bcryptjs.hash(updateData.password, 10);
+    }
+
+    const updated = await userRepository.update(driverId, updateData);
+    if (!updated) {
+      throw new HttpException(500, "Failed to update driver");
+    }
+    return this.sanitizeUser(updated);
+  }
+
+  async adminDeleteDriver(driverId: string): Promise<boolean> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    const activeShipments = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+      status: { $nin: ["delivered", "cancelled"] },
+    });
+    if (activeShipments > 0) {
+      throw new HttpException(
+        400,
+        "Driver has active shipments and cannot be deactivated",
+      );
+    }
+    const assignedVehicle = await VehicleModel.findOne({
+      assignedDriverId: driver._id,
+    });
+    if (assignedVehicle) {
+      throw new HttpException(
+        400,
+        "Unassign the driver's vehicle before deactivation",
+      );
+    }
+    const updated = await userRepository.update(driverId, {
+      status: "inactive",
+      availabilityStatus: "inactive",
+    });
+    return !!updated;
+  }
+
+  // A driver toggles their own availability from the driver console.
+  async updateAvailability(
+    driverId: string,
+    availabilityStatus: string,
+  ): Promise<SafeUser> {
+    if (!["available", "off-duty"].includes(availabilityStatus)) {
+      throw new HttpException(
+        400,
+        "Drivers can only switch between available and off-duty",
+      );
+    }
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+    if (driver.status !== "active") {
+      throw new HttpException(400, "Inactive drivers cannot change availability");
+    }
+    const activeAssignments = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+      status: { $nin: ["delivered", "cancelled"] },
+    });
+    if (activeAssignments > 0) {
+      throw new HttpException(
+        400,
+        "Availability is controlled by the active shipment",
+      );
+    }
+    const updated = await userRepository.update(driverId, {
+      availabilityStatus: availabilityStatus as IUser["availabilityStatus"],
+    });
+    if (!updated) {
+      throw new HttpException(404, "Driver not found");
+    }
+    return this.sanitizeUser(updated);
+  }
+
+  // The driver's own profile plus their currently assigned vehicle (if any),
+  // used by the driver console to show live availability + vehicle details.
+  async getDriverMe(driverId: string): Promise<DriverMe> {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+
+    let vehicle: DriverVehicleSummary | null = null;
+    if (driver.assignedVehicleId) {
+      const v = await VehicleModel.findById(driver.assignedVehicleId);
+      if (v) {
+        vehicle = {
+          id: v._id.toString(),
+          registrationNumber: v.registrationNumber,
+          type: v.type,
+          make: v.make,
+          model: v.vehicleModel,
+          capacityKg: v.capacityKg ?? null,
+          status: v.status,
+        };
+      }
+    }
+
+    return { ...this.sanitizeUser(driver), vehicle };
   }
 }

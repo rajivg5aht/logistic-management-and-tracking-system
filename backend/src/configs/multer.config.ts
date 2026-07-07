@@ -2,10 +2,15 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Ensure uploads directory exists
+// Ensure uploads directories exist
 const uploadDir = path.join(__dirname, "../../uploads/profiles");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const vehicleUploadDir = path.join(__dirname, "../../uploads/vehicles");
+if (!fs.existsSync(vehicleUploadDir)) {
+  fs.mkdirSync(vehicleUploadDir, { recursive: true });
 }
 
 // Configure storage
@@ -17,6 +22,18 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `profile-${uniqueSuffix}${ext}`);
+  },
+});
+
+// Separate storage for vehicle photos, kept under /uploads/vehicles.
+const vehicleStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, vehicleUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `vehicle-${uniqueSuffix}${ext}`);
   },
 });
 
@@ -42,6 +59,15 @@ const fileFilter = (
 // Create multer upload instance
 export const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
+
+// Upload instance for vehicle photos.
+export const vehicleUpload = multer({
+  storage: vehicleStorage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit

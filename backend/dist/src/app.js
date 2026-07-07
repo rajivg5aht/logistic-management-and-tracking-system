@@ -8,6 +8,13 @@ const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
 const admin_route_1 = __importDefault(require("./routes/admin.route"));
+const adminDriver_route_1 = __importDefault(require("./routes/adminDriver.route"));
+const driver_route_1 = __importDefault(require("./routes/driver.route"));
+const shipment_route_1 = __importDefault(require("./routes/shipment.route"));
+const adminShipment_route_1 = __importDefault(require("./routes/adminShipment.route"));
+const inquiry_route_1 = __importDefault(require("./routes/inquiry.route"));
+const adminInquiry_route_1 = __importDefault(require("./routes/adminInquiry.route"));
+const adminVehicle_route_1 = __importDefault(require("./routes/adminVehicle.route"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
     origin: [
@@ -31,6 +38,13 @@ app.get("/", (req, res) => {
 });
 app.use("/api/v1/auth", user_route_1.default);
 app.use("/api/v1/admin/users", admin_route_1.default);
+app.use("/api/v1/admin/drivers", adminDriver_route_1.default);
+app.use("/api/v1/admin/vehicles", adminVehicle_route_1.default);
+app.use("/api/v1/driver", driver_route_1.default);
+app.use("/api/v1/shipments", shipment_route_1.default);
+app.use("/api/v1/admin/shipments", adminShipment_route_1.default);
+app.use("/api/v1/inquiries", inquiry_route_1.default);
+app.use("/api/v1/admin/inquiries", adminInquiry_route_1.default);
 app.use((req, res) => {
     return res.status(404).json({
         success: false,

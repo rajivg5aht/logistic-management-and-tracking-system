@@ -3,6 +3,14 @@
 import { useShipment } from "@/context/ShipmentContext";
 import { Package, GlassWater, ClipboardCheck, Check } from "lucide-react";
 
+// Allow only numeric input with an optional single decimal point (strips letters/symbols).
+function sanitizeNumeric(value: string): string {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  if (firstDot === -1) return cleaned;
+  return cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+}
+
 export function ParcelDetailsCard() {
   const { packageDetails, updatePackageField, updateDimension } = useShipment();
 
@@ -147,9 +155,10 @@ export function ParcelDetailsCard() {
             <div className="flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all overflow-hidden">
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="0.00"
                 value={packageDetails.weight}
-                onChange={(e) => updatePackageField("weight", e.target.value)}
+                onChange={(e) => updatePackageField("weight", sanitizeNumeric(e.target.value))}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400 px-3.5"
                 suppressHydrationWarning
               />
@@ -198,9 +207,10 @@ export function ParcelDetailsCard() {
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="Length"
                 value={packageDetails.dimensions.length}
-                onChange={(e) => updateDimension("length", e.target.value)}
+                onChange={(e) => updateDimension("length", sanitizeNumeric(e.target.value))}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />
@@ -211,9 +221,10 @@ export function ParcelDetailsCard() {
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="Width"
                 value={packageDetails.dimensions.width}
-                onChange={(e) => updateDimension("width", e.target.value)}
+                onChange={(e) => updateDimension("width", sanitizeNumeric(e.target.value))}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />
@@ -224,9 +235,10 @@ export function ParcelDetailsCard() {
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"
+                inputMode="decimal"
                 placeholder="Height"
                 value={packageDetails.dimensions.height}
-                onChange={(e) => updateDimension("height", e.target.value)}
+                onChange={(e) => updateDimension("height", sanitizeNumeric(e.target.value))}
                 className="w-full bg-transparent focus:outline-none text-[13px] text-slate-800 placeholder-slate-400"
                 suppressHydrationWarning
               />

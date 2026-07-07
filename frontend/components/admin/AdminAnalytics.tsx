@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   DollarSign,
   Truck,
@@ -7,6 +8,10 @@ import {
   ShieldCheck,
   Download,
 } from "lucide-react";
+import {
+  adminGetFleetStats,
+  type FleetStats,
+} from "@/lib/api/fleet.api";
 
 const STAT_CARDS = [
   {
@@ -47,16 +52,42 @@ const STAT_CARDS = [
   },
 ];
 
-// Donut segments (must sum to 100)
-const FLEET_SEGMENTS = [
-  { label: "On-Time Deliveries", value: 64, color: "var(--teal)" },
-  { label: "Slight Delay", value: 24, color: "var(--accent)" },
-  { label: "Critical Lag", value: 12, color: "var(--surface-muted)" },
-];
-
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN"];
 
-export default function AdminAnalytics() {
+export default function AdminAnalytics({ token }: { token: string }) {
+  const [fleetStats, setFleetStats] = useState<FleetStats | null>(null);
+
+  useEffect(() => {
+    adminGetFleetStats(token)
+      .then(setFleetStats)
+      .catch(() => setFleetStats(null));
+  }, [token]);
+
+  const totalVehicles = fleetStats?.total ?? 0;
+  const percentage = (value: number) =>
+    totalVehicles > 0 ? Math.round((value / totalVehicles) * 100) : 0;
+  const fleetSegments = [
+    {
+      label: "Available",
+      value: percentage(fleetStats?.available ?? 0),
+      color: "var(--teal)",
+    },
+    {
+      label: "Assigned",
+      value: percentage(fleetStats?.assigned ?? 0),
+      color: "var(--accent)",
+    },
+    {
+      label: "Maintenance / Inactive",
+      value:
+        totalVehicles > 0
+          ? 100 -
+            percentage(fleetStats?.available ?? 0) -
+            percentage(fleetStats?.assigned ?? 0)
+          : 0,
+      color: "var(--surface-muted)",
+    },
+  ];
   // Donut geometry
   const r = 70;
   const circumference = 2 * Math.PI * r;
@@ -180,7 +211,7 @@ export default function AdminAnalytics() {
                 stroke="var(--surface-muted)"
                 strokeWidth="18"
               />
-              {FLEET_SEGMENTS.map((seg) => {
+              {fleetSegments.map((seg) => {
                 const dash = (seg.value / 100) * circumference;
                 const offset = -(cumulative / 100) * circumference;
                 cumulative += seg.value;
@@ -200,7 +231,12 @@ export default function AdminAnalytics() {
               })}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-black text-[#6C63FF]">88%</span>
+              <span className="text-3xl font-black text-[#6C63FF]">
+                {percentage(
+                  (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0),
+                )}
+                %
+              </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Optimal
               </span>
@@ -209,7 +245,7 @@ export default function AdminAnalytics() {
 
           {/* Legend */}
           <div className="mt-6 space-y-3">
-            {FLEET_SEGMENTS.map((seg) => (
+            {fleetSegments.map((seg) => (
               <div key={seg.label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span

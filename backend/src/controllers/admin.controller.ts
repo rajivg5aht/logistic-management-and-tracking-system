@@ -13,8 +13,18 @@ export class AdminController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const search = req.query.search as string || "";
+      const requestedRole = req.query.role as string | undefined;
+      const role =
+        requestedRole && ["admin", "customer", "driver"].includes(requestedRole)
+          ? requestedRole
+          : undefined;
 
-      const { users, total } = await userService.adminGetUsers(page, limit, search);
+      const { users, total } = await userService.adminGetUsers(
+        page,
+        limit,
+        search,
+        role,
+      );
       const totalPages = Math.ceil(total / limit);
 
       return ApiResponseHelper.success(
@@ -64,21 +74,20 @@ export class AdminController {
         body.fullName = body.name;
       }
 
+      if (body.role && body.role !== "customer") {
+        return ApiResponseHelper.error(
+          res,
+          "Drivers must be created in Driver Management",
+          400,
+        );
+      }
+
       const parsedData = AdminCreateUserDTO.safeParse(body);
       if (!parsedData.success) {
         return ApiResponseHelper.error(
           res,
           z.prettifyError(parsedData.error),
           400
-        );
-      }
-
-      // Security: Administrators cannot create another admin account
-      if (parsedData.data.role === "admin") {
-        return ApiResponseHelper.error(
-          res,
-          "Forbidden - Administrators cannot create another administrator account",
-          403
         );
       }
 
@@ -116,21 +125,20 @@ export class AdminController {
         body.fullName = body.name;
       }
 
+      if (body.role !== undefined) {
+        return ApiResponseHelper.error(
+          res,
+          "Roles cannot be changed in User Management",
+          400,
+        );
+      }
+
       const parsedData = AdminUpdateUserDTO.safeParse(body);
       if (!parsedData.success) {
         return ApiResponseHelper.error(
           res,
           z.prettifyError(parsedData.error),
           400
-        );
-      }
-
-      // Security: Administrators cannot promote a user to admin role
-      if (parsedData.data.role === "admin") {
-        return ApiResponseHelper.error(
-          res,
-          "Forbidden - Administrators cannot promote users to the administrator role",
-          403
         );
       }
 
@@ -163,7 +171,7 @@ export class AdminController {
       }
 
       await userService.adminDeleteUser(id);
-      return ApiResponseHelper.success(res, null, "User deleted successfully");
+      return ApiResponseHelper.success(res, null, "User deactivated successfully");
     } catch (error: any) {
       return ApiResponseHelper.error(
         res,

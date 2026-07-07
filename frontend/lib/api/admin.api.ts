@@ -16,7 +16,7 @@ export type AdminUserPayload = {
   fullName: string;
   email: string;
   password?: string;
-  role: "admin" | "customer" | "driver";
+  role?: "customer";
   phoneNumber?: string;
   status?: "active" | "inactive";
 };
@@ -26,10 +26,14 @@ export async function adminGetUsers(
   page: number,
   limit: number,
   search?: string,
+  role?: "admin" | "customer" | "driver",
 ): Promise<{ data: AuthUser[]; meta: AdminUserMeta }> {
   let endpoint = `${API_BASE_URL}/api/v1/admin/users?page=${page}&limit=${limit}`;
   if (search) {
     endpoint += `&search=${encodeURIComponent(search)}`;
+  }
+  if (role) {
+    endpoint += `&role=${role}`;
   }
 
   const response = await fetch(endpoint, {

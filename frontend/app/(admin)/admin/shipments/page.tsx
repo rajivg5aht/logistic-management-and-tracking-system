@@ -29,5 +29,5 @@ export default async function AdminShipmentsPage() {
     redirect("/dashboard");
   }
 
-  return <AdminShipments />;
+  return <AdminShipments token={token} />;
 }

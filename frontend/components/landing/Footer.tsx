@@ -70,14 +70,14 @@ export default function Footer() {
               Get the latest logistics news and delivery insights.
             </p>
             <form onSubmit={(e) => e.preventDefault()} className="flex items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] p-1.5">
-              <input
+              <input suppressHydrationWarning
                 type="email"
                 required
                 placeholder="Enter your email"
                 aria-label="Email address"
                 className="h-10 w-full bg-transparent px-3 text-sm text-[var(--text-on-dark)] outline-none placeholder:text-[var(--text-on-dark-muted)]"
               />
-              <button
+              <button suppressHydrationWarning
                 type="submit"
                 aria-label="Subscribe"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--text-on-accent)] transition-colors hover:bg-[var(--accent-hover)]"

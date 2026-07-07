@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu, X, Search } from "lucide-react";
@@ -63,21 +64,14 @@ export default function Navbar() {
     >
       <div className="mx-auto flex h-full w-full max-w-[1440px] items-center justify-between px-5 sm:px-6 lg:px-8">
         <Link href="/" aria-label="CargoNep home" className="group flex shrink-0 items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(200,162,74,0.30)] bg-gradient-to-br from-[rgba(200,162,74,0.20)] to-transparent transition-colors group-hover:border-[rgba(200,162,74,0.60)]">
-            <svg
-              className="h-5 w-5 text-[var(--accent)]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-          </div>
+          <Image
+            src="/logo.png"
+            alt=""
+            width={40}
+            height={40}
+            priority
+            className="h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-105"
+          />
           <span className="text-2xl font-bold tracking-tight">
             <span className="text-[var(--text)]">Cargo</span>
             <span className="text-[var(--accent)]">Nep</span>
@@ -93,13 +87,15 @@ export default function Navbar() {
                   className={`group/nav relative flex flex-col items-center gap-1.5 py-5 text-sm font-semibold tracking-wide transition-colors duration-300 ${
                     activeId === item.id
                       ? "text-[var(--accent-hover)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--accent-hover)]"
                   }`}
                 >
                   {item.label}
                   <span
-                    className={`h-0.5 rounded-full bg-[var(--accent)] transition-all duration-300 ease-out ${
-                      activeId === item.id ? "w-full" : "w-0 group-hover/nav:w-full"
+                    className={`absolute inset-x-0 bottom-3 h-0.5 origin-left rounded-full bg-[var(--accent)] transition-transform duration-300 ease-out motion-reduce:transition-none ${
+                      activeId === item.id
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover/nav:scale-x-100"
                     }`}
                   />
                 </Link>
@@ -109,7 +105,7 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
+          <button suppressHydrationWarning
             type="button"
             aria-label="Search"
             className="hidden h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:flex"
@@ -123,7 +119,7 @@ export default function Navbar() {
             Register
           </Link>
 
-          <button
+          <button suppressHydrationWarning
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
