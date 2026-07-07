@@ -31,7 +31,7 @@ function ShipmentPageContent() {
     if (!pickupAddress.fullName.trim()) errors.push("Pickup: Full Name is required");
     if (!pickupAddress.phoneNumber.trim()) errors.push("Pickup: Phone Number is required");
     else if (!/^9\d{9}$/.test(pickupAddress.phoneNumber)) errors.push("Pickup: Enter a valid 10-digit mobile number");
-    if (!pickupAddress.streetAddress.trim()) errors.push("Pickup: Delivery Address is required");
+    if (!pickupAddress.streetAddress.trim()) errors.push("Pickup: Pickup Address is required");
     if (!pickupAddress.district.trim()) errors.push("Pickup: District is required");
     if (!pickupAddress.city.trim()) errors.push("Pickup: City / Municipality is required");
 
