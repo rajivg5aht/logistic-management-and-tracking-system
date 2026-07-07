@@ -10,10 +10,11 @@ import {
   Circle,
   Loader2,
   Wallet,
+  Banknote,
   AlertTriangle,
   Undo2,
 } from "lucide-react";
-import { driverUpdateStage } from "@/lib/api/driver.api";
+import { driverUpdateStage, driverCollectCod } from "@/lib/api/driver.api";
 import { DRIVER_STAGE_LABELS } from "@/lib/api/shipment.api";
 import type {
   Shipment,
@@ -154,12 +155,14 @@ export function ActiveAssignmentCard({
   withMap?: boolean;
 }) {
   const [busy, setBusy] = useState<DriverStage | null>(null);
+  const [codBusy, setCodBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const current = shipment.driverStage ?? "assigned";
   const nextStages = STAGE_TRANSITIONS[current] ?? [];
-  const isCod =
-    shipment.paymentMethod === "cod" && shipment.paymentStatus === "pending";
+  const isCodShipment = shipment.paymentMethod === "cod";
+  const codPending = isCodShipment && shipment.paymentStatus === "pending";
+  const codPaid = isCodShipment && shipment.paymentStatus === "paid";
 
   const advance = async (stage: DriverStage) => {
     setBusy(stage);
@@ -171,6 +174,19 @@ export function ActiveAssignmentCard({
       setError(err instanceof Error ? err.message : "Failed to update stage");
     } finally {
       setBusy(null);
+    }
+  };
+
+  const collectCod = async (collected: boolean) => {
+    setCodBusy(true);
+    setError(null);
+    try {
+      const updated = await driverCollectCod(token, shipment.id, collected);
+      await onChanged(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update COD payment");
+    } finally {
+      setCodBusy(false);
     }
   };
 
@@ -230,11 +246,82 @@ export function ActiveAssignmentCard({
         <MetaTile icon={<Package size={14} />} label="Parcel" value={`${shipment.package.parcelType} · ${shipment.package.weight || "—"}`} />
         <MetaTile
           icon={<Wallet size={14} />}
-          label={isCod ? "COD to collect" : "Payment"}
-          value={isCod ? formatNPR(shipment.amount) : "Prepaid"}
-          highlight={isCod}
+          label={isCodShipment ? "COD" : "Payment"}
+          value={
+            isCodShipment
+              ? codPaid
+                ? "Collected"
+                : formatNPR(shipment.amount)
+              : "Prepaid"
+          }
+          highlight={codPending}
         />
       </div>
+
+      {/* COD collection */}
+      {isCodShipment && (
+        <div
+          className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+            codPaid
+              ? "border-[#BFE6CD] bg-[#DEF3E6]"
+              : "border-[#F3D9A0] bg-[#FDF3E0]"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                codPaid ? "bg-[#1E9E4C] text-white" : "bg-[#E9B44C]/25 text-[#B8791B]"
+              }`}
+            >
+              {codPaid ? <CheckCircle2 size={18} /> : <Banknote size={18} />}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                Cash on delivery
+              </p>
+              <p className="text-sm font-black text-[var(--text)]">
+                {formatNPR(shipment.amount)}
+                <span
+                  className={`ml-2 text-xs font-bold ${
+                    codPaid ? "text-[#1E9E4C]" : "text-[#B8791B]"
+                  }`}
+                >
+                  {codPaid ? "· Collected" : "· To collect"}
+                </span>
+              </p>
+            </div>
+          </div>
+          {codPending ? (
+            <button
+              type="button"
+              onClick={() => collectCod(true)}
+              disabled={codBusy}
+              className="flex items-center gap-1.5 rounded-lg bg-[#1E9E4C] px-4 py-2 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+            >
+              {codBusy ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Wallet size={14} />
+              )}
+              Mark COD Collected
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => collectCod(false)}
+              disabled={codBusy}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] disabled:opacity-60"
+            >
+              {codBusy ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Undo2 size={14} />
+              )}
+              Undo
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Stepper */}
       <div className="mt-6">
@@ -244,18 +331,27 @@ export function ActiveAssignmentCard({
       {/* Actions */}
       {nextStages.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
-          {nextStages.map((stage) => (
-            <button
-              key={stage}
-              type="button"
-              onClick={() => advance(stage)}
-              disabled={busy !== null}
-              className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-60 ${TONE_CLASS[ACTION_CONFIG[stage].tone]}`}
-            >
-              {busy === stage && <Loader2 size={14} className="animate-spin" />}
-              {ACTION_CONFIG[stage].label}
-            </button>
-          ))}
+          {nextStages.map((stage) => {
+            const lockedForCod = stage === "delivered" && codPending;
+            return (
+              <button
+                key={stage}
+                type="button"
+                onClick={() => advance(stage)}
+                disabled={busy !== null || codBusy || lockedForCod}
+                title={lockedForCod ? "Collect COD to enable delivery" : undefined}
+                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-60 ${TONE_CLASS[ACTION_CONFIG[stage].tone]}`}
+              >
+                {busy === stage && <Loader2 size={14} className="animate-spin" />}
+                {ACTION_CONFIG[stage].label}
+              </button>
+            );
+          })}
+          {nextStages.includes("delivered") && codPending && (
+            <p className="w-full text-xs font-semibold text-[#B8791B]">
+              Collect COD to enable delivery.
+            </p>
+          )}
         </div>
       )}
 

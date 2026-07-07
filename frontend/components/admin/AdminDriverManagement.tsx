@@ -24,7 +24,6 @@ import {
   adminCreateDriver,
   adminUpdateDriver,
   EMPLOYMENT_STATUSES,
-  AVAILABILITY_STATUSES,
   type Driver,
   type DriverMeta,
   type AdminDriverStats,
@@ -790,64 +789,35 @@ function DriverForm({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="form-label">License Number</label>
-          <input
-            className="form-input"
-            value={form.licenseNumber}
-            onChange={(e) => set({ licenseNumber: e.target.value })}
-            placeholder="e.g. 03-06-00123456"
-            suppressHydrationWarning
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="form-label">Assigned Branch / Center</label>
-          <input
-            className="form-input"
-            value={form.branch}
-            onChange={(e) => set({ branch: e.target.value })}
-            placeholder="e.g. Kathmandu Hub"
-            suppressHydrationWarning
-          />
-        </div>
+      <div className="space-y-1.5">
+        <label className="form-label">License Number</label>
+        <input
+          className="form-input"
+          value={form.licenseNumber}
+          onChange={(e) => set({ licenseNumber: e.target.value })}
+          placeholder="e.g. 03-06-00123456"
+          suppressHydrationWarning
+        />
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-sm text-[var(--text-soft)]">
         Assign vehicles from Fleet Management after saving the driver.
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="form-label">Employment</label>
-          <select
-            className="form-input capitalize"
-            value={form.employmentStatus}
-            onChange={(e) => set({ employmentStatus: e.target.value as typeof form.employmentStatus })}
-            suppressHydrationWarning
-          >
-            {EMPLOYMENT_STATUSES.map((v) => (
-              <option key={v} value={v} className="capitalize">
-                {v}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <label className="form-label">Availability</label>
-          <select
-            className="form-input capitalize"
-            value={form.availabilityStatus}
-            onChange={(e) => set({ availabilityStatus: e.target.value as AvailabilityStatus })}
-            suppressHydrationWarning
-          >
-            {AVAILABILITY_STATUSES.map((v) => (
-              <option key={v} value={v} className="capitalize">
-                {AVAILABILITY_CONFIG[v].label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="space-y-1.5">
+        <label className="form-label">Employment</label>
+        <select
+          className="form-input capitalize"
+          value={form.employmentStatus}
+          onChange={(e) => set({ employmentStatus: e.target.value as typeof form.employmentStatus })}
+          suppressHydrationWarning
+        >
+          {EMPLOYMENT_STATUSES.map((v) => (
+            <option key={v} value={v} className="capitalize">
+              {v}
+            </option>
+          ))}
+        </select>
       </div>
 
       {isEdit && (

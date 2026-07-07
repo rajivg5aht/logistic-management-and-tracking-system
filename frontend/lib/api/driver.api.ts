@@ -228,6 +228,18 @@ export async function driverUpdateStage(
   return payload.data;
 }
 
+export async function driverCollectCod(
+  token: string,
+  id: string,
+  collected: boolean,
+): Promise<Shipment> {
+  const payload = await authFetch(`/api/v1/driver/shipments/${id}/cod`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ collected }),
+  });
+  return payload.data;
+}
+
 export async function driverUpdateAvailability(
   token: string,
   availabilityStatus: "available" | "off-duty",

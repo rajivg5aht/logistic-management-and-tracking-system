@@ -15,18 +15,34 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  X,
+  MapPin,
+  Phone,
+  Package,
+  Boxes,
+  Weight,
+  Ruler,
+  CreditCard,
+  ShieldCheck,
+  Sparkles,
+  Clock,
+  User,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   adminGetShipments,
   adminGetShipmentStats,
   adminUpdateShipment,
   adminDeleteShipment,
   getShipmentDisplayStatus,
+  DRIVER_STAGE_LABELS,
   type Shipment,
   type ShipmentMeta,
   type ShipmentStats,
   type ShipmentStatus,
   type DriverStage,
+  type AdminUpdateShipmentPayload,
 } from "@/lib/api/shipment.api";
 import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
@@ -89,6 +105,12 @@ const PAYMENT_STYLES: Record<string, string> = {
   prepaid: "bg-[#DEF3E6] text-[#1E9E4C]",
 };
 
+// Whether the money has actually been collected (COD is settled by the driver).
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  paid: "bg-[#DEF3E6] text-[#1E9E4C]",
+  pending: "bg-[#FDECD8] text-[#C77718]",
+};
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -144,6 +166,8 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  // Shipment shown in the read-only detail drawer (open when non-null).
+  const [detail, setDetail] = useState<Shipment | null>(null);
   const [selected, setSelected] = useState<Shipment | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [form, setForm] = useState<{
@@ -249,16 +273,21 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     try {
       setActionLoading(true);
       setFormError(null);
-      if (!form.driverStage) {
-        setFormError("Select a delivery status.");
+      // A manual status override only makes sense once a driver is assigned; the
+      // backend enforces this too, but we pre-empt it for a friendlier message.
+      if (form.driverStage && !form.assignedDriverId) {
+        setFormError("Assign a driver before setting a delivery status.");
         return;
       }
-      await adminUpdateShipment(token, selected.id, {
-        driverStage: form.driverStage,
+      const payload: AdminUpdateShipmentPayload = {
         // Server resolves the driver name from the id and starts the timeline.
         assignedDriverId: form.assignedDriverId || null,
         paymentStatus: form.paymentStatus,
-      });
+      };
+      // Only send a stage when the admin is manually overriding it. Left empty,
+      // the shipment stays Pending/Assigned and progresses from driver updates.
+      if (form.driverStage) payload.driverStage = form.driverStage;
+      await adminUpdateShipment(token, selected.id, payload);
       setIsEditOpen(false);
       fetchData(true);
       fetchDrivers();
@@ -296,6 +325,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       "Recipient",
       "Recipient Location",
       "Payment",
+      "Payment Status",
       "Amount",
       "Status",
       "Driver",
@@ -308,6 +338,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       s.delivery.recipientName ?? "",
       locLine(s.delivery.city, s.delivery.district),
       s.paymentMethod === "cod" ? "COD" : "PREPAID",
+      s.paymentStatus === "paid" ? "Paid" : "Pending",
       s.amount,
       getShipmentDisplayStatus(s),
       s.assignedDriver ?? "Unassigned",
@@ -496,7 +527,8 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                     return (
                       <tr
                         key={s.id}
-                        className="border-t border-[var(--border-light)] transition-colors hover:bg-[var(--surface-soft)]"
+                        onClick={() => setDetail(s)}
+                        className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[var(--surface-soft)]"
                       >
                         {/* Tracking ID */}
                         <td className="px-5 py-4">
@@ -525,13 +557,22 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         </td>
                         {/* Payment */}
                         <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                              PAYMENT_STYLES[isCod ? "cod" : "prepaid"]
-                            }`}
-                          >
-                            {isCod ? "COD" : "PREPAID"}
-                          </span>
+                          <div className="flex flex-col items-start gap-1">
+                            <span
+                              className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                                PAYMENT_STYLES[isCod ? "cod" : "prepaid"]
+                              }`}
+                            >
+                              {isCod ? "COD" : "PREPAID"}
+                            </span>
+                            <span
+                              className={`inline-flex rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                PAYMENT_STATUS_STYLES[s.paymentStatus]
+                              }`}
+                            >
+                              {s.paymentStatus === "paid" ? "Paid" : "Pending"}
+                            </span>
+                          </div>
                         </td>
                         {/* Amount */}
                         <td className="px-5 py-4">
@@ -571,7 +612,22 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
-                              onClick={() => handleEditOpen(s)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetail(s);
+                              }}
+                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B] cursor-pointer"
+                              title="View details"
+                              suppressHydrationWarning
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditOpen(s);
+                              }}
                               className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B] cursor-pointer"
                               title="Update shipment"
                               suppressHydrationWarning
@@ -580,7 +636,10 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteOpen(s)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteOpen(s);
+                              }}
                               className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
                               title="Delete shipment"
                               suppressHydrationWarning
@@ -679,7 +738,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           )}
 
           <div>
-            <label className="form-label" htmlFor="ship-status">Delivery Status *</label>
+            <label className="form-label" htmlFor="ship-status">Delivery Status</label>
             <select
               id="ship-status"
               value={form.driverStage}
@@ -690,15 +749,18 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 })
               }
               className="form-input"
-              required
             >
-              <option value="" disabled>Select delivery status</option>
+              <option value="">Assigned — awaiting pickup</option>
               {ADMIN_DELIVERY_STAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Leave as &ldquo;Awaiting pickup&rdquo; — drivers update this as they
+              progress. Change it only to manually override.
+            </p>
           </div>
 
           <div>
@@ -810,6 +872,379 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           </div>
         </div>
       </Modal>
+
+      {/* ============ DETAIL DRAWER ============ */}
+      <ShipmentDetailDrawer
+        shipment={detail}
+        onClose={() => setDetail(null)}
+        onEdit={(s) => {
+          setDetail(null);
+          handleEditOpen(s);
+        }}
+      />
     </div>
+  );
+}
+
+/* ── Read-only shipment detail drawer (slides in from the right) ──────────── */
+
+const SERVICE_LABELS: Record<string, string> = {
+  standard: "Standard",
+  express: "Express",
+  overnight: "Overnight",
+};
+
+const PARCEL_LABELS: Record<string, string> = {
+  standard: "Standard",
+  fragile: "Fragile",
+  pallet: "Pallet",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "Cash on Delivery",
+  esewa: "eSewa",
+  khalti: "Khalti",
+};
+
+function fmtDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function addressLine(a: Shipment["pickup"]): string {
+  return (
+    [a.streetAddress, a.city, a.district].filter(Boolean).join(", ") || "—"
+  );
+}
+
+function dimsLabel(d: Shipment["package"]["dimensions"]): string {
+  return d.length && d.width && d.height
+    ? `${d.length} × ${d.width} × ${d.height} cm`
+    : "—";
+}
+
+function DetailSection({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        <span className="text-[#123E6B]">{icon}</span>
+        {title}
+      </h3>
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function DetailTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-3">
+      <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+        {icon}
+        <span className="text-[10px] font-bold uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <p className="mt-1 break-words font-bold text-[var(--text)]">{value}</p>
+    </div>
+  );
+}
+
+function ShipmentDetailDrawer({
+  shipment,
+  onClose,
+  onEdit,
+}: {
+  shipment: Shipment | null;
+  onClose: () => void;
+  onEdit: (s: Shipment) => void;
+}) {
+  // Lock background scroll + close on Escape while the drawer is open.
+  useEffect(() => {
+    if (!shipment) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [shipment, onClose]);
+
+  return (
+    <AnimatePresence>
+      {shipment && (
+        <div className="fixed inset-0 z-[60]">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          />
+
+          {/* Panel */}
+          <motion.aside
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 32, stiffness: 320 }}
+            className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl"
+          >
+            {/* Header */}
+            <div
+              className="relative shrink-0 px-6 pb-5 pt-6 text-white"
+              style={{
+                background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_BTN} 100%)`,
+              }}
+            >
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/15 hover:text-white cursor-pointer"
+                aria-label="Close details"
+              >
+                <X size={18} />
+              </button>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/70">
+                <Package size={14} /> Shipment Details
+              </div>
+              <h2 className="mt-2 text-2xl font-black">#{shipment.trackingId}</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
+                  {getShipmentDisplayStatus(shipment)}
+                </span>
+                <span className="text-xs text-white/70">
+                  Created {fmtDateTime(shipment.createdAt)}
+                </span>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 space-y-5 overflow-y-auto p-6">
+              {/* Route */}
+              <DetailSection icon={<MapPin size={14} />} title="Route">
+                <div className="relative pl-6">
+                  <span className="absolute bottom-3 left-[6px] top-3 w-px bg-[var(--border)]" />
+                  {/* Pickup */}
+                  <div className="relative pb-5">
+                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      Pickup · Sender
+                    </p>
+                    <p className="mt-0.5 font-bold text-[var(--text)]">
+                      {shipment.pickup.fullName || "—"}
+                    </p>
+                    <p className="text-sm text-[var(--text-soft)]">
+                      {addressLine(shipment.pickup)}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                      <Phone size={12} /> {shipment.pickup.phoneNumber || "—"}
+                    </p>
+                  </div>
+                  {/* Delivery */}
+                  <div className="relative">
+                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      Delivery · Recipient
+                    </p>
+                    <p className="mt-0.5 font-bold text-[var(--text)]">
+                      {shipment.delivery.recipientName || "—"}
+                    </p>
+                    <p className="text-sm text-[var(--text-soft)]">
+                      {addressLine(shipment.delivery)}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                      <Phone size={12} /> {shipment.delivery.phoneNumber || "—"}
+                    </p>
+                  </div>
+                </div>
+              </DetailSection>
+
+              {/* Parcel */}
+              <DetailSection icon={<Package size={14} />} title="Parcel Information">
+                <div className="grid grid-cols-2 gap-3">
+                  <DetailTile
+                    icon={<Boxes size={13} />}
+                    label="Type"
+                    value={PARCEL_LABELS[shipment.package.parcelType] ?? shipment.package.parcelType}
+                  />
+                  <DetailTile
+                    icon={<Weight size={13} />}
+                    label="Weight"
+                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "—"}
+                  />
+                  <DetailTile
+                    icon={<Boxes size={13} />}
+                    label="Quantity"
+                    value={shipment.package.quantity}
+                  />
+                  <DetailTile
+                    icon={<Ruler size={13} />}
+                    label="Dimensions"
+                    value={dimsLabel(shipment.package.dimensions)}
+                  />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[#2E6FD6]">
+                    <Truck size={12} /> {SERVICE_LABELS[shipment.service] ?? shipment.service}
+                  </span>
+                  {shipment.insurance && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#DEF3E6] px-2.5 py-1 text-[11px] font-bold text-[#1E9E4C]">
+                      <ShieldCheck size={12} /> Insured
+                    </span>
+                  )}
+                  {shipment.specialHandling && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#FBF1DC] px-2.5 py-1 text-[11px] font-bold text-[#C99A3D]">
+                      <Sparkles size={12} /> Special handling
+                    </span>
+                  )}
+                </div>
+              </DetailSection>
+
+              {/* Payment */}
+              <DetailSection icon={<CreditCard size={14} />} title="Payment">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                      Amount
+                    </p>
+                    <p className="text-2xl font-black" style={{ color: NAVY }}>
+                      NPR {shipment.amount.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span
+                      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                        PAYMENT_STYLES[shipment.paymentMethod === "cod" ? "cod" : "prepaid"]
+                      }`}
+                    >
+                      {PAYMENT_METHOD_LABELS[shipment.paymentMethod] ?? shipment.paymentMethod}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                        PAYMENT_STATUS_STYLES[shipment.paymentStatus]
+                      }`}
+                    >
+                      {shipment.paymentStatus === "paid" ? "Paid" : "Pending"}
+                    </span>
+                  </div>
+                </div>
+              </DetailSection>
+
+              {/* Assignment */}
+              <DetailSection icon={<Truck size={14} />} title="Assignment">
+                {shipment.assignedDriver ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F0FB] text-[11px] font-bold text-[#2E6FD6]">
+                        {getInitials(shipment.assignedDriver)}
+                      </span>
+                      <div>
+                        <p className="font-bold text-[var(--text)]">
+                          {shipment.assignedDriver}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {shipment.assignedVehicle
+                            ? `Vehicle · ${shipment.assignedVehicle}`
+                            : "No vehicle linked"}
+                        </p>
+                      </div>
+                    </div>
+                    {shipment.driverStage && (
+                      <span className="inline-flex rounded-full bg-[#E4EEFB] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#2E6FD6]">
+                        {DRIVER_STAGE_LABELS[shipment.driverStage] ?? shipment.driverStage}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-2 text-sm italic text-[var(--text-muted)]">
+                    <User size={15} /> No driver assigned yet.
+                  </p>
+                )}
+              </DetailSection>
+
+              {/* Journey */}
+              <DetailSection icon={<Clock size={14} />} title="Journey">
+                {shipment.timeline.length === 0 ? (
+                  <p className="text-sm italic text-[var(--text-muted)]">
+                    No journey updates yet.
+                  </p>
+                ) : (
+                  <ol className="relative space-y-4 pl-6">
+                    <span className="absolute bottom-2 left-[6px] top-2 w-px bg-[var(--border)]" />
+                    {[...shipment.timeline].reverse().map((entry, i) => (
+                      <li key={i} className="relative">
+                        <span
+                          className={`absolute -left-6 top-0.5 h-3.5 w-3.5 rounded-full ring-4 ${
+                            i === 0
+                              ? "bg-[#1E9E4C] ring-[#1E9E4C]/15"
+                              : "bg-[var(--text-muted)] ring-[var(--text-muted)]/10"
+                          }`}
+                        />
+                        <p className="text-sm font-bold text-[var(--text)]">
+                          {DRIVER_STAGE_LABELS[entry.stage] ?? entry.stage}
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {fmtDateTime(entry.at)}
+                        </p>
+                        {entry.note && (
+                          <p className="mt-0.5 text-xs text-[var(--text-soft)]">
+                            {entry.note}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </DetailSection>
+            </div>
+
+            {/* Footer */}
+            <div className="flex shrink-0 items-center gap-3 border-t border-[var(--border)] p-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary btn-sm flex-1 cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => onEdit(shipment)}
+                className="btn-primary btn-sm flex flex-1 items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Edit2 size={15} /> Edit Shipment
+              </button>
+            </div>
+          </motion.aside>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
