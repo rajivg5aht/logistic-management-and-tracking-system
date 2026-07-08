@@ -48,6 +48,8 @@ import {
 import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
+import LiveMap from "@/components/tracking/LiveMap";
 
 /* Screenshot-matched navy palette (shared app theme is gold/teal) */
 const NAVY = "#0C3B67";
@@ -876,6 +878,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
       {/* ============ DETAIL DRAWER ============ */}
       <ShipmentDetailDrawer
+        token={token}
         shipment={detail}
         onClose={() => setDetail(null)}
         onEdit={(s) => {
@@ -974,10 +977,12 @@ function DetailTile({
 }
 
 function ShipmentDetailDrawer({
+  token,
   shipment,
   onClose,
   onEdit,
 }: {
+  token: string;
   shipment: Shipment | null;
   onClose: () => void;
   onEdit: (s: Shipment) => void;
@@ -995,6 +1000,14 @@ function ShipmentDetailDrawer({
       window.removeEventListener("keydown", onKey);
     };
   }, [shipment, onClose]);
+
+  // Live driver location for the open shipment. The room is joined while the
+  // drawer is open (assigned driver only) and left automatically on close.
+  const { location: liveLocation } = useShipmentLiveLocation(
+    token,
+    shipment?.id,
+    Boolean(shipment?.assignedDriverId && shipment.status !== "cancelled"),
+  );
 
   return (
     <AnimatePresence>
@@ -1189,6 +1202,37 @@ function ShipmentDetailDrawer({
                   </p>
                 )}
               </DetailSection>
+
+              {/* Live Location */}
+              {shipment.assignedDriverId && (
+                <DetailSection icon={<MapPin size={14} />} title="Live Location">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[var(--text-muted)]">
+                      {liveLocation
+                        ? "Driver is sharing live location"
+                        : "Driver location not available"}
+                    </span>
+                    {liveLocation && (
+                      <span
+                        className="flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold text-white"
+                        style={{ backgroundColor: "#1D7A8C" }}
+                      >
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                        </span>
+                        Live
+                      </span>
+                    )}
+                  </div>
+                  <LiveMap
+                    location={liveLocation}
+                    height={220}
+                    accent={NAVY}
+                    waitingLabel="Waiting for driver location…"
+                  />
+                </DetailSection>
+              )}
 
 
               {/* Proof of Delivery */}
