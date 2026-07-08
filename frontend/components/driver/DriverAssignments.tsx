@@ -487,10 +487,10 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ── Upcoming schedule + incentive ──────────────────────────────────── */}
+      {/* ── Today's assignments + incentive ──────────────────────────────────── */}
       <div>
         <h2 className="mb-3 text-sm font-black tracking-tight" style={{ color: NAVY }}>
-          Upcoming Schedule
+          Today&apos;s Assignments
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {/* Real active assignments as schedule cards */}
@@ -532,7 +532,7 @@ export default function DriverAssignments({ token }: { token: string }) {
                 className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-center"
               >
                 <ClipboardList size={22} className="text-[var(--text-muted)]" />
-                <p className="mt-2 text-sm font-semibold text-[var(--text)]">No upcoming pickups</p>
+                <p className="mt-2 text-sm font-semibold text-[var(--text)]">No assignments today</p>
                 <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                   New assignments from dispatch appear here.
                 </p>

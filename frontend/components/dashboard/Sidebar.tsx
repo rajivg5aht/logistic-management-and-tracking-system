@@ -82,13 +82,13 @@ export function Sidebar() {
         style={{ transitionDuration: '280ms' }}
       >
         {/* Logo Section */}
-        <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[88px]' : 'justify-between h-[88px] px-7'}`}>
+        <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[72px]' : 'justify-between h-[72px] px-5'}`}>
           <Link href="/" className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl overflow-hidden shrink-0">
-              <Image src="/logo.png" alt="CargoNep Logo" width={44} height={44} className="object-cover" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shrink-0">
+              <Image src="/logo.png" alt="CargoNep Logo" width={36} height={36} className="object-cover" />
             </div>
             {!isCollapsed && (
-              <span className="text-[30px] font-extrabold tracking-tight whitespace-nowrap">
+              <span className="text-xl font-extrabold tracking-tight whitespace-nowrap">
                 <span className="text-[var(--text)]">Cargo</span>
                 <span className="text-[var(--accent)]">Nep</span>
               </span>
@@ -148,8 +148,8 @@ export function Sidebar() {
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className={`nav-link flex items-center rounded-xl px-4 py-3.5 text-base font-semibold transition-all duration-200 relative group ${
-                      isCollapsed ? 'justify-center' : 'gap-3.5'
+                    className={`nav-link flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 relative group ${
+                      isCollapsed ? 'justify-center' : 'gap-3'
                     } ${
                       isActive
                         ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -157,7 +157,7 @@ export function Sidebar() {
                     }`}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon size={22} className="shrink-0" />
+                    <Icon size={20} className="shrink-0" />
                     {!isCollapsed && (
                       <span className="whitespace-nowrap">{item.label}</span>
                     )}
