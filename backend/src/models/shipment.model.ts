@@ -175,6 +175,11 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
       default: null,
     },
 
+    currentLocation: {
+      type: CurrentLocationSchema,
+      default: null,
+    },
+
     timeline: {
       type: [
         {
