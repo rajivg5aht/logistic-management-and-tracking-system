@@ -10,6 +10,8 @@ export interface IUser extends UserType, Document {
   _id: mongoose.Types.ObjectId;
   status?: "active" | "inactive";
   assignedVehicleId?: mongoose.Types.ObjectId | null;
+  // Home hub the driver is based at (only meaningful when role === "driver").
+  warehouseId?: mongoose.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,7 +65,13 @@ const UserMongoSchema: Schema<IUser> = new Schema(
     licenseNumber: { type: String, trim: true, default: "" },
     vehicleType: { type: String, enum: VEHICLE_TYPES },
     vehicleNumber: { type: String, trim: true, default: "" },
+    // Legacy free-text hub label, superseded by warehouseId (kept for migration).
     branch: { type: String, trim: true, default: "" },
+    warehouseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Warehouse",
+      default: null,
+    },
     employmentStatus: {
       type: String,
       enum: EMPLOYMENT_STATUSES,

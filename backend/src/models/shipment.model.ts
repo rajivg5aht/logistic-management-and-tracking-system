@@ -15,6 +15,11 @@ export interface IShipment extends ShipmentType, Document {
   // Real link to the driver's User account (name is denormalized in assignedDriver).
   assignedDriverId: mongoose.Types.ObjectId | null;
   assignedVehicleId: mongoose.Types.ObjectId | null;
+  // Hubs the parcel is routed through (names denormalized alongside the refs).
+  originWarehouseId: mongoose.Types.ObjectId | null;
+  originWarehouse: string | null;
+  destinationWarehouseId: mongoose.Types.ObjectId | null;
+  destinationWarehouse: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -117,6 +122,28 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
     assignedVehicleId: {
       type: Schema.Types.ObjectId,
       ref: "Vehicle",
+      default: null,
+    },
+
+    originWarehouseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Warehouse",
+      default: null,
+    },
+
+    originWarehouse: {
+      type: String,
+      default: null,
+    },
+
+    destinationWarehouseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Warehouse",
+      default: null,
+    },
+
+    destinationWarehouse: {
+      type: String,
       default: null,
     },
 

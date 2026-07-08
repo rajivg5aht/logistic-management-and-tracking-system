@@ -13,6 +13,7 @@ export const AdminCreateDriverDTO = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
   licenseNumber: z.string().min(1, "License number is required"),
   branch: z.string().optional().default(""),
+  warehouseId: z.string().nullable().optional(),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional().default("full-time"),
   availabilityStatus: z.enum(AVAILABILITY_STATUSES).optional().default("available"),
 });
@@ -26,6 +27,7 @@ export const AdminUpdateDriverDTO = z.object({
   phoneNumber: z.string().optional(),
   licenseNumber: z.string().min(1, "License number is required").optional(),
   branch: z.string().optional(),
+  warehouseId: z.string().nullable().optional(),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional(),
   availabilityStatus: z.enum(AVAILABILITY_STATUSES).optional(),
   status: z.enum(["active", "inactive"]).optional(),

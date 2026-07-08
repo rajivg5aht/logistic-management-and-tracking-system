@@ -25,6 +25,8 @@ export interface IVehicle extends Document {
   year?: number;
   capacityKg?: number;
   branch: string;
+  // Home hub the vehicle is stationed at.
+  warehouseId: mongoose.Types.ObjectId | null;
   imageUrl: string | null;
   status: VehicleStatus;
   insuranceExpiry: Date | null;
@@ -69,7 +71,13 @@ const VehicleSchema = new Schema<IVehicle>(
     vehicleModel: { type: String, trim: true, default: "" },
     year: { type: Number },
     capacityKg: { type: Number },
+    // Legacy free-text hub label, superseded by warehouseId (kept for migration).
     branch: { type: String, trim: true, default: "" },
+    warehouseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Warehouse",
+      default: null,
+    },
     imageUrl: { type: String, default: null },
     status: {
       type: String,

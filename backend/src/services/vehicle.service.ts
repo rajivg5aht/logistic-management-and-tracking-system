@@ -6,6 +6,7 @@ import {
 } from "../models/vehicle.model";
 import { UserModel } from "../models/user.model";
 import { ShipmentModel } from "../models/shipment.model";
+import { WarehouseModel } from "../models/warehouse.model";
 import {
   AdminCreateVehicleDTO,
   AdminUpdateVehicleDTO,
@@ -23,6 +24,8 @@ export type SafeVehicle = {
   year?: number;
   capacityKg?: number;
   branch: string;
+  warehouseId: string | null;
+  warehouseName: string | null;
   imageUrl: string | null;
   status: VehicleStatus;
   insuranceExpiry: Date | null;
@@ -55,6 +58,11 @@ export class VehicleService {
       data.vehicleModel = data.model;
       delete data.model;
     }
+    // An empty warehouse selection means "no home hub" — store null so Mongoose
+    // does not try to cast "" to an ObjectId.
+    if (data.warehouseId === "") {
+      data.warehouseId = null;
+    }
     for (const field of DATE_FIELDS) {
       if (field in data) {
         data[field] = data[field] ? new Date(data[field] as string) : null;
@@ -66,6 +74,7 @@ export class VehicleService {
   private sanitize(
     vehicle: IVehicle,
     driverName: string | null = null,
+    warehouseName: string | null = null,
   ): SafeVehicle {
     return {
       id: vehicle._id.toString(),
@@ -76,6 +85,8 @@ export class VehicleService {
       year: vehicle.year,
       capacityKg: vehicle.capacityKg,
       branch: vehicle.branch,
+      warehouseId: vehicle.warehouseId?.toString() ?? null,
+      warehouseName,
       imageUrl: vehicle.imageUrl ?? null,
       status: vehicle.status,
       insuranceExpiry: vehicle.insuranceExpiry,
@@ -99,17 +110,33 @@ export class VehicleService {
     const driverIds = vehicles
       .map((vehicle) => vehicle.assignedDriverId)
       .filter((id): id is mongoose.Types.ObjectId => !!id);
-    const drivers = await UserModel.find({ _id: { $in: driverIds } }).select(
-      "_id fullName",
-    );
+    const warehouseIds = vehicles
+      .map((vehicle) => vehicle.warehouseId)
+      .filter((id): id is mongoose.Types.ObjectId => !!id);
+
+    const [drivers, warehouses] = await Promise.all([
+      UserModel.find({ _id: { $in: driverIds } }).select("_id fullName"),
+      WarehouseModel.find({ _id: { $in: warehouseIds } }).select("_id name"),
+    ]);
+
     const names = new Map(
       drivers.map((driver) => [driver._id.toString(), driver.fullName]),
     );
+    const warehouseNames = new Map(
+      warehouses.map((warehouse) => [
+        warehouse._id.toString(),
+        warehouse.name,
+      ]),
+    );
+
     return vehicles.map((vehicle) =>
       this.sanitize(
         vehicle,
         vehicle.assignedDriverId
           ? names.get(vehicle.assignedDriverId.toString()) ?? null
+          : null,
+        vehicle.warehouseId
+          ? warehouseNames.get(vehicle.warehouseId.toString()) ?? null
           : null,
       ),
     );
@@ -179,7 +206,8 @@ export class VehicleService {
       ...this.normalizeInput(input),
       registrationNumber,
     });
-    return this.sanitize(vehicle);
+    const [safeVehicle] = await this.withDriverNames([vehicle]);
+    return safeVehicle;
   }
 
   async updateVehicle(

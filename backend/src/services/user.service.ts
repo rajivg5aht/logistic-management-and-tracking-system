@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
 import { ShipmentModel } from "../models/shipment.model";
 import { VehicleModel } from "../models/vehicle.model";
+import { WarehouseModel } from "../models/warehouse.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -25,6 +26,8 @@ export type SafeUser = {
   vehicleType?: IUser["vehicleType"];
   vehicleNumber?: string;
   branch?: string;
+  warehouseId?: string | null;
+  warehouseName?: string | null;
   employmentStatus?: IUser["employmentStatus"];
   availabilityStatus?: IUser["availabilityStatus"];
   assignedVehicleId?: string | null;
@@ -45,7 +48,10 @@ export type DriverVehicleSummary = {
 export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
 
 export class UserService {
-  private sanitizeUser(user: IUser): SafeUser {
+  private sanitizeUser(
+    user: IUser,
+    warehouseName: string | null = null,
+  ): SafeUser {
     return {
       id: user._id.toString(),
       fullName: user.fullName,
@@ -59,10 +65,22 @@ export class UserService {
       vehicleType: user.vehicleType,
       vehicleNumber: user.vehicleNumber || "",
       branch: user.branch || "",
+      warehouseId: user.warehouseId?.toString() ?? null,
+      warehouseName,
       employmentStatus: user.employmentStatus,
       availabilityStatus: user.availabilityStatus,
       assignedVehicleId: user.assignedVehicleId?.toString() ?? null,
     };
+  }
+
+  // Resolves the home-hub name for a single driver (used by the single-driver
+  // admin endpoints). Returns null when the driver has no warehouse.
+  private async resolveWarehouseName(
+    warehouseId: mongoose.Types.ObjectId | null | undefined,
+  ): Promise<string | null> {
+    if (!warehouseId) return null;
+    const warehouse = await WarehouseModel.findById(warehouseId).select("name");
+    return warehouse?.name ?? null;
   }
 
  async createUser(userData: CreateUserDTO): Promise<SafeUser> {
@@ -335,9 +353,25 @@ export class UserService {
       deliveryCounts.map((entry) => [entry._id.toString(), entry.count]),
     );
 
+    // Resolve every driver's home-hub name in a single query.
+    const warehouseIds = users
+      .map((u) => u.warehouseId)
+      .filter((id): id is mongoose.Types.ObjectId => !!id);
+    const warehouses = await WarehouseModel.find({
+      _id: { $in: warehouseIds },
+    }).select("_id name");
+    const nameByWarehouse = new Map(
+      warehouses.map((w) => [w._id.toString(), w.name]),
+    );
+
     return {
       drivers: users.map((u) => ({
-        ...this.sanitizeUser(u),
+        ...this.sanitizeUser(
+          u,
+          u.warehouseId
+            ? nameByWarehouse.get(u.warehouseId.toString()) ?? null
+            : null,
+        ),
         deliveriesCount: countByDriver.get(u._id.toString()) ?? 0,
       })),
       total,
@@ -376,7 +410,10 @@ export class UserService {
     if (!user || user.role !== "driver") {
       throw new HttpException(404, "Driver not found");
     }
-    return this.sanitizeUser(user);
+    return this.sanitizeUser(
+      user,
+      await this.resolveWarehouseName(user.warehouseId),
+    );
   }
 
   async adminCreateDriver(driverData: any): Promise<SafeUser> {
@@ -406,11 +443,15 @@ export class UserService {
       status: "active",
       licenseNumber: driverData.licenseNumber || "",
       branch: driverData.branch || "",
+      warehouseId: driverData.warehouseId || null,
       employmentStatus: driverData.employmentStatus ?? "full-time",
       availabilityStatus: driverData.availabilityStatus ?? "available",
     });
 
-    return this.sanitizeUser(driver);
+    return this.sanitizeUser(
+      driver,
+      await this.resolveWarehouseName(driver.warehouseId),
+    );
   }
 
   async adminUpdateDriver(
@@ -506,11 +547,20 @@ export class UserService {
       updateData.password = await bcryptjs.hash(updateData.password, 10);
     }
 
+    // An empty warehouse selection means "no home hub" — store null so Mongoose
+    // does not try to cast "" to an ObjectId.
+    if (updateData.warehouseId === "") {
+      updateData.warehouseId = null;
+    }
+
     const updated = await userRepository.update(driverId, updateData);
     if (!updated) {
       throw new HttpException(500, "Failed to update driver");
     }
-    return this.sanitizeUser(updated);
+    return this.sanitizeUser(
+      updated,
+      await this.resolveWarehouseName(updated.warehouseId),
+    );
   }
 
   async adminDeleteDriver(driverId: string): Promise<boolean> {

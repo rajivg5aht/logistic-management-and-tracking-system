@@ -12,6 +12,7 @@ import { DriverStageUpdateDTO } from "../dtos/driver.dto";
 import { IShipment, ShipmentModel } from "../models/shipment.model";
 import { UserModel } from "../models/user.model";
 import { VehicleModel } from "../models/vehicle.model";
+import { WarehouseModel } from "../models/warehouse.model";
 import {
   DriverStage,
   ShipmentStatus,
@@ -42,6 +43,10 @@ export type SafeShipment = {
   assignedDriverId: string | null;
   assignedVehicle: string | null;
   assignedVehicleId: string | null;
+  originWarehouseId: string | null;
+  originWarehouse: string | null;
+  destinationWarehouseId: string | null;
+  destinationWarehouse: string | null;
   driverStage: DriverStage | null;
   timeline: IShipment["timeline"];
   createdAt: Date;
@@ -80,6 +85,11 @@ export class ShipmentService {
       assignedDriverId: shipment.assignedDriverId?.toString() ?? null,
       assignedVehicle: shipment.assignedVehicle ?? null,
       assignedVehicleId: shipment.assignedVehicleId?.toString() ?? null,
+      originWarehouseId: shipment.originWarehouseId?.toString() ?? null,
+      originWarehouse: shipment.originWarehouse ?? null,
+      destinationWarehouseId:
+        shipment.destinationWarehouseId?.toString() ?? null,
+      destinationWarehouse: shipment.destinationWarehouse ?? null,
       driverStage: (shipment.driverStage as DriverStage) ?? null,
       timeline: shipment.timeline ?? [],
       createdAt: shipment.createdAt,
