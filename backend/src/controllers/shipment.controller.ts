@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import mongoose from "mongoose";
 import { ShipmentService } from "../services/shipment.service";
+import { TrackingService } from "../services/tracking.service";
 import {
   CreateShipmentDTO,
   AdminUpdateShipmentDTO,
@@ -12,6 +13,7 @@ import { AuthRequest } from "../middleware/auth.middleware";
 import { SHIPMENT_STATUSES, ShipmentStatus } from "../types/shipment.type";
 
 const shipmentService = new ShipmentService();
+const trackingService = new TrackingService();
 
 export class ShipmentController {
   // ── Customer: create a shipment (confirm & pay) ──────────────────────────
@@ -58,6 +60,40 @@ export class ShipmentController {
         res,
         shipments,
         "Shipments retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // ── Live tracking: last saved driver location for a shipment ─────────────
+  // Authorization branches by role inside the service: admin any, customer
+  // only their own shipment, driver only their assignment.
+  async getShipmentLocation(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid shipment ID", 400);
+      }
+
+      await trackingService.assertCanRead(
+        { id: req.user.id, role: req.user.role },
+        id,
+      );
+      const location = await trackingService.getLatestLocation(id);
+
+      return ApiResponseHelper.success(
+        res,
+        location,
+        "Shipment location retrieved successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(

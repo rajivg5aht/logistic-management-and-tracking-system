@@ -54,6 +54,7 @@ export type SafeShipment = {
   assignedVehicle: string | null;
   assignedVehicleId: string | null;
   driverStage: DriverStage | null;
+  currentLocation: IShipment["currentLocation"];
   timeline: IShipment["timeline"];
   createdAt: Date;
   updatedAt: Date;
