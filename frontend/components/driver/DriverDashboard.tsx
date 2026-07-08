@@ -62,6 +62,7 @@ export default function DriverDashboard({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -70,25 +71,25 @@ export default function DriverDashboard({
   const tiles = [
     {
       label: "Active Delivery",
-      value: stats ? String(stats.active) : "—",
+      value: stats ? String(stats.active) : "â€”",
       Icon: Package,
       tint: "bg-[#E8F0FB] text-[#2E6FD6]",
     },
     {
       label: "Delivered Today",
-      value: stats ? String(stats.deliveredToday) : "—",
+      value: stats ? String(stats.deliveredToday) : "â€”",
       Icon: CircleCheckBig,
       tint: "bg-[#E6F4EC] text-[#1F9D57]",
     },
     {
       label: "Total Completed",
-      value: stats ? String(stats.completed) : "—",
+      value: stats ? String(stats.completed) : "â€”",
       Icon: TrendingUp,
       tint: "bg-[#E5F1F3] text-[#1D7A8C]",
     },
     {
       label: "COD to Collect",
-      value: stats ? formatNPR(stats.codToCollect) : "—",
+      value: stats ? formatNPR(stats.codToCollect) : "â€”",
       Icon: Wallet,
       tint: "bg-[#FBE9E5] text-[#D0533F]",
     },
@@ -132,7 +133,7 @@ export default function DriverDashboard({
                 {t.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight text-[var(--text)]">
-                {loading ? "—" : t.value}
+                {loading ? "â€”" : t.value}
               </h3>
             </div>
           );
@@ -145,7 +146,12 @@ export default function DriverDashboard({
           {loading ? (
             <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
           ) : active ? (
-            <ActiveAssignmentCard shipment={active} token={token} onChanged={() => load(true)} />
+            <ActiveAssignmentCard
+              key={active.id}
+              shipment={active}
+              token={token}
+              onChanged={() => load(true)}
+            />
           ) : (
             <div
               className="flex h-full min-h-[18rem] flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center"
@@ -181,7 +187,7 @@ export default function DriverDashboard({
                 </p>
                 <p className="capitalize text-[var(--text-muted)]">
                   {me.vehicle.type}
-                  {me.vehicle.make ? ` · ${me.vehicle.make}` : ""}
+                  {me.vehicle.make ? ` Â· ${me.vehicle.make}` : ""}
                   {me.vehicle.model ? ` ${me.vehicle.model}` : ""}
                 </p>
                 {me.vehicle.capacityKg != null && (

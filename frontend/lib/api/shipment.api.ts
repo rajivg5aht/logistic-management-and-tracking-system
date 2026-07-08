@@ -52,6 +52,15 @@ export type TimelineEntry = {
   note?: string;
 };
 
+export type ProofOfDelivery = {
+  photoUrl: string | null;
+  notes: string;
+  recipientName: string;
+  confirmedAt: string | null;
+  confirmedByDriverId: string | null;
+  updatedAt: string | null;
+};
+
 export type ShipmentAddress = {
   fullName?: string;
   recipientName?: string;
@@ -81,6 +90,7 @@ export type Shipment = {
   paymentMethod: PaymentMethod;
   paymentStatus: "paid" | "pending";
   deliveredAt: string | null;
+  proofOfDelivery: ProofOfDelivery | null;
   amount: number;
   status: ShipmentStatus;
   assignedDriver: string | null;

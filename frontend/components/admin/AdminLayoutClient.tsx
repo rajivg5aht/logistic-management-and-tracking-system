@@ -9,7 +9,6 @@ import {
   Map,
   Package,
   Truck,
-  Warehouse,
   BarChart3,
   Users,
   HelpCircle,
@@ -90,7 +89,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     { label: "Shipments", href: "/admin/shipments", icon: Package, active: pathname.startsWith("/admin/shipments") },
     { label: "Driver Management", href: "/admin/drivers", icon: UserRoundCog, active: pathname.startsWith("/admin/drivers") },
     { label: "Fleet Management", href: "/admin/fleet", icon: Truck, active: pathname.startsWith("/admin/fleet") },
-    { label: "Warehouse", href: "#", icon: Warehouse, active: false },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },
     { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquareText, active: pathname.startsWith("/admin/inquiries") },
@@ -241,7 +239,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        {/* Top App Bar — height matches the sidebar brand header (72px) so their bottom borders align */}
+        {/* Top App Bar - height matches the sidebar brand header (72px) so their bottom borders align */}
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
           <div className="relative w-full max-w-md">
             <Search

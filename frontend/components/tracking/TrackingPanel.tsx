@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  Camera,
   CheckCircle2,
   Clock,
   Loader2,
@@ -320,6 +321,43 @@ export default function TrackingPanel({
                   />
                 </div>
               </div>
+
+              {shipment.proofOfDelivery && (
+                <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+                  <h2 className="flex items-center gap-2 font-extrabold text-[var(--text)]">
+                    <Camera size={17} className="text-[var(--accent)]" />
+                    Delivery confirmation
+                  </h2>
+                  {shipment.proofOfDelivery.photoUrl && (
+                    <img
+                      src={shipment.proofOfDelivery.photoUrl}
+                      alt="Proof of delivery"
+                      className="mt-4 h-44 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <Detail
+                      icon={<UserRound size={16} />}
+                      label="Received by"
+                      value={shipment.proofOfDelivery.recipientName || "Not noted"}
+                    />
+                    <Detail
+                      icon={<Clock size={16} />}
+                      label="Confirmed"
+                      value={
+                        shipment.proofOfDelivery.confirmedAt
+                          ? formatDate(shipment.proofOfDelivery.confirmedAt)
+                          : "Not noted"
+                      }
+                    />
+                  </div>
+                  {shipment.proofOfDelivery.notes && (
+                    <p className="mt-3 rounded-xl bg-[var(--surface-soft)] p-3 text-sm font-semibold text-[var(--text-soft)]">
+                      {shipment.proofOfDelivery.notes}
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm lg:col-span-2">

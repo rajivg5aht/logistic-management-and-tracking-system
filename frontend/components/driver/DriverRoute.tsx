@@ -67,6 +67,7 @@ export default function DriverRoute({ token }: { token: string }) {
       ) : active ? (
         <div className="max-w-3xl">
           <ActiveAssignmentCard
+            key={active.id}
             shipment={active}
             token={token}
             onChanged={(updated) => {

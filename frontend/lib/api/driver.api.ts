@@ -91,6 +91,12 @@ export type DriverVehicle = {
   status: string;
 };
 
+export type DriverProofPayload = {
+  photo?: File;
+  notes?: string;
+  recipientName?: string;
+};
+
 // The signed-in driver's own profile + their assigned vehicle (GET /driver/me).
 export type DriverMe = Driver & { vehicle: DriverVehicle | null };
 
@@ -237,6 +243,46 @@ export async function driverCollectCod(
     method: "PATCH",
     body: JSON.stringify({ collected }),
   });
+  return payload.data;
+}
+
+export async function driverSaveProof(
+  token: string,
+  id: string,
+  payload: DriverProofPayload,
+): Promise<Shipment> {
+  const formData = new FormData();
+  if (payload.photo) formData.append("proofPhoto", payload.photo);
+  if (payload.notes !== undefined) formData.append("notes", payload.notes);
+  if (payload.recipientName !== undefined) {
+    formData.append("recipientName", payload.recipientName);
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/driver/shipments/${id}/proof`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      credentials: "include",
+    },
+  );
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to save proof of delivery");
+  }
+  return data.data;
+}
+
+export async function driverDeleteProof(
+  token: string,
+  id: string,
+): Promise<Shipment> {
+  const payload = await authFetch(
+    `/api/v1/driver/shipments/${id}/proof`,
+    token,
+    { method: "DELETE" },
+  );
   return payload.data;
 }
 

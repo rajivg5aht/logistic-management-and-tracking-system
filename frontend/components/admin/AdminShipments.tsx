@@ -13,6 +13,7 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
+  Camera,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -1185,6 +1186,47 @@ function ShipmentDetailDrawer({
                 ) : (
                   <p className="flex items-center gap-2 text-sm italic text-[var(--text-muted)]">
                     <User size={15} /> No driver assigned yet.
+                  </p>
+                )}
+              </DetailSection>
+
+
+              {/* Proof of Delivery */}
+              <DetailSection icon={<Camera size={14} />} title="Proof of Delivery">
+                {shipment.proofOfDelivery ? (
+                  <div className="space-y-3">
+                    {shipment.proofOfDelivery.photoUrl && (
+                      <img
+                        src={shipment.proofOfDelivery.photoUrl}
+                        alt="Proof of delivery"
+                        className="h-44 w-full rounded-xl border border-[var(--border)] object-cover"
+                      />
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <DetailTile
+                        icon={<User size={13} />}
+                        label="Received By"
+                        value={shipment.proofOfDelivery.recipientName || "-"}
+                      />
+                      <DetailTile
+                        icon={<Clock size={13} />}
+                        label="Confirmed"
+                        value={
+                          shipment.proofOfDelivery.confirmedAt
+                            ? fmtDateTime(shipment.proofOfDelivery.confirmedAt)
+                            : "-"
+                        }
+                      />
+                    </div>
+                    {shipment.proofOfDelivery.notes && (
+                      <p className="rounded-xl bg-[var(--surface-soft)] p-3 text-sm font-medium text-[var(--text-soft)]">
+                        {shipment.proofOfDelivery.notes}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-[var(--text-muted)]">
+                    No proof of delivery recorded yet.
                   </p>
                 )}
               </DetailSection>
