@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import {
   ShipmentMongoRepository,
   ShipmentStats,
@@ -8,11 +9,10 @@ import {
   AdminUpdateShipmentDTO,
   CustomerUpdateShipmentDTO,
 } from "../dtos/shipment.dto";
-import { DriverStageUpdateDTO } from "../dtos/driver.dto";
+import { DriverProofUpdateDTO, DriverStageUpdateDTO } from "../dtos/driver.dto";
 import { IShipment, ShipmentModel } from "../models/shipment.model";
 import { UserModel } from "../models/user.model";
 import { VehicleModel } from "../models/vehicle.model";
-import { WarehouseModel } from "../models/warehouse.model";
 import {
   DriverStage,
   ShipmentStatus,
@@ -23,6 +23,15 @@ import {
 import { HttpException } from "../exceptions/http-exception";
 
 const shipmentRepository = new ShipmentMongoRepository();
+
+export type SafeProofOfDelivery = {
+  photoUrl: string | null;
+  notes: string;
+  recipientName: string;
+  confirmedAt: Date | null;
+  confirmedByDriverId: string | null;
+  updatedAt: Date | null;
+};
 
 export type SafeShipment = {
   id: string;
@@ -37,16 +46,13 @@ export type SafeShipment = {
   paymentMethod: IShipment["paymentMethod"];
   paymentStatus: IShipment["paymentStatus"];
   deliveredAt: Date | null;
+  proofOfDelivery: SafeProofOfDelivery | null;
   amount: number;
   status: IShipment["status"];
   assignedDriver: string | null;
   assignedDriverId: string | null;
   assignedVehicle: string | null;
   assignedVehicleId: string | null;
-  originWarehouseId: string | null;
-  originWarehouse: string | null;
-  destinationWarehouseId: string | null;
-  destinationWarehouse: string | null;
   driverStage: DriverStage | null;
   timeline: IShipment["timeline"];
   createdAt: Date;
@@ -65,6 +71,20 @@ const STAGE_TRANSITIONS: Record<DriverStage, DriverStage[]> = {
 };
 
 export class ShipmentService {
+  private sanitizeProof(
+    proof: IShipment["proofOfDelivery"],
+  ): SafeProofOfDelivery | null {
+    if (!proof) return null;
+    return {
+      photoUrl: proof.photoUrl ?? null,
+      notes: proof.notes ?? "",
+      recipientName: proof.recipientName ?? "",
+      confirmedAt: proof.confirmedAt ?? null,
+      confirmedByDriverId: proof.confirmedByDriverId?.toString() ?? null,
+      updatedAt: proof.updatedAt ?? null,
+    };
+  }
+
   private sanitize(shipment: IShipment): SafeShipment {
     return {
       id: shipment._id.toString(),
@@ -79,17 +99,13 @@ export class ShipmentService {
       paymentMethod: shipment.paymentMethod,
       paymentStatus: shipment.paymentStatus,
       deliveredAt: shipment.deliveredAt ?? null,
+      proofOfDelivery: this.sanitizeProof(shipment.proofOfDelivery),
       amount: shipment.amount,
       status: shipment.status,
       assignedDriver: shipment.assignedDriver ?? null,
       assignedDriverId: shipment.assignedDriverId?.toString() ?? null,
       assignedVehicle: shipment.assignedVehicle ?? null,
       assignedVehicleId: shipment.assignedVehicleId?.toString() ?? null,
-      originWarehouseId: shipment.originWarehouseId?.toString() ?? null,
-      originWarehouse: shipment.originWarehouse ?? null,
-      destinationWarehouseId:
-        shipment.destinationWarehouseId?.toString() ?? null,
-      destinationWarehouse: shipment.destinationWarehouse ?? null,
       driverStage: (shipment.driverStage as DriverStage) ?? null,
       timeline: shipment.timeline ?? [],
       createdAt: shipment.createdAt,
@@ -288,6 +304,15 @@ export class ShipmentService {
     }
 
     if (requestedStatus === "delivered" && shipment.status !== "delivered") {
+      if (
+        !shipment.proofOfDelivery?.confirmedAt ||
+        !shipment.proofOfDelivery.photoUrl
+      ) {
+        throw new HttpException(
+          400,
+          "Upload proof of delivery before marking this shipment delivered",
+        );
+      }
       updateData.deliveredAt = new Date();
     } else if (requestedStatus && requestedStatus !== "delivered") {
       updateData.deliveredAt = null;
@@ -551,6 +576,17 @@ export class ShipmentService {
       );
     }
 
+    if (
+      next === "delivered" &&
+      (!shipment.proofOfDelivery?.confirmedAt ||
+        !shipment.proofOfDelivery.photoUrl)
+    ) {
+      throw new HttpException(
+        400,
+        "Upload proof of delivery before marking this shipment delivered",
+      );
+    }
+
     const nextStatus = DRIVER_STAGE_TO_SHIPMENT_STATUS[next];
     const updateData: Partial<IShipment> = {
       driverStage: next,
@@ -583,6 +619,67 @@ export class ShipmentService {
       });
     }
 
+    return this.sanitize(updated);
+  }
+
+  async driverUpsertProof(
+    driverId: string,
+    id: string,
+    data: DriverProofUpdateDTO & { photoUrl?: string },
+  ): Promise<SafeShipment> {
+    const shipment = await this.getOwnedAssignment(driverId, id);
+    if (shipment.status === "cancelled") {
+      throw new HttpException(409, "Cancelled shipments cannot receive proof");
+    }
+
+    const existing = shipment.proofOfDelivery;
+    const notes =
+      data.notes !== undefined ? data.notes.trim() : existing?.notes ?? "";
+    const recipientName =
+      data.recipientName !== undefined
+        ? data.recipientName.trim()
+        : existing?.recipientName || shipment.delivery.recipientName || "";
+    const photoUrl = data.photoUrl ?? existing?.photoUrl ?? null;
+
+    if (!photoUrl) {
+      throw new HttpException(
+        400,
+        "Upload a proof photo before saving proof",
+      );
+    }
+
+    const now = new Date();
+    const updated = await shipmentRepository.update(id, {
+      proofOfDelivery: {
+        photoUrl,
+        notes,
+        recipientName,
+        confirmedAt: existing?.confirmedAt ?? now,
+        confirmedByDriverId: new mongoose.Types.ObjectId(driverId),
+        updatedAt: now,
+      },
+    } as Partial<IShipment>);
+    if (!updated) {
+      throw new HttpException(500, "Failed to save proof of delivery");
+    }
+    return this.sanitize(updated);
+  }
+
+  async driverDeleteProof(driverId: string, id: string): Promise<SafeShipment> {
+    const shipment = await this.getOwnedAssignment(driverId, id);
+    if (shipment.status === "delivered") {
+      throw new HttpException(
+        409,
+        "Delivered shipments must keep their proof of delivery record",
+      );
+    }
+
+    const updated = await shipmentRepository.update(id, {
+      proofOfDelivery: null,
+    } as Partial<IShipment>);
+    if (!updated) {
+      throw new HttpException(500, "Failed to remove proof of delivery");
+    }
     return this.sanitize(updated);
   }
 

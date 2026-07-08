@@ -49,9 +49,6 @@ export const AdminUpdateShipmentDTO = z.object({
   assignedDriver: z.string().nullable().optional(),
   // Real link to a driver's User account. `null`/"" clears the assignment.
   assignedDriverId: z.string().nullable().optional(),
-  // Hubs the parcel routes through. `null`/"" clears the routing.
-  originWarehouseId: z.string().nullable().optional(),
-  destinationWarehouseId: z.string().nullable().optional(),
   paymentStatus: z.enum(["paid", "pending"]).optional(),
 });
 

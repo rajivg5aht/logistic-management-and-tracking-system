@@ -6,20 +6,25 @@ import {
   PAYMENT_METHODS,
 } from "../types/shipment.type";
 
+export interface IProofOfDelivery {
+  photoUrl: string | null;
+  notes: string;
+  recipientName: string;
+  confirmedAt: Date | null;
+  confirmedByDriverId: mongoose.Types.ObjectId | null;
+  updatedAt: Date | null;
+}
+
 export interface IShipment extends ShipmentType, Document {
   _id: mongoose.Types.ObjectId;
   trackingId: string;
   customer: mongoose.Types.ObjectId;
   paymentStatus: "paid" | "pending";
   deliveredAt: Date | null;
+  proofOfDelivery: IProofOfDelivery | null;
   // Real link to the driver's User account (name is denormalized in assignedDriver).
   assignedDriverId: mongoose.Types.ObjectId | null;
   assignedVehicleId: mongoose.Types.ObjectId | null;
-  // Hubs the parcel is routed through (names denormalized alongside the refs).
-  originWarehouseId: mongoose.Types.ObjectId | null;
-  originWarehouse: string | null;
-  destinationWarehouseId: mongoose.Types.ObjectId | null;
-  destinationWarehouse: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +37,22 @@ const AddressSchema = new Schema(
     streetAddress: { type: String, trim: true },
     city: { type: String, trim: true },
     district: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
+const ProofOfDeliverySchema = new Schema<IProofOfDelivery>(
+  {
+    photoUrl: { type: String, default: null },
+    notes: { type: String, trim: true, default: "" },
+    recipientName: { type: String, trim: true, default: "" },
+    confirmedAt: { type: Date, default: null },
+    confirmedByDriverId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    updatedAt: { type: Date, default: null },
   },
   { _id: false },
 );
@@ -103,6 +124,11 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
       default: null,
     },
 
+    proofOfDelivery: {
+      type: ProofOfDeliverySchema,
+      default: null,
+    },
+
     assignedDriver: {
       type: String,
       default: null,
@@ -122,28 +148,6 @@ const ShipmentMongoSchema: Schema<IShipment> = new Schema(
     assignedVehicleId: {
       type: Schema.Types.ObjectId,
       ref: "Vehicle",
-      default: null,
-    },
-
-    originWarehouseId: {
-      type: Schema.Types.ObjectId,
-      ref: "Warehouse",
-      default: null,
-    },
-
-    originWarehouse: {
-      type: String,
-      default: null,
-    },
-
-    destinationWarehouseId: {
-      type: Schema.Types.ObjectId,
-      ref: "Warehouse",
-      default: null,
-    },
-
-    destinationWarehouse: {
-      type: String,
       default: null,
     },
 

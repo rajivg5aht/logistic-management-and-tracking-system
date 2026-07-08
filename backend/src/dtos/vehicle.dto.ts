@@ -14,7 +14,6 @@ export const AdminCreateVehicleDTO = z.object({
   year: z.number().int().min(1900).max(2200).optional(),
   capacityKg: z.number().positive().optional(),
   branch: z.string().trim().optional().default(""),
-  warehouseId: z.string().nullable().optional(),
   status: z.enum(VEHICLE_STATUSES).optional().default("available"),
   insuranceExpiry: OptionalDate,
   registrationExpiry: OptionalDate,

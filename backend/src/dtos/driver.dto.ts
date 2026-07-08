@@ -13,7 +13,6 @@ export const AdminCreateDriverDTO = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
   licenseNumber: z.string().min(1, "License number is required"),
   branch: z.string().optional().default(""),
-  warehouseId: z.string().nullable().optional(),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional().default("full-time"),
   availabilityStatus: z.enum(AVAILABILITY_STATUSES).optional().default("available"),
 });
@@ -27,7 +26,6 @@ export const AdminUpdateDriverDTO = z.object({
   phoneNumber: z.string().optional(),
   licenseNumber: z.string().min(1, "License number is required").optional(),
   branch: z.string().optional(),
-  warehouseId: z.string().nullable().optional(),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional(),
   availabilityStatus: z.enum(AVAILABILITY_STATUSES).optional(),
   status: z.enum(["active", "inactive"]).optional(),
@@ -50,6 +48,13 @@ export const DriverCodUpdateDTO = z.object({
 });
 
 export type DriverCodUpdateDTO = z.infer<typeof DriverCodUpdateDTO>;
+
+export const DriverProofUpdateDTO = z.object({
+  notes: z.string().trim().max(500).optional(),
+  recipientName: z.string().trim().max(120).optional(),
+});
+
+export type DriverProofUpdateDTO = z.infer<typeof DriverProofUpdateDTO>;
 
 // A driver toggles their own availability (available / off-duty).
 export const DriverAvailabilityDTO = z.object({
