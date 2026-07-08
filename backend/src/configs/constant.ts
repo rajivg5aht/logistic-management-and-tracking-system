@@ -10,3 +10,7 @@ export const MONGODB_URL: string =
 
 export const SECRET_KEY: string =
   process.env.JWT_SECRET || process.env.SECRET_KEY || "merosecretkey";
+
+// Frontend origin allowed to open a Socket.IO connection (real-time tracking).
+export const FRONTEND_ORIGIN: string =
+  process.env.FRONTEND_ORIGIN || "http://localhost:3000";

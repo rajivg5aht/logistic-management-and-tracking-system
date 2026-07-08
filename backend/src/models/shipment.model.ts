@@ -15,6 +15,14 @@ export interface IProofOfDelivery {
   updatedAt: Date | null;
 }
 
+// Latest live GPS position of the assigned driver, mirrored from the
+// driver_locations collection so it travels with the shipment document.
+export interface ICurrentLocation {
+  latitude: number;
+  longitude: number;
+  updatedAt: Date;
+}
+
 export interface IShipment extends ShipmentType, Document {
   _id: mongoose.Types.ObjectId;
   trackingId: string;
@@ -25,9 +33,19 @@ export interface IShipment extends ShipmentType, Document {
   // Real link to the driver's User account (name is denormalized in assignedDriver).
   assignedDriverId: mongoose.Types.ObjectId | null;
   assignedVehicleId: mongoose.Types.ObjectId | null;
+  currentLocation: ICurrentLocation | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const CurrentLocationSchema = new Schema<ICurrentLocation>(
+  {
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    updatedAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
 
 const AddressSchema = new Schema(
   {
