@@ -108,6 +108,7 @@ export class ShipmentService {
       assignedVehicle: shipment.assignedVehicle ?? null,
       assignedVehicleId: shipment.assignedVehicleId?.toString() ?? null,
       driverStage: (shipment.driverStage as DriverStage) ?? null,
+      currentLocation: shipment.currentLocation ?? null,
       timeline: shipment.timeline ?? [],
       createdAt: shipment.createdAt,
       updatedAt: shipment.updatedAt,
