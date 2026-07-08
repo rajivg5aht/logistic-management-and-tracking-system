@@ -16,6 +16,8 @@ import {
   Image as ImageIcon,
   Trash2,
   Undo2,
+  Navigation,
+  Square,
 } from "lucide-react";
 import {
   driverUpdateStage,
@@ -30,6 +32,8 @@ import type {
   DriverStage,
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
+import { useDriverTracking } from "@/lib/hooks/useDriverTracking";
+import LiveMap from "@/components/tracking/LiveMap";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {
   ...DRIVER_STAGE_LABELS,
@@ -187,6 +191,10 @@ export function ActiveAssignmentCard({
     shipment.proofOfDelivery?.confirmedAt && shipment.proofOfDelivery.photoUrl,
   );
   const canSaveProof = Boolean(proofFile || shipment.proofOfDelivery?.photoUrl);
+
+  // Live GPS broadcast for this delivery (driver → customer/admin).
+  const tracking = useDriverTracking(token, shipment);
+  const driverLocation = tracking.lastFix ?? shipment.currentLocation ?? null;
 
 
   const advance = async (stage: DriverStage) => {
