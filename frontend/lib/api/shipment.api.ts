@@ -77,6 +77,14 @@ export type ShipmentPackage = {
   dimensions: { length: string; width: string; height: string };
 };
 
+// Latest live driver position mirrored onto the shipment (null until the
+// assigned driver starts live tracking).
+export type CurrentLocation = {
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
+};
+
 export type Shipment = {
   id: string;
   trackingId: string;
