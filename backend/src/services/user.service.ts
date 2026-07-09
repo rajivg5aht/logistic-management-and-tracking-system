@@ -244,17 +244,19 @@ export class UserService {
         nepalOffsetMs,
     );
 
-    const customer = { role: "customer" };
     const [total, newSignups24h, signupsThisMonth, signupsLastMonth] =
       await Promise.all([
         UserModel.countDocuments({}),
-        UserModel.countDocuments({ ...customer, createdAt: { $gte: dayAgo } }),
         UserModel.countDocuments({
-          ...customer,
+          role: "customer",
+          createdAt: { $gte: dayAgo },
+        }),
+        UserModel.countDocuments({
+          role: "customer",
           createdAt: { $gte: startOfThisMonth },
         }),
         UserModel.countDocuments({
-          ...customer,
+          role: "customer",
           createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
         }),
       ]);
