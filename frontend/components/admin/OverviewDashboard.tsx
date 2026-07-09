@@ -157,6 +157,18 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const weekTotal = shipmentStats
     ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
     : 0;
+
+  // Fleet operational health: vehicles ready or on assignment vs. the whole fleet.
+  const fleetTotal = fleetStats?.total ?? 0;
+  const fleetOperational =
+    (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0);
+  const fleetHealthPct =
+    fleetTotal > 0 ? Math.round((fleetOperational / fleetTotal) * 100) : 0;
+  const systemStatusMessage = !fleetStats
+    ? "Checking fleet status…"
+    : fleetTotal === 0
+      ? "No vehicles registered in the fleet yet."
+      : `${fleetOperational} of ${fleetTotal} vehicle${fleetTotal === 1 ? "" : "s"} operational across all hubs.`;
   const fleetHealth = [
     {
       label: "Ready to Dispatch",
@@ -215,14 +227,8 @@ export default function OverviewDashboard({ token }: { token: string }) {
               className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
               style={{ boxShadow: "var(--shadow-sm)" }}
             >
-              <div className="flex items-start justify-between">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${kpi.tint}`}>
-                  <Icon size={19} className="stroke-[2.4]" />
-                </div>
-                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#1F9D57]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#1F9D57]" />
-                  Live
-                </span>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${kpi.tint}`}>
+                <Icon size={19} className="stroke-[2.4]" />
               </div>
               <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[#5A6B82]">
                 {kpi.label}
@@ -341,17 +347,25 @@ export default function OverviewDashboard({ token }: { token: string }) {
             className="mt-4 rounded-[var(--radius-md)] p-4"
             style={{ background: "linear-gradient(150deg, #0C2E4E, #123A5E)" }}
           >
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white">
-                <Info size={15} />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white">
+                  <Info size={15} />
+                </div>
+                <span className="text-sm font-bold text-white">System Status</span>
               </div>
-              <span className="text-sm font-bold text-white">System Status</span>
+              {fleetStats && fleetTotal > 0 && (
+                <span className="text-sm font-black text-white">{fleetHealthPct}%</span>
+              )}
             </div>
             <p className="mt-2.5 text-xs font-medium leading-relaxed text-white/70">
-              All delivery hubs are operating within optimal parameters.
+              {systemStatusMessage}
             </p>
             <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
-              <div className="h-full rounded-full bg-[#6FA8DC]" style={{ width: "78%" }} />
+              <div
+                className="h-full rounded-full bg-[#6FA8DC] transition-all duration-500"
+                style={{ width: `${fleetHealthPct}%` }}
+              />
             </div>
           </div>
         </div>
@@ -366,21 +380,12 @@ export default function OverviewDashboard({ token }: { token: string }) {
           <h3 className="text-base font-extrabold" style={{ color: NAVY }}>
             Recent Shipments
           </h3>
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
-              suppressHydrationWarning
-            >
-              Export CSV
-            </button>
-            <Link
-              href="/admin/shipments"
-              className="text-xs font-bold text-[#123E6B] hover:underline"
-            >
-              View All
-            </Link>
-          </div>
+          <Link
+            href="/admin/shipments"
+            className="text-xs font-bold text-[#123E6B] hover:underline"
+          >
+            View All
+          </Link>
         </div>
 
         <div className="mt-4 overflow-x-auto">
