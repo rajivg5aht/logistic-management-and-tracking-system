@@ -120,6 +120,22 @@ export const initSocketServer = (server: HttpServer): Server => {
       }
     });
 
+    socket.on("driver-location-stop", async (payload) => {
+      try {
+        const shipmentId = extractShipmentId(payload);
+        if (!shipmentId || !mongoose.Types.ObjectId.isValid(shipmentId)) {
+          throw { status: 400, message: "Invalid shipment id" };
+        }
+        const status = await trackingService.stopDriverLocation(
+          user,
+          shipmentId,
+        );
+        io?.to(roomName(shipmentId)).emit("shipment-location-stopped", status);
+      } catch (error) {
+        emitError(socket, error);
+      }
+    });
+
     socket.on("leave-shipment-room", (payload) => {
       const shipmentId = extractShipmentId(payload);
       if (shipmentId) {

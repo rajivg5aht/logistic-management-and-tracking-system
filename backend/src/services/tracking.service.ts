@@ -33,6 +33,16 @@ export interface SafeDriverLocation {
   accuracy: number | null;
   speed: number | null;
   heading: number | null;
+  isLive: boolean;
+  startedAt: Date | null;
+  stoppedAt: Date | null;
+  updatedAt: Date;
+}
+
+export interface DriverTrackingStatus {
+  shipmentId: string;
+  driverId: string;
+  isLive: boolean;
   updatedAt: Date;
 }
 
@@ -50,6 +60,9 @@ export class TrackingService {
       accuracy: location.accuracy ?? null,
       speed: location.speed ?? null,
       heading: location.heading ?? null,
+      isLive: location.isLive ?? false,
+      startedAt: location.startedAt ?? null,
+      stoppedAt: location.stoppedAt ?? null,
       updatedAt: location.updatedAt,
     };
   }
@@ -133,10 +146,13 @@ export class TrackingService {
       accuracy: this.toFiniteOrNull(payload.accuracy),
       speed: this.toFiniteOrNull(payload.speed),
       heading: this.toFiniteOrNull(payload.heading),
+      isLive: true,
+      startedAt: updatedAt,
+      stoppedAt: null,
       updatedAt,
     });
 
-    // Mirror the latest position onto the shipment document.
+    // Mirror the latest live position onto the shipment document.
     await shipmentRepository.update(payload.shipmentId, {
       currentLocation: { latitude, longitude, updatedAt },
     });
@@ -144,11 +160,45 @@ export class TrackingService {
     return this.sanitize(location);
   }
 
-  // Returns the last saved location for a shipment, or null if none yet.
+  async stopDriverLocation(
+    user: TrackingUser,
+    shipmentId: string,
+  ): Promise<DriverTrackingStatus> {
+    if (user.role !== "driver") {
+      throw new HttpException(403, "Only drivers can stop location updates");
+    }
+
+    const shipment = await shipmentRepository.getById(shipmentId);
+    if (!shipment) {
+      throw new HttpException(404, "Shipment not found");
+    }
+    if (shipment.assignedDriverId?.toString() !== user.id) {
+      throw new HttpException(403, "This shipment is not assigned to you");
+    }
+
+    const stoppedAt = new Date();
+    await driverLocationRepository.setLiveStatus(
+      shipmentId,
+      user.id,
+      false,
+      stoppedAt,
+    );
+    await shipmentRepository.update(shipmentId, { currentLocation: null });
+
+    return {
+      shipmentId,
+      driverId: user.id,
+      isLive: false,
+      updatedAt: stoppedAt,
+    };
+  }
+
+  // Returns the last saved live location for a shipment, or null if none yet.
   async getLatestLocation(
     shipmentId: string,
   ): Promise<SafeDriverLocation | null> {
     const location = await driverLocationRepository.getByShipment(shipmentId);
-    return location ? this.sanitize(location) : null;
+    if (!location || !location.isLive) return null;
+    return this.sanitize(location);
   }
 }

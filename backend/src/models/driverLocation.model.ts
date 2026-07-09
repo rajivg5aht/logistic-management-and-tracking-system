@@ -14,6 +14,9 @@ export interface IDriverLocation extends Document {
   accuracy: number | null;
   speed: number | null;
   heading: number | null;
+  isLive: boolean;
+  startedAt: Date | null;
+  stoppedAt: Date | null;
   updatedAt: Date;
 }
 
@@ -36,6 +39,9 @@ const DriverLocationSchema: Schema<IDriverLocation> = new Schema({
   accuracy: { type: Number, default: null },
   speed: { type: Number, default: null },
   heading: { type: Number, default: null },
+  isLive: { type: Boolean, default: false },
+  startedAt: { type: Date, default: null },
+  stoppedAt: { type: Date, default: null },
   updatedAt: { type: Date, required: true },
 });
 
