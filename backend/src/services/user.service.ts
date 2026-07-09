@@ -220,6 +220,58 @@ export class UserService {
     };
   }
 
+  // Registration insight for the User Management KPI cards: customer signups in
+  // the last 24h and month-over-month growth. Scoped to customers because that
+  // is the public sign-up flow (drivers/admins are created internally).
+  async adminGetUserStats(): Promise<{
+    total: number;
+    newSignups24h: number;
+    signupsThisMonth: number;
+    growthPct: number;
+  }> {
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Nepal-local month boundaries (UTC+05:45) converted back to UTC for querying.
+    const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+    const nowInNepal = new Date(now.getTime() + nepalOffsetMs);
+    const startOfThisMonth = new Date(
+      Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth(), 1) -
+        nepalOffsetMs,
+    );
+    const startOfLastMonth = new Date(
+      Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth() - 1, 1) -
+        nepalOffsetMs,
+    );
+
+    const customer = { role: "customer" };
+    const [total, newSignups24h, signupsThisMonth, signupsLastMonth] =
+      await Promise.all([
+        UserModel.countDocuments({}),
+        UserModel.countDocuments({ ...customer, createdAt: { $gte: dayAgo } }),
+        UserModel.countDocuments({
+          ...customer,
+          createdAt: { $gte: startOfThisMonth },
+        }),
+        UserModel.countDocuments({
+          ...customer,
+          createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
+        }),
+      ]);
+
+    // Grew-from-zero baseline reads as +100%; a flat/empty prior month is 0%.
+    const growthPct =
+      signupsLastMonth === 0
+        ? signupsThisMonth > 0
+          ? 100
+          : 0
+        : Math.round(
+            ((signupsThisMonth - signupsLastMonth) / signupsLastMonth) * 100,
+          );
+
+    return { total, newSignups24h, signupsThisMonth, growthPct };
+  }
+
   async adminCreateUser(userData: any): Promise<SafeUser> {
     if (userData.role && userData.role !== "customer") {
       throw new HttpException(

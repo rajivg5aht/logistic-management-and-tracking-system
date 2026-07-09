@@ -48,6 +48,23 @@ export class AdminController {
     }
   }
 
+  async getUserStats(_req: Request, res: Response) {
+    try {
+      const stats = await userService.adminGetUserStats();
+      return ApiResponseHelper.success(
+        res,
+        stats,
+        "User stats retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   async getUserById(req: Request, res: Response) {
     try {
       const id = req.params.id as string;

@@ -1,4 +1,4 @@
-import mongoose, { FilterQuery } from "mongoose";
+import mongoose from "mongoose";
 import { ShipmentModel, IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 
@@ -39,15 +39,16 @@ export interface RegionVolume {
 
 export interface ShipmentAnalytics {
   totalRevenue: number; // Paid revenue to date
-  revenueDelta: number | null; // % change, last 30d vs prior 30d (null = no baseline)
+  revenueDelta: number; // % change, last 30d vs prior 30d (+100% = grew from zero)
   deliveries: number; // Delivered to date
-  deliveriesDelta: number | null;
+  deliveriesDelta: number;
   avgDeliveryMs: number | null; // Avg order-to-door time (null when none delivered)
-  avgTimeDelta: number | null; // % change (negative = faster)
+  avgTimeDelta: number; // % change (negative = faster)
   successRate: number; // delivered / (delivered + cancelled), 0-100
-  successDelta: number | null; // percentage-point change
+  successDelta: number; // percentage-point change
   monthlyRevenue: MonthlyRevenue[]; // Last 6 months, oldest → newest
   regionVolume: RegionVolume[]; // Top regions by delivery count
+  totalShipments: number; // All shipments (denominator for region share)
 }
 
 export interface IShipmentRepository {
@@ -309,7 +310,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const deliveredIn = (
       start: Date,
       end?: Date,
-    ): FilterQuery<IShipment> => {
+    ): Record<string, any> => {
       const range = (extra: Date | undefined) =>
         extra ? { $gte: start, $lt: extra } : { $gte: start };
       return {
@@ -323,7 +324,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const cancelledIn = (
       start: Date,
       end?: Date,
-    ): FilterQuery<IShipment> => ({
+    ): Record<string, any> => ({
       status: "cancelled",
       updatedAt: end ? { $gte: start, $lt: end } : { $gte: start },
     });
@@ -358,6 +359,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       avgPrev30Agg,
       monthlyAgg,
       regionAgg,
+      totalShipments,
     ] = await Promise.all([
       ShipmentModel.aggregate<{ total: number }>([
         { $match: { paymentStatus: "paid" } },
@@ -440,12 +442,17 @@ export class ShipmentMongoRepository implements IShipmentRepository {
         { $sort: { count: -1 } },
         { $limit: 6 },
       ]),
+      ShipmentModel.countDocuments({}),
     ]);
 
-    const pctChange = (current: number, prev: number): number | null =>
-      prev === 0 ? null : ((current - prev) / prev) * 100;
-    const round1 = (n: number | null): number | null =>
-      n === null ? null : Math.round(n * 10) / 10;
+    // Period-over-period % change. With no prior-period baseline, a metric that
+    // has current activity reads as +100% (grew from zero); a flat/empty metric
+    // reads as 0% so the badge always shows a number instead of a dash.
+    const pctChange = (current: number, prev: number): number => {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return ((current - prev) / prev) * 100;
+    };
+    const round1 = (n: number): number => Math.round(n * 10) / 10;
 
     const totalRevenue = totalRevAgg[0]?.total ?? 0;
     const revenueDelta = round1(
@@ -456,10 +463,11 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const avgDeliveryMs = avgTotalAgg[0]?.avg ?? null;
     const avgLast = avgLast30Agg[0]?.avg ?? null;
     const avgPrev = avgPrev30Agg[0]?.avg ?? null;
+    // Averages can't "grow from zero"; without both windows there's no delta → 0%.
     const avgTimeDelta =
-      avgLast !== null && avgPrev !== null
-        ? round1(pctChange(avgLast, avgPrev))
-        : null;
+      avgLast !== null && avgPrev !== null && avgPrev > 0
+        ? round1(((avgLast - avgPrev) / avgPrev) * 100)
+        : 0;
 
     const resolvedTotal = deliveredTotal + cancelledTotal;
     const successRate =
@@ -471,9 +479,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const ratePrev =
       resolvedPrev > 0 ? (deliveredPrev30 / resolvedPrev) * 100 : null;
     const successDelta =
-      rateLast !== null && ratePrev !== null
-        ? round1(rateLast - ratePrev)
-        : null;
+      rateLast !== null && ratePrev !== null ? round1(rateLast - ratePrev) : 0;
 
     // Fill all six month buckets so the chart has a continuous series.
     const MONTH_LABELS = [
@@ -511,6 +517,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       successDelta,
       monthlyRevenue,
       regionVolume,
+      totalShipments,
     };
   }
 }
