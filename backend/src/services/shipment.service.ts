@@ -3,6 +3,7 @@ import {
   ShipmentMongoRepository,
   ShipmentStats,
   DriverStats,
+  ShipmentAnalytics,
 } from "../repositories/shipment.repository";
 import {
   CreateShipmentDTO,
@@ -501,6 +502,10 @@ export class ShipmentService {
 
   async getStats(): Promise<ShipmentStats> {
     return shipmentRepository.getStats();
+  }
+
+  async getAnalytics(): Promise<ShipmentAnalytics> {
+    return shipmentRepository.getAnalytics();
   }
 
   // ── Driver console ─────────────────────────────────────────────────────────

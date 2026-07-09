@@ -276,6 +276,24 @@ export class ShipmentController {
     }
   }
 
+  // ── Admin: revenue / delivery analytics for the Analytics page ───────────
+  async adminGetAnalytics(req: Request, res: Response) {
+    try {
+      const analytics = await shipmentService.getAnalytics();
+      return ApiResponseHelper.success(
+        res,
+        analytics,
+        "Shipment analytics retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   // ── Admin: get one ───────────────────────────────────────────────────────
   async adminGetShipmentById(req: Request, res: Response) {
     try {

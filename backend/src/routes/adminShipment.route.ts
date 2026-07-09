@@ -11,6 +11,7 @@ adminShipmentRouter.use(adminMiddleware);
 
 adminShipmentRouter.get("/", shipmentController.adminGetShipments);
 adminShipmentRouter.get("/stats", shipmentController.adminGetStats);
+adminShipmentRouter.get("/analytics", shipmentController.adminGetAnalytics);
 adminShipmentRouter.get("/:id", shipmentController.adminGetShipmentById);
 adminShipmentRouter.put("/:id", shipmentController.adminUpdateShipment);
 adminShipmentRouter.patch("/:id", shipmentController.adminUpdateShipment);
