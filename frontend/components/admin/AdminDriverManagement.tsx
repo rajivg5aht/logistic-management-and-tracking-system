@@ -17,12 +17,14 @@ import {
   Users,
   Wrench,
   Package,
+  Trash2,
 } from "lucide-react";
 import {
   adminGetDrivers,
   adminGetDriverStats,
   adminCreateDriver,
   adminUpdateDriver,
+  adminDeleteDriver,
   EMPLOYMENT_STATUSES,
   type Driver,
   type DriverMeta,
@@ -127,6 +129,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Driver | null>(null);
   const [vehicleByDriver, setVehicleByDriver] = useState<
     Record<string, VehicleAssignmentInfo>
   >({});
@@ -318,6 +321,24 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           ? err.message
           : "Failed to update driver status.",
       );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      setActionLoading(true);
+      setError(null);
+      await adminDeleteDriver(token, deleteTarget.id);
+      setDeleteTarget(null);
+      fetchDrivers();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete driver.",
+      );
+      setDeleteTarget(null);
     } finally {
       setActionLoading(false);
     }
@@ -628,10 +649,21 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             type="button"
                             onClick={() => handleToggleStatus(driver)}
                             className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
-                            aria-label={driver.status === "inactive" ? "Activate driver" : "Deactivate driver"}
+                            aria-label={driver.status === "inactive" ? "Unblock driver" : "Block driver"}
+                            title={driver.status === "inactive" ? "Unblock (allow sign-in)" : "Block (prevent sign-in)"}
                             suppressHydrationWarning
                           >
                             {driver.status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(driver)}
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                            aria-label="Delete driver"
+                            title="Delete driver permanently"
+                            suppressHydrationWarning
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -712,6 +744,47 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             setIsEditOpen(false);
           }}
         />
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => !actionLoading && setDeleteTarget(null)}
+        title="Delete Driver"
+      >
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-[#D0453A]" />
+            <p className="text-sm font-medium text-[#D0453A]">
+              This permanently deletes{" "}
+              <span className="font-bold">{deleteTarget?.fullName}</span> and their
+              account. This action cannot be undone.
+            </p>
+          </div>
+          <p className="text-sm text-[var(--text-soft)]">
+            To temporarily bar sign-in instead, use the block action to keep the
+            record.
+          </p>
+          <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={actionLoading}
+              className="btn-secondary cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#b93b31] disabled:opacity-60 cursor-pointer"
+            >
+              {actionLoading && <Loader2 size={15} className="animate-spin" />}
+              Delete Permanently
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>

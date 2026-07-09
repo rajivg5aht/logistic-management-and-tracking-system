@@ -242,6 +242,19 @@ export default function DriverAssignments({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Page header */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
+          My Assignments
+        </p>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-[var(--text)] sm:text-3xl">
+          Your delivery trips
+        </h1>
+        <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
+          Review your earnings, completed trips, and active deliveries at a glance.
+        </p>
+      </div>
+
       {error && (
         <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
           {error}

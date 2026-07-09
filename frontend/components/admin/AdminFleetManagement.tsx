@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Plus,
   Search,
+  Trash2,
   TrendingUp,
   Truck,
   UserRoundCheck,
@@ -27,6 +28,7 @@ import {
   adminDeactivateVehicle,
   adminGetFleetStats,
   adminGetVehicles,
+  adminRemoveVehicle,
   adminUpdateVehicle,
   adminUploadVehicleImage,
   type FleetMeta,
@@ -384,6 +386,27 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     }
   };
 
+  const removeVehicle = async (vehicle: Vehicle) => {
+    if (
+      !window.confirm(
+        `Permanently remove ${vehicle.registrationNumber}? This deletes the vehicle and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      setSaving(true);
+      await adminRemoveVehicle(token, vehicle.id);
+      await loadData(true);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove vehicle",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 lg:flex-row lg:items-center lg:justify-between">
@@ -666,6 +689,17 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                                   <Ban size={15} /> Deactivate
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                disabled={saving || !!vehicle.assignedDriverId}
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  void removeVehicle(vehicle);
+                                }}
+                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1] disabled:opacity-40 disabled:hover:bg-transparent"
+                              >
+                                <Trash2 size={15} /> Remove Vehicle
+                              </button>
                             </div>
                           </>
                         )}

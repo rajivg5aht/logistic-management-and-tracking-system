@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Ban,
   UserCheck,
+  Trash2,
   Shield,
   Truck,
   User,
@@ -27,6 +28,7 @@ import {
   adminGetUserStats,
   adminCreateUser,
   adminUpdateUser,
+  adminDeleteUser,
   AdminUserMeta,
   AdminUserPayload,
   AdminUserStats,
@@ -115,9 +117,11 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Form payload states
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -210,6 +214,12 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     setIsEditOpen(true);
   };
 
+  const handleDeleteOpen = (user: AuthUser) => {
+    setSelectedUser(user);
+    setDeleteError(null);
+    setIsDeleteOpen(true);
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -297,6 +307,24 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Failed to update user status.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setActionLoading(true);
+      setDeleteError(null);
+      await adminDeleteUser(token, selectedUser.id);
+      setIsDeleteOpen(false);
+      fetchUsers();
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete user.",
       );
     } finally {
       setActionLoading(false);
@@ -549,6 +577,15 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                                 >
                                   {status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteOpen(user)}
+                                  disabled={actionLoading}
+                                  className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[rgba(181,71,59,0.1)] hover:text-[var(--danger)] cursor-pointer disabled:opacity-50"
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
                               </>
                             ) : (
                               <span className="pr-2 text-xs font-semibold text-[var(--text-muted)]">You</span>
@@ -795,6 +832,46 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* DELETE MODAL */}
+      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete User Permanently">
+        <div className="space-y-4">
+          {deleteError && <div className="form-error">{deleteError}</div>}
+
+          <div className="rounded-xl border border-[rgba(181,71,59,0.18)] bg-[rgba(181,71,59,0.06)] p-4 text-sm text-[var(--text)]">
+            <p className="font-semibold text-[var(--danger)]">This will permanently delete the account.</p>
+            <p className="mt-2 text-[var(--text-soft)]">
+              {selectedUser ? (
+                <>
+                  <span className="font-semibold text-[var(--text)]">{selectedUser.fullName}</span>
+                  {" "}({selectedUser.email}) will be removed from the system.
+                </>
+              ) : (
+                "The selected user will be removed from the system."
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(false)}
+              className="btn-secondary btn-sm cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteSubmit}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading && <Loader2 size={16} className="animate-spin" />}
+              Delete
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>

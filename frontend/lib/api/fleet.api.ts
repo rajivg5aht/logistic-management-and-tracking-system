@@ -156,6 +156,16 @@ export async function adminDeactivateVehicle(
   });
 }
 
+// Permanently deletes the vehicle record (distinct from the soft deactivate).
+export async function adminRemoveVehicle(
+  token: string,
+  id: string,
+): Promise<void> {
+  await authFetch(`/api/v1/admin/vehicles/${id}/permanent`, token, {
+    method: "DELETE",
+  });
+}
+
 // Multipart upload — leaves Content-Type unset so the browser adds the
 // multipart boundary itself (authFetch always forces JSON, so we can't use it).
 export async function adminUploadVehicleImage(
