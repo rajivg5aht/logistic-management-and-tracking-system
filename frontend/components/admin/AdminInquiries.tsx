@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Download,
   Eye,
   Filter,
   Inbox,
@@ -81,10 +80,6 @@ function formatTime(date: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function escapeCsv(value: string): string {
-  return '"' + value.replaceAll('"', '""') + '"';
 }
 
 export default function AdminInquiries({ token }: { token: string }) {
@@ -174,27 +169,6 @@ export default function AdminInquiries({ token }: { token: string }) {
     }
   };
 
-  const exportData = () => {
-    const headings = ["Date", "Sender", "Email", "Subject", "Message", "Category", "Status"];
-    const rows = inquiries.map((inquiry) => [
-      inquiry.createdAt,
-      inquiry.fullName,
-      inquiry.email,
-      inquiry.subject,
-      inquiry.message,
-      CATEGORY_LABELS[inquiry.category],
-      STATUS_LABELS[inquiry.status],
-    ]);
-    const csv = [headings, ...rows]
-      .map((row) => row.map(escapeCsv).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "contact-inquiries.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const totalPages = Math.max(1, meta?.totalPages ?? 1);
   const efficiency = stats?.resolvedRate ?? 0;
@@ -210,14 +184,6 @@ export default function AdminInquiries({ token }: { token: string }) {
             Manage and respond to incoming customer messages.
           </p>
         </div>
-        <button suppressHydrationWarning
-          type="button"
-          onClick={exportData}
-          disabled={inquiries.length === 0}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C4F86] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#083E6B] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Download size={15} /> Export Data
-        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

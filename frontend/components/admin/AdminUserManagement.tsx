@@ -369,32 +369,38 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {/* Total users (real data) */}
-        <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2" style={{ boxShadow: "var(--shadow-sm)" }}>
-          <Truck
-            className="pointer-events-none absolute -right-3 top-1/2 h-28 w-28 -translate-y-1/2 text-[var(--surface-muted)]"
-            strokeWidth={1.2}
-          />
-          <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
-            <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
-              {meta ? meta.total.toLocaleString() : "—"}
+        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
+          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
+            {meta ? meta.total.toLocaleString() : "—"}
+          </p>
+          {stats ? (
+            <p
+              className={`mt-2 flex items-center gap-1 text-xs font-bold ${
+                stats.growthPct >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"
+              }`}
+            >
+              {stats.growthPct >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+              {stats.growthPct >= 0 ? "+" : ""}
+              {stats.growthPct}% vs last month
             </p>
-            <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[var(--success)]">
-              <TrendingUp size={14} /> 12% growth this month
-            </p>
-          </div>
+          ) : (
+            <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Registration trend</p>
+          )}
         </div>
 
-        {/* New signups (illustrative) */}
+        {/* New signups (real data — customer registrations in the last 24h) */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">New Signups</p>
-          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">42</p>
+          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">
+            {stats ? stats.newSignups24h.toLocaleString() : "—"}
+          </p>
           <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Last 24 hours</p>
         </div>
 
-        {/* System uptime (illustrative) */}
+        {/* System uptime */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">System Uptime</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--teal)]">99.9%</p>
