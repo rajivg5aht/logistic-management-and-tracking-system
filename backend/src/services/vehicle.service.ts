@@ -338,4 +338,28 @@ export class VehicleService {
     vehicle.status = "inactive";
     await vehicle.save();
   }
+
+  // Permanently removes a vehicle from the fleet. Guarded so we never delete a
+  // vehicle that is still assigned to a driver or tied to an active shipment.
+  async removeVehicle(id: string): Promise<void> {
+    const vehicle = await VehicleModel.findById(id);
+    if (!vehicle) throw new HttpException(404, "Vehicle not found");
+    if (vehicle.assignedDriverId) {
+      throw new HttpException(
+        400,
+        "Unassign the driver before removing this vehicle",
+      );
+    }
+    const activeShipments = await ShipmentModel.countDocuments({
+      assignedVehicleId: vehicle._id,
+      status: { $nin: ["delivered", "cancelled"] },
+    });
+    if (activeShipments > 0) {
+      throw new HttpException(
+        400,
+        "Vehicle has active shipments and cannot be removed",
+      );
+    }
+    await VehicleModel.findByIdAndDelete(id);
+  }
 }

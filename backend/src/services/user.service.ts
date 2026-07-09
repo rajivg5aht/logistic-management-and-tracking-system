@@ -352,8 +352,7 @@ export class UserService {
       );
     }
 
-    const updated = await userRepository.update(userId, { status: "inactive" });
-    return !!updated;
+    return userRepository.delete(userId);
   }
 
   // ── Driver management (admin-controlled internal staff) ────────────────────
@@ -567,6 +566,8 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
+  // Permanently removes a driver account. Guarded so we never orphan an active
+  // shipment or leave a vehicle pointing at a deleted driver.
   async adminDeleteDriver(driverId: string): Promise<boolean> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
@@ -579,7 +580,7 @@ export class UserService {
     if (activeShipments > 0) {
       throw new HttpException(
         400,
-        "Driver has active shipments and cannot be deactivated",
+        "Driver has active shipments and cannot be deleted",
       );
     }
     const assignedVehicle = await VehicleModel.findOne({
@@ -588,14 +589,10 @@ export class UserService {
     if (assignedVehicle) {
       throw new HttpException(
         400,
-        "Unassign the driver's vehicle before deactivation",
+        "Unassign the driver's vehicle before deletion",
       );
     }
-    const updated = await userRepository.update(driverId, {
-      status: "inactive",
-      availabilityStatus: "inactive",
-    });
-    return !!updated;
+    return userRepository.delete(driverId);
   }
 
   // A driver toggles their own availability from the driver console.

@@ -218,4 +218,25 @@ export class AdminVehicleController {
       );
     }
   }
+
+  async removeVehicle(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return ApiResponseHelper.error(res, "Invalid vehicle ID", 400);
+      }
+      await vehicleService.removeVehicle(id);
+      return ApiResponseHelper.success(
+        res,
+        null,
+        "Vehicle removed successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
 }

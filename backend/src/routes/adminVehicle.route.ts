@@ -21,6 +21,7 @@ adminVehicleRouter.post(
 adminVehicleRouter.put("/:id", controller.updateVehicle);
 adminVehicleRouter.patch("/:id", controller.updateVehicle);
 adminVehicleRouter.patch("/:id/assignment", controller.assignDriver);
+adminVehicleRouter.delete("/:id/permanent", controller.removeVehicle);
 adminVehicleRouter.delete("/:id", controller.deactivateVehicle);
 
 export default adminVehicleRouter;

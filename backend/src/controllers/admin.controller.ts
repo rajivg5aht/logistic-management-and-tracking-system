@@ -188,7 +188,7 @@ export class AdminController {
       }
 
       await userService.adminDeleteUser(id);
-      return ApiResponseHelper.success(res, null, "User deactivated successfully");
+      return ApiResponseHelper.success(res, null, "User deleted successfully");
     } catch (error: any) {
       return ApiResponseHelper.error(
         res,
