@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, Truck, Timer, ShieldCheck } from "lucide-react";
+import { DollarSign, Truck, Timer, ShieldCheck, MapPin, Crown } from "lucide-react";
 import { adminGetFleetStats, type FleetStats } from "@/lib/api/fleet.api";
 import {
   adminGetAnalytics,
@@ -141,9 +141,15 @@ export default function AdminAnalytics({ token }: { token: string }) {
         `L ${points[0].x.toFixed(1)} ${CHART.bottom} Z`
       : "";
 
-  // ── Deliveries by region: proportional bars ───────────────────────────────
+  // ── Deliveries by region: single-hue ranked bars (magnitude by length) ────
   const regions = analytics?.regionVolume ?? [];
   const maxRegion = Math.max(1, ...regions.map((rg) => rg.count));
+  const regionTotal = analytics?.totalShipments ?? 0;
+  const regionShare = (count: number) =>
+    regionTotal > 0 ? Math.round((count / regionTotal) * 100) : 0;
+  const regionBar = "linear-gradient(90deg, #2E97AB, #1D7A8C)";
+  const leader = regions[0];
+  const rest = regions.slice(1);
 
   return (
     <div className="space-y-6 font-sans">
@@ -336,42 +342,123 @@ export default function AdminAnalytics({ token }: { token: string }) {
         style={{ boxShadow: "var(--shadow-sm)" }}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-lg font-extrabold text-[var(--text)]">Deliveries by Region</h3>
-            <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
-              Shipment volume concentration by destination district
-            </p>
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--teal-tint)] text-[var(--teal)]">
+              <MapPin size={18} className="stroke-[2.4]" />
+            </span>
+            <div>
+              <h3 className="text-lg font-extrabold text-[var(--text)]">Deliveries by Region</h3>
+              <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
+                Shipment volume concentration by destination district
+              </p>
+            </div>
           </div>
+          {regions.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-1 text-xs font-bold text-[var(--text-soft)] sm:self-auto">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]" />
+              {regionTotal.toLocaleString("en-IN")} total shipments
+            </span>
+          )}
         </div>
 
-        {/* Ranked region bars */}
-        <div className="mt-5 space-y-4">
+        {/* Ranked region bars — single hue, length encodes volume */}
+        <div className="mt-6 space-y-2.5">
           {regions.length === 0 ? (
-            <p className="py-6 text-center text-sm font-medium text-[var(--text-muted)]">
-              {analytics ? "No shipment data yet." : "Loading regional volume…"}
-            </p>
+            <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] py-10 text-center">
+              <MapPin size={22} className="text-[var(--text-muted)]" />
+              <p className="text-sm font-semibold text-[var(--text-muted)]">
+                {analytics ? "No shipment data yet." : "Loading regional volume…"}
+              </p>
+            </div>
           ) : (
-            regions.map((rg) => (
-              <div key={rg.region}>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-sm font-bold text-[var(--text-soft)]">
-                    {rg.region}
-                  </span>
-                  <span className="text-sm font-extrabold text-[var(--text)]">
-                    {rg.count.toLocaleString("en-IN")}
-                  </span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
+            <>
+              {/* Leader — hero emphasis for the busiest region */}
+              <div
+                className="relative overflow-hidden rounded-[var(--radius-md)] border p-4"
+                style={{
+                  borderColor: "rgba(200,162,74,0.4)",
+                  background: "linear-gradient(135deg, #FBF1DC 0%, #FFFFFF 55%)",
+                }}
+                title={`${leader.region} — ${leader.count.toLocaleString("en-IN")} shipments (${regionShare(leader.count)}% of total)`}
+              >
+                <span
+                  className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full"
+                  style={{ background: "radial-gradient(circle, rgba(233,196,106,0.30), transparent 70%)" }}
+                />
+                <div className="relative flex items-center gap-3.5">
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#3A2E12]"
                     style={{
-                      width: `${Math.max(4, (rg.count / maxRegion) * 100)}%`,
-                      backgroundColor: "var(--teal)",
+                      background: "linear-gradient(135deg, #F0D083, #C99A3D)",
+                      boxShadow: "0 6px 16px rgba(201,154,61,0.35)",
+                    }}
+                  >
+                    <Crown size={20} className="stroke-[2.4]" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#C99A3D]">
+                      Top region
+                    </span>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h4 className="truncate text-base font-black text-[var(--text)]">
+                        {leader.region}
+                      </h4>
+                      <span className="shrink-0 whitespace-nowrap text-lg font-black text-[var(--text)]">
+                        {leader.count.toLocaleString("en-IN")}
+                        <span className="ml-1 text-xs font-bold text-[var(--text-muted)]">
+                          {regionShare(leader.count)}%
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/70">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.max(6, (leader.count / maxRegion) * 100)}%`,
+                      background: regionBar,
                     }}
                   />
                 </div>
               </div>
-            ))
+
+              {/* Remaining regions */}
+              {rest.map((rg, i) => (
+                <div
+                  key={rg.region}
+                  className="group flex items-center gap-3.5 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3.5 py-3 transition-all hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)]"
+                  title={`${rg.region} — ${rg.count.toLocaleString("en-IN")} shipments (${regionShare(rg.count)}% of total)`}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-muted)] text-sm font-black text-[var(--text-soft)]">
+                    {i + 2}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-[var(--text)]">
+                        <MapPin size={13} className="shrink-0 text-[var(--teal)]" />
+                        <span className="truncate">{rg.region}</span>
+                      </span>
+                      <span className="shrink-0 whitespace-nowrap text-sm font-black text-[var(--text)]">
+                        {rg.count.toLocaleString("en-IN")}
+                        <span className="ml-1 text-xs font-semibold text-[var(--text-muted)]">
+                          {regionShare(rg.count)}%
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.max(6, (rg.count / maxRegion) * 100)}%`,
+                          background: regionBar,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       </div>

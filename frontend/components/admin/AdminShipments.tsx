@@ -381,17 +381,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             Manage and monitor logistics flow across all provinces.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => fetchData()}
-          disabled={loading}
-          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-md)] px-5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-60 cursor-pointer self-start sm:self-auto"
-          style={{ background: NAVY_BTN, boxShadow: "0 8px 20px rgba(18,62,107,0.22)" }}
-          suppressHydrationWarning
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
       </div>
 
       {/* ============ KPI cards ============ */}

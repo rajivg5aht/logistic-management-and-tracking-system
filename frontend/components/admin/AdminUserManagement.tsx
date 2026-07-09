@@ -19,14 +19,17 @@ import {
   Filter,
   MoreVertical,
   TrendingUp,
+  TrendingDown,
   type LucideIcon,
 } from "lucide-react";
 import {
   adminGetUsers,
+  adminGetUserStats,
   adminCreateUser,
   adminUpdateUser,
   AdminUserMeta,
   AdminUserPayload,
+  AdminUserStats,
 } from "@/lib/api/admin.api";
 import { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
@@ -97,6 +100,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   // Lists & pagination
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [meta, setMeta] = useState<AdminUserMeta | null>(null);
+  const [stats, setStats] = useState<AdminUserStats | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,6 +156,9 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         );
         setUsers(res.data);
         setMeta(res.meta);
+        // Refresh the signup/growth KPIs alongside, but never let a stats error
+        // block the user table.
+        adminGetUserStats(token).then(setStats).catch(() => {});
         onMutationFinished?.();
       } catch (err: unknown) {
         if (!silent) {
@@ -748,7 +755,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Role</label>
-              <div className="form-input capitalize">{formData.role}</div>
+              <div className="form-input flex items-center capitalize text-[var(--text-muted)]">{formData.role}</div>
             </div>
             <div>
               <label className="form-label" htmlFor="edit-status">Status *</label>

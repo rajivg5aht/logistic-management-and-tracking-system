@@ -232,13 +232,12 @@ export default function ContactContent() {
               <div>
                 <label htmlFor="subject" className="form-label">Subject</label>
                 <div className="relative">
-                  <select suppressHydrationWarning id="subject" name="subject" defaultValue="Support" className="form-input cursor-pointer appearance-none pr-10">
+                  <select suppressHydrationWarning id="subject" name="subject" defaultValue="Support" className="form-input cursor-pointer">
                     <option>Support</option>
                     <option>Business Partnership</option>
                     <option>Complaint</option>
                     <option>General Inquiry</option>
                   </select>
-                  <ChevronDown size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                 </div>
               </div>
 

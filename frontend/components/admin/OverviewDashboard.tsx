@@ -56,7 +56,8 @@ function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
   return dailyVolume.map((d, i) => ({
     day: d.label,
     count: d.count,
-    h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 100)),
+    // Cap the peak at 85% so the count label above each bar has headroom.
+    h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 85)),
     active: d.count > 0 && i === peakIndex,
   }));
 }
@@ -282,6 +283,13 @@ export default function OverviewDashboard({ token }: { token: string }) {
                 ))
               : bars.map((bar, index) => (
                   <div key={index} className="flex h-full flex-1 flex-col justify-end">
+                    <span
+                      className={`mb-1.5 text-center text-sm font-black tabular-nums ${
+                        bar.count > 0 ? "text-[#123E6B]" : "text-[var(--text-muted)]"
+                      }`}
+                    >
+                      {bar.count}
+                    </span>
                     <div
                       className="w-full rounded-lg transition-all duration-500"
                       style={{

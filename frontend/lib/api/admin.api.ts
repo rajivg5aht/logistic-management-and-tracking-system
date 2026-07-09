@@ -12,6 +12,13 @@ export type AdminUserMeta = {
   totalPages: number;
 };
 
+export type AdminUserStats = {
+  total: number;
+  newSignups24h: number;
+  signupsThisMonth: number;
+  growthPct: number;
+};
+
 export type AdminUserPayload = {
   fullName: string;
   email: string;
@@ -54,6 +61,26 @@ export async function adminGetUsers(
     data: payload.data,
     meta: payload.meta,
   };
+}
+
+export async function adminGetUserStats(
+  token: string,
+): Promise<AdminUserStats> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/stats`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  const payload = await response.json();
+  if (!payload.success) {
+    throw new Error(payload.message || "Failed to fetch user stats");
+  }
+
+  return payload.data;
 }
 
 export async function adminGetUserById(

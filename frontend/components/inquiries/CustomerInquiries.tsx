@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   CheckCircle2,
-  ChevronDown,
   Clock3,
   Loader2,
   MessageSquareText,
@@ -163,7 +162,7 @@ export default function CustomerInquiries({
                 <label className="text-xs font-bold text-[var(--text-soft)]">Account name<input suppressHydrationWarning type="text" value={user.fullName} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-slate-50 px-3 text-sm text-[var(--text-muted)]" /></label>
                 <label className="text-xs font-bold text-[var(--text-soft)]">Account email<input suppressHydrationWarning type="email" value={user.email} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-slate-50 px-3 text-sm text-[var(--text-muted)]" /></label>
               </div>
-              <label className="block text-xs font-bold text-[var(--text-soft)]">Subject<div className="relative mt-2"><select suppressHydrationWarning value={subject} onChange={(event) => setSubject(event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-[var(--border)] bg-white px-3 pr-10 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"><option>Support</option><option>Business Partnership</option><option>Complaint</option><option>General Inquiry</option></select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" /></div></label>
+              <label className="block text-xs font-bold text-[var(--text-soft)]">Subject<div className="relative mt-2"><select suppressHydrationWarning value={subject} onChange={(event) => setSubject(event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-[var(--border)] bg-white px-3 pr-10 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"><option>Support</option><option>Business Partnership</option><option>Complaint</option><option>General Inquiry</option></select></div></label>
               <label className="block text-xs font-bold text-[var(--text-soft)]">Message<textarea suppressHydrationWarning value={message} onChange={(event) => setMessage(event.target.value)} required minLength={10} maxLength={2000} rows={6} placeholder="How can our support team help?" className="mt-2 w-full resize-y rounded-lg border border-[var(--border)] p-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" /></label>
               {formError && <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">{formError}</p>}
               <div className="flex justify-end gap-3 border-t border-[var(--border)] pt-5"><button suppressHydrationWarning type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-bold text-[var(--text-soft)] hover:bg-[var(--surface-soft)]">Cancel</button><button suppressHydrationWarning type="submit" disabled={submitting} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--text-on-accent)] hover:bg-[var(--accent-hover)] disabled:opacity-60">{submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Send Inquiry</button></div>

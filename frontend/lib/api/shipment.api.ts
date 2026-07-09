@@ -148,15 +148,16 @@ export type RegionVolume = {
 
 export type ShipmentAnalytics = {
   totalRevenue: number;
-  revenueDelta: number | null; // % change vs prior 30 days (null = no baseline)
+  revenueDelta: number; // % change vs prior 30 days (+100% = grew from zero)
   deliveries: number;
-  deliveriesDelta: number | null;
+  deliveriesDelta: number;
   avgDeliveryMs: number | null; // Avg order-to-door time (null when none delivered)
-  avgTimeDelta: number | null; // % change (negative = faster)
+  avgTimeDelta: number; // % change (negative = faster)
   successRate: number; // 0-100
-  successDelta: number | null; // percentage-point change
+  successDelta: number; // percentage-point change
   monthlyRevenue: MonthlyRevenue[]; // Last 6 months, oldest → newest
   regionVolume: RegionVolume[]; // Top regions by delivery count
+  totalShipments: number; // All shipments (denominator for region share)
 };
 
 export type CreateShipmentPayload = {

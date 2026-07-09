@@ -12,7 +12,6 @@ import {
   Navigation,
   Package,
   Phone,
-  RefreshCw,
   Route as RouteIcon,
   Search,
   ShieldCheck,
@@ -374,16 +373,6 @@ export default function AdminLiveMap({ token }: { token: string }) {
           <h1 className="mt-1 text-3xl font-black tracking-tight" style={{ color: NAVY }}>Live Map</h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-soft)]">Track active GPS orders, driver position, and parcel details.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => loadShipments(true)}
-          disabled={loading || refreshing}
-          className="inline-flex h-11 items-center gap-2 self-start rounded-[var(--radius-md)] px-5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-60 lg:self-auto"
-          style={{ background: NAVY, boxShadow: "0 8px 20px rgba(18,62,107,0.22)" }}
-        >
-          {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-          Refresh
-        </button>
       </div>
 
       {(error || trackingError) && (
