@@ -136,6 +136,29 @@ export type ShipmentStats = {
   dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
 };
 
+export type MonthlyRevenue = {
+  label: string; // Month abbreviation, e.g. "Jan"
+  revenue: number;
+};
+
+export type RegionVolume = {
+  region: string;
+  count: number;
+};
+
+export type ShipmentAnalytics = {
+  totalRevenue: number;
+  revenueDelta: number | null; // % change vs prior 30 days (null = no baseline)
+  deliveries: number;
+  deliveriesDelta: number | null;
+  avgDeliveryMs: number | null; // Avg order-to-door time (null when none delivered)
+  avgTimeDelta: number | null; // % change (negative = faster)
+  successRate: number; // 0-100
+  successDelta: number | null; // percentage-point change
+  monthlyRevenue: MonthlyRevenue[]; // Last 6 months, oldest → newest
+  regionVolume: RegionVolume[]; // Top regions by delivery count
+};
+
 export type CreateShipmentPayload = {
   pickup: ShipmentAddress;
   delivery: ShipmentAddress;
@@ -336,6 +359,29 @@ export async function adminGetShipmentStats(
   const payload = await response.json();
   if (!payload.success) {
     throw new Error(payload.message || "Failed to fetch shipment stats");
+  }
+
+  return payload.data;
+}
+
+export async function adminGetAnalytics(
+  token: string,
+): Promise<ShipmentAnalytics> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/admin/shipments/analytics`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    },
+  );
+
+  const payload = await response.json();
+  if (!payload.success) {
+    throw new Error(payload.message || "Failed to fetch analytics");
   }
 
   return payload.data;
