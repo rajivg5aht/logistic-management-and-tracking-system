@@ -170,6 +170,18 @@ export default function TrackingPanel({
     shipment?.id,
     Boolean(shipment && shipment.status !== "cancelled"),
   );
+  const displayedLocation = liveLocation;
+  const hasAssignedDriver = Boolean(
+    shipment?.assignedDriverId || shipment?.assignedDriver,
+  );
+  const liveStatusLabel = liveLocation
+    ? "Live"
+    : hasAssignedDriver
+      ? "Waiting for driver GPS..."
+      : "Driver not assigned yet";
+  const mapWaitingLabel = hasAssignedDriver
+    ? "Waiting for driver GPS..."
+    : "A driver will appear here after assignment.";
 
   return (
     <div className="space-y-6">
@@ -256,10 +268,13 @@ export default function TrackingPanel({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
             <section className="space-y-4 lg:col-span-3">
               <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2.5 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2.5 text-xs">
                   <span className="flex items-center gap-1.5 font-bold text-[var(--text-soft)]">
                     <MapPin size={14} className="text-[#1D7A8C]" />
                     Live location
+                    <span className="rounded-md bg-[var(--surface-soft)] px-2 py-0.5 text-[10px] font-black uppercase text-[var(--text)]">
+                      #{shipment.trackingId}
+                    </span>
                   </span>
                   {liveLocation ? (
                     <span className="flex items-center gap-1.5 rounded-full bg-[#1D7A8C] px-2.5 py-1 font-bold text-white">
@@ -267,26 +282,26 @@ export default function TrackingPanel({
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
                       </span>
-                      Live
+                      {liveStatusLabel}
                     </span>
                   ) : (
                     <span className="font-semibold text-[var(--text-muted)]">
-                      Waiting for driver…
+                      {liveStatusLabel}
                     </span>
                   )}
                 </div>
-                <div className="relative">
+                <div className="relative isolate">
                   <LiveMap
-                    location={liveLocation}
+                    location={displayedLocation}
                     height={240}
                     accent="#1D7A8C"
-                    waitingLabel="Waiting for driver location…"
+                    waitingLabel={mapWaitingLabel}
                   />
-                  <span className="pointer-events-none absolute bottom-4 left-4 z-[1000] rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[#18864B] shadow">
+                  <span className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[#18864B] shadow">
                     <MapPin size={13} className="mr-1 inline" />
                     {shipment.pickup.city || "Pickup"}
                   </span>
-                  <span className="pointer-events-none absolute right-4 top-4 z-[1000] rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[var(--accent-strong)] shadow">
+                  <span className="pointer-events-none absolute right-4 top-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[var(--accent-strong)] shadow">
                     <MapPin size={13} className="mr-1 inline" />
                     {shipment.delivery.city || "Destination"}
                   </span>

@@ -194,8 +194,12 @@ export function ActiveAssignmentCard({
 
   // Live GPS broadcast for this delivery (driver → customer/admin).
   const tracking = useDriverTracking(token, shipment);
-  const driverLocation = tracking.lastFix ?? shipment.currentLocation ?? null;
-
+  const driverLocation = tracking.isTracking ? tracking.lastFix : null;
+  const liveGpsLabel = tracking.isTracking
+    ? driverLocation
+      ? "Sharing live GPS"
+      : "Finding GPS..."
+    : "GPS not shared yet";
 
   const advance = async (stage: DriverStage) => {
     setBusy(stage);
@@ -333,6 +337,64 @@ export function ActiveAssignmentCard({
         />
       </div>
 
+
+      {/* Live GPS sharing */}
+      <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E5F1F3] text-[#1D7A8C]">
+              <Navigation size={17} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                Live GPS
+              </p>
+              <p className="text-sm font-black text-[var(--text)]">
+                {liveGpsLabel}
+              </p>
+            </div>
+          </div>
+          {tracking.isTracking ? (
+            <button
+              type="button"
+              onClick={tracking.stop}
+              className="flex items-center gap-1.5 rounded-lg border border-[#F3C6BF] bg-[#FBE4E1] px-3 py-2 text-xs font-bold text-[#D0453A] transition-colors hover:bg-[#f7d6d1]"
+            >
+              <Square size={13} />
+              Stop Sharing
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={tracking.start}
+              disabled={!tracking.trackable}
+              className="flex items-center gap-1.5 rounded-lg bg-[#1D7A8C] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+            >
+              <Navigation size={13} />
+              Start Live GPS
+            </button>
+          )}
+        </div>
+        <div className="p-3">
+          <LiveMap
+            location={driverLocation}
+            height={180}
+            accent="#1D7A8C"
+            waitingLabel={
+              tracking.isTracking
+                ? "Finding your GPS signal..."
+                : tracking.trackable
+                  ? "Start live GPS to share your location."
+                  : "Live GPS is closed for this shipment."
+            }
+          />
+        </div>
+        {tracking.error && (
+          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[#D0453A]">
+            {tracking.error}
+          </p>
+        )}
+      </div>
       {/* COD collection */}
       {isCodShipment && (
         <div

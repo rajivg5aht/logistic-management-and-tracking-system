@@ -24,6 +24,7 @@ import { AuthUser } from "@/lib/api/auth.api";
 
 const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
+  "/admin/live-map": "Live Map",
   "/admin/shipments": "Shipments",
   "/admin/drivers": "Driver Management",
   "/admin/fleet": "Fleet Management",
@@ -85,7 +86,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
   const navItems = [
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
-    { label: "Live Map", href: "#", icon: Map, active: false },
+    { label: "Live Map", href: "/admin/live-map", icon: Map, active: pathname.startsWith("/admin/live-map") },
     { label: "Shipments", href: "/admin/shipments", icon: Package, active: pathname.startsWith("/admin/shipments") },
     { label: "Driver Management", href: "/admin/drivers", icon: UserRoundCog, active: pathname.startsWith("/admin/drivers") },
     { label: "Fleet Management", href: "/admin/fleet", icon: Truck, active: pathname.startsWith("/admin/fleet") },

@@ -13,6 +13,9 @@ export type LiveLocation = {
   accuracy: number | null;
   speed: number | null;
   heading: number | null;
+  isLive: boolean;
+  startedAt: string | null;
+  stoppedAt: string | null;
   updatedAt: string;
 };
 
@@ -24,6 +27,13 @@ export type DriverLocationUpdate = {
   accuracy: number | null;
   speed: number | null;
   heading: number | null;
+};
+
+export type TrackingStatusUpdate = {
+  shipmentId: string;
+  driverId: string;
+  isLive: boolean;
+  updatedAt: string;
 };
 
 // Error shape the server sends on the `tracking-error` event.

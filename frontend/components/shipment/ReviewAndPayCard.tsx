@@ -232,10 +232,16 @@ export function ReviewAndPayCard({
 
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/shipments/history"
+            href={`/tracking?trackingId=${encodeURIComponent(placedShipment.trackingId)}`}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1D7A8C] to-[#15616D] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:shadow-md sm:w-auto"
           >
-            View My Shipments <ArrowRight className="h-4 w-4" />
+            Track This Shipment <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/shipments/history"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-[#E2E8F0] px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 sm:w-auto"
+          >
+            View My Shipments
           </Link>
           <button
             type="button"

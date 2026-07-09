@@ -37,9 +37,10 @@ interface Result {
  * Drives the assigned driver's location broadcast for one shipment.
  *
  * `start()` opens `navigator.geolocation.watchPosition` and emits a
- * `driver-location-update` on every fix; `stop()` clears the watch and leaves
- * the room. Permission/GPS failures surface via `error`. Tracking auto-stops
- * when the delivery reaches a terminal state and when the component unmounts.
+ * `driver-location-update` on every fix; `stop()` clears the watch, tells the
+ * backend live GPS is off, and leaves the room. Permission/GPS failures surface
+ * via `error`. Tracking auto-stops when the delivery reaches a terminal state
+ * and when the component unmounts.
  */
 export function useDriverTracking(
   token: string,
@@ -49,7 +50,12 @@ export function useDriverTracking(
   const [error, setError] = useState<string | null>(null);
   const [lastFix, setLastFix] = useState<DriverFix | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const isTrackingRef = useRef(false);
   const shipmentId = shipment.id;
+
+  useEffect(() => {
+    isTrackingRef.current = isTracking;
+  }, [isTracking]);
 
   const clearWatch = useCallback(() => {
     if (watchIdRef.current !== null && typeof navigator !== "undefined") {
@@ -59,10 +65,16 @@ export function useDriverTracking(
   }, []);
 
   const stop = useCallback(() => {
+    const wasSharing = watchIdRef.current !== null || isTrackingRef.current;
     clearWatch();
     if (token) {
-      getSocket(token).emit("leave-shipment-room", { shipmentId });
+      const socket = getSocket(token);
+      if (wasSharing) {
+        socket.emit("driver-location-stop", { shipmentId });
+      }
+      socket.emit("leave-shipment-room", { shipmentId });
     }
+    setLastFix(null);
     setIsTracking(false);
   }, [token, shipmentId, clearWatch]);
 
@@ -102,15 +114,14 @@ export function useDriverTracking(
         } else {
           setError("Could not get your location.");
         }
-        clearWatch();
-        setIsTracking(false);
+        stop();
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
     );
 
     watchIdRef.current = watchId;
     setIsTracking(true);
-  }, [token, shipmentId, clearWatch]);
+  }, [token, shipmentId, stop]);
 
   // Surface server-side rejections (e.g. shipment no longer active).
   useEffect(() => {
@@ -132,8 +143,17 @@ export function useDriverTracking(
     }
   }, [shipment, isTracking, stop]);
 
-  // Ensure the watch is released if the component unmounts mid-tracking.
-  useEffect(() => clearWatch, [clearWatch]);
+  // Ensure the watch is released and the backend is told GPS is off if the
+  // component unmounts mid-tracking.
+  useEffect(() => {
+    return () => {
+      const wasSharing = watchIdRef.current !== null || isTrackingRef.current;
+      clearWatch();
+      if (wasSharing && token) {
+        getSocket(token).emit("driver-location-stop", { shipmentId });
+      }
+    };
+  }, [clearWatch, shipmentId, token]);
 
   return {
     isTracking,
