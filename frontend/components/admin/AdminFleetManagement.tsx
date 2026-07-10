@@ -174,6 +174,12 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // Pending destructive action (remove / deactivate) confirmed via a styled modal.
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "remove" | "deactivate";
+    vehicle: Vehicle;
+  } | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   // Vehicle photo staged in the create/edit form; uploaded after the record saves.
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -365,42 +371,29 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     }
   };
 
-  const deactivateVehicle = async (vehicle: Vehicle) => {
-    if (
-      !window.confirm(
-        `Deactivate ${vehicle.registrationNumber}? Historical records will be kept.`,
-      )
-    ) {
-      return;
-    }
-    try {
-      setSaving(true);
-      await adminDeactivateVehicle(token, vehicle.id);
-      await loadData(true);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to deactivate vehicle",
-      );
-    } finally {
-      setSaving(false);
-    }
+  const openConfirm = (type: "remove" | "deactivate", vehicle: Vehicle) => {
+    setConfirmError(null);
+    setConfirmAction({ type, vehicle });
   };
 
-  const removeVehicle = async (vehicle: Vehicle) => {
-    if (
-      !window.confirm(
-        `Permanently remove ${vehicle.registrationNumber}? This deletes the vehicle and cannot be undone.`,
-      )
-    ) {
-      return;
-    }
+  // Runs the pending remove/deactivate. Backend guards (assigned driver / active
+  // shipments) surface as an inline error and keep the modal open.
+  const runConfirm = async () => {
+    if (!confirmAction) return;
+    const { type, vehicle } = confirmAction;
     try {
       setSaving(true);
-      await adminRemoveVehicle(token, vehicle.id);
+      setConfirmError(null);
+      if (type === "remove") {
+        await adminRemoveVehicle(token, vehicle.id);
+      } else {
+        await adminDeactivateVehicle(token, vehicle.id);
+      }
+      setConfirmAction(null);
       await loadData(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to remove vehicle",
+      setConfirmError(
+        err instanceof Error ? err.message : `Failed to ${type} vehicle`,
       );
     } finally {
       setSaving(false);
@@ -671,24 +664,22 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                               {vehicle.status !== "inactive" && (
                                 <button
                                   type="button"
-                                  disabled={saving || !!vehicle.assignedDriverId}
                                   onClick={() => {
                                     setMenuOpenId(null);
-                                    void deactivateVehicle(vehicle);
+                                    openConfirm("deactivate", vehicle);
                                   }}
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1] disabled:opacity-40 disabled:hover:bg-transparent"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
                                 >
                                   <Ban size={15} /> Deactivate
                                 </button>
                               )}
                               <button
                                 type="button"
-                                disabled={saving || !!vehicle.assignedDriverId}
                                 onClick={() => {
                                   setMenuOpenId(null);
-                                  void removeVehicle(vehicle);
+                                  openConfirm("remove", vehicle);
                                 }}
-                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1] disabled:opacity-40 disabled:hover:bg-transparent"
+                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
                               >
                                 <Trash2 size={15} /> Remove Vehicle
                               </button>
@@ -851,6 +842,93 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Confirm remove / deactivate */}
+      <Modal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        title={
+          confirmAction?.type === "remove"
+            ? "Remove Vehicle"
+            : "Deactivate Vehicle"
+        }
+      >
+        {confirmAction && (
+          <div className="space-y-4">
+            {confirmAction.vehicle.assignedDriverId ? (
+              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+                <p className="flex items-center gap-2 font-bold text-[#C99A3D]">
+                  <AlertTriangle size={16} /> Action blocked
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  is currently assigned to{" "}
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.assignedDriverName || "a driver"}
+                  </span>
+                  . Unassign the driver first before you can{" "}
+                  {confirmAction.type === "remove" ? "remove" : "deactivate"} it.
+                </p>
+              </div>
+            ) : confirmAction.type === "remove" ? (
+              <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] p-4 text-sm">
+                <p className="font-bold text-[#D0453A]">
+                  This permanently deletes the vehicle.
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  will be permanently removed from the fleet. This action cannot be
+                  undone.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+                <p className="font-bold text-[#C99A3D]">
+                  This marks the vehicle as inactive.
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  will be taken out of service. Historical records are kept and it
+                  can be reactivated later.
+                </p>
+              </div>
+            )}
+
+            {confirmError && <div className="form-error">{confirmError}</div>}
+
+            <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={saving || !!confirmAction.vehicle.assignedDriverId}
+                onClick={() => void runConfirm()}
+                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40 ${
+                  confirmAction.type === "remove"
+                    ? "bg-[#D0453A]"
+                    : "bg-[#C99A3D]"
+                }`}
+              >
+                {saving && <Loader2 size={15} className="animate-spin" />}
+                {confirmAction.type === "remove"
+                  ? "Remove Vehicle"
+                  : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

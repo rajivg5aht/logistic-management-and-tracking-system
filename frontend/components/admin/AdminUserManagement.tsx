@@ -66,6 +66,18 @@ const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string
 };
 
 
+// Registration date shown in the personnel table, e.g. "Jul 10, 2026".
+function formatRegDate(value?: string): string {
+  if (!value) return "â€”";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "â€”";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function AdminUserManagement({ token, currentUser, onMutationFinished }: AdminUserManagementProps) {
   // Lists & pagination
   const [users, setUsers] = useState<AuthUser[]>([]);
@@ -462,6 +474,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                   <th>Phone</th>
                   <th>Role</th>
                   <th>Status</th>
+                  <th>Registered</th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -481,12 +494,13 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                       <td><div className="h-4 w-24 rounded bg-[var(--border)]" /></td>
                       <td><div className="h-6 w-16 rounded-full bg-[var(--border)]" /></td>
                       <td><div className="h-6 w-16 rounded-full bg-[var(--border)]" /></td>
+                      <td><div className="h-4 w-20 rounded bg-[var(--border)]" /></td>
                       <td><div className="ml-auto h-6 w-20 rounded bg-[var(--border)]" /></td>
                     </tr>
                   ))
                 ) : visibleUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center font-medium text-[var(--text-muted)]">
+                    <td colSpan={6} className="py-12 text-center font-medium text-[var(--text-muted)]">
                       {activeTab === "all" ? "No users found." : `No ${activeTab}s found.`}
                     </td>
                   </tr>
@@ -532,6 +546,9 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                             <span className={`h-1.5 w-1.5 rounded-full ${status === "inactive" ? "bg-[var(--danger)]" : "bg-[var(--success)]"}`} />
                             {status}
                           </span>
+                        </td>
+                        <td className="whitespace-nowrap text-sm text-[var(--text-soft)]">
+                          {formatRegDate(user.createdAt)}
                         </td>
                         <td>
                           <div className="flex items-center justify-end gap-1">
