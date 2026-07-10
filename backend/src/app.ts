@@ -11,6 +11,8 @@ import inquiryRoutes from "./routes/inquiry.route";
 import adminInquiryRoutes from "./routes/adminInquiry.route";
 import adminVehicleRoutes from "./routes/adminVehicle.route";
 import adminFleetReportRoutes from "./routes/adminFleetReport.route";
+import paymentRoutes from "./routes/payment.route";
+import adminPaymentRoutes from "./routes/adminPayment.route";
 import { CORS_ORIGINS } from "./configs/constant";
 
 const app: Application = express();
@@ -40,6 +42,8 @@ app.use("/api/v1/admin/users", adminRoutes);
 app.use("/api/v1/admin/drivers", adminDriverRoutes);
 app.use("/api/v1/admin/vehicles", adminVehicleRoutes);
 app.use("/api/v1/admin/fleet-reports", adminFleetReportRoutes);
+app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/admin/payments", adminPaymentRoutes);
 app.use("/api/v1/driver", driverRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/admin/shipments", adminShipmentRoutes);
