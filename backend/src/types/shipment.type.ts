@@ -92,6 +92,15 @@ export const TimelineEntrySchema = z.object({
   note: z.string().optional(),
 });
 
+export const ProofOfDeliverySchema = z.object({
+  photoUrl: z.string().nullable().default(null),
+  notes: z.string().default(""),
+  recipientName: z.string().default(""),
+  confirmedAt: z.coerce.date().nullable().default(null),
+  confirmedByDriverId: z.any().nullable().default(null),
+  updatedAt: z.coerce.date().nullable().default(null),
+});
+
 // Full shipment schema ------------------------------------------------------
 export const ShipmentSchema = z.object({
   pickup: PickupSchema,
@@ -107,8 +116,10 @@ export const ShipmentSchema = z.object({
   assignedVehicle: z.string().nullable().optional(),
   driverStage: z.enum(DRIVER_STAGES).nullable().optional(),
   timeline: z.array(TimelineEntrySchema).default([]),
+  proofOfDelivery: ProofOfDeliverySchema.nullable().optional(),
 });
 
 export type ShipmentType = z.infer<typeof ShipmentSchema>;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
+export type ProofOfDelivery = z.infer<typeof ProofOfDeliverySchema>;

@@ -31,6 +31,7 @@ import type { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
 import EditShipmentModal from "@/components/shipment/EditShipmentModal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getPageNumbers } from "@/lib/ui-helpers";
 
 const STATUS_META: Record<ShipmentStatus, { text: string; bg: string; color: string; dot: string }> = {
   pending: {
@@ -93,7 +94,7 @@ function displayDate(s: Shipment): string {
   if (s.status === "delivered") return fmtDate(s.deliveredAt ?? s.updatedAt);
   if (s.status === "cancelled") return fmtDate(s.updatedAt);
   if (s.status === "in-transit") return estimatedArrival(s.createdAt, s.service);
-  return fmtDate(s.createdAt); // pending → Order Date
+  return fmtDate(s.createdAt); // pending -> Order Date
 }
 
 function getIcon(s: Shipment) {
@@ -102,17 +103,6 @@ function getIcon(s: Shipment) {
   return <Package size={20} className="text-[var(--accent)]" />;
 }
 
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-}
 
 const PAGE_SIZE = 5;
 
@@ -158,7 +148,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHistory();
   }, [fetchHistory]);
 
@@ -324,7 +313,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
             {pageItems.map((shipment) => {
               const meta = STATUS_META[shipment.status];
               const isCancelled = shipment.status === "cancelled";
-              const route = `${shipment.pickup.city || "—"} → ${shipment.delivery.city || "—"}`;
+              const route = `${shipment.pickup.city || "-"} -> ${shipment.delivery.city || "-"}`;
 
               return (
                 <div
@@ -348,7 +337,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                           #{shipment.trackingId}
                         </p>
                         <p className="text-xs text-[var(--text-muted)] mt-1">
-                          {shipment.delivery.city || shipment.delivery.district || "—"}
+                          {shipment.delivery.city || shipment.delivery.district || "-"}
                         </p>
                       </div>
 

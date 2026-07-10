@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   AlertTriangle,
@@ -16,6 +17,7 @@ import {
   MoreVertical,
   Plus,
   Search,
+  Trash2,
   TrendingUp,
   Truck,
   UserRoundCheck,
@@ -27,6 +29,7 @@ import {
   adminDeactivateVehicle,
   adminGetFleetStats,
   adminGetVehicles,
+  adminRemoveVehicle,
   adminUpdateVehicle,
   adminUploadVehicleImage,
   type FleetMeta,
@@ -171,6 +174,12 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // Pending destructive action (remove / deactivate) confirmed via a styled modal.
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "remove" | "deactivate";
+    vehicle: Vehicle;
+  } | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   // Vehicle photo staged in the create/edit form; uploaded after the record saves.
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -215,7 +224,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
   }, [loadData]);
 
@@ -363,21 +371,29 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     }
   };
 
-  const deactivateVehicle = async (vehicle: Vehicle) => {
-    if (
-      !window.confirm(
-        `Deactivate ${vehicle.registrationNumber}? Historical records will be kept.`,
-      )
-    ) {
-      return;
-    }
+  const openConfirm = (type: "remove" | "deactivate", vehicle: Vehicle) => {
+    setConfirmError(null);
+    setConfirmAction({ type, vehicle });
+  };
+
+  // Runs the pending remove/deactivate. Backend guards (assigned driver / active
+  // shipments) surface as an inline error and keep the modal open.
+  const runConfirm = async () => {
+    if (!confirmAction) return;
+    const { type, vehicle } = confirmAction;
     try {
       setSaving(true);
-      await adminDeactivateVehicle(token, vehicle.id);
+      setConfirmError(null);
+      if (type === "remove") {
+        await adminRemoveVehicle(token, vehicle.id);
+      } else {
+        await adminDeactivateVehicle(token, vehicle.id);
+      }
+      setConfirmAction(null);
       await loadData(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to deactivate vehicle",
+      setConfirmError(
+        err instanceof Error ? err.message : `Failed to ${type} vehicle`,
       );
     } finally {
       setSaving(false);
@@ -405,7 +421,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               suppressHydrationWarning
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search registration, make, branch…"
+              placeholder="Search registration, make, branch..."
               className="form-input w-full pl-9 sm:w-72"
             />
           </div>
@@ -421,13 +437,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total vehicles — with an operational-utilisation bar */}
+        {/* Total vehicles - with an operational-utilisation bar */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Total Vehicles
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.total : "—"}
+            {stats ? stats.total : "-"}
           </p>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -445,13 +461,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Active units — vehicles currently assigned/in service */}
+        {/* Active units - vehicles currently assigned/in service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Active Units
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.assigned : "—"}
+            {stats ? stats.assigned : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
             <TrendingUp size={14} /> In active service
@@ -464,20 +480,20 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             In Maintenance
           </p>
           <p className="mt-2 text-3xl font-black text-[#C99A3D]">
-            {stats ? stats.maintenance : "—"}
+            {stats ? stats.maintenance : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#D0453A]">
             <AlertTriangle size={14} /> Needs attention
           </p>
         </div>
 
-        {/* Inactive — retired / out of service */}
+        {/* Inactive - retired / out of service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Inactive
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.inactive : "—"}
+            {stats ? stats.inactive : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
             <Ban size={14} /> Out of service
@@ -549,14 +565,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               );
               const isAssignPrimary =
                 vehicle.status === "available" || vehicle.status === "assigned";
-              const primaryLabel =
-                vehicle.status === "available"
-                  ? "Assign Driver"
-                  : vehicle.status === "assigned"
-                    ? "Reassign"
-                    : vehicle.status === "maintenance"
-                      ? "Service Log"
-                      : "Edit Details";
 
               return (
                 <div
@@ -656,16 +664,25 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                               {vehicle.status !== "inactive" && (
                                 <button
                                   type="button"
-                                  disabled={saving || !!vehicle.assignedDriverId}
                                   onClick={() => {
                                     setMenuOpenId(null);
-                                    void deactivateVehicle(vehicle);
+                                    openConfirm("deactivate", vehicle);
                                   }}
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1] disabled:opacity-40 disabled:hover:bg-transparent"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
                                 >
                                   <Ban size={15} /> Deactivate
                                 </button>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  openConfirm("remove", vehicle);
+                                }}
+                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
+                              >
+                                <Trash2 size={15} /> Remove Vehicle
+                              </button>
                             </div>
                           </>
                         )}
@@ -696,27 +713,25 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Actions - assignment is a card-level action; editing lives
+                        in the kebab menu, and "Details" opens the full read-only page. */}
                     <div className="mt-4 flex items-center gap-2">
-                      <button
-                        type="button"
-                        suppressHydrationWarning
-                        onClick={() =>
-                          isAssignPrimary
-                            ? openAssignment(vehicle)
-                            : openEdit(vehicle)
-                        }
-                        className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                      {isAssignPrimary && (
+                        <button
+                          type="button"
+                          suppressHydrationWarning
+                          onClick={() => openAssignment(vehicle)}
+                          className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                        >
+                          {vehicle.status === "available" ? "Assign Driver" : "Reassign"}
+                        </button>
+                      )}
+                      <Link
+                        href={`/admin/fleet/${vehicle.id}`}
+                        className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-center text-sm font-bold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
                       >
-                        {primaryLabel}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(vehicle)}
-                        className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-bold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
-                      >
-                        Details
-                      </button>
+                        View Details
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -803,7 +818,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               <option value="">Unassigned</option>
               {assignableDrivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
-                  {driver.fullName} · {driver.licenseNumber}
+                  {driver.fullName} - {driver.licenseNumber}
                 </option>
               ))}
             </select>
@@ -827,6 +842,93 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Confirm remove / deactivate */}
+      <Modal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        title={
+          confirmAction?.type === "remove"
+            ? "Remove Vehicle"
+            : "Deactivate Vehicle"
+        }
+      >
+        {confirmAction && (
+          <div className="space-y-4">
+            {confirmAction.vehicle.assignedDriverId ? (
+              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+                <p className="flex items-center gap-2 font-bold text-[#C99A3D]">
+                  <AlertTriangle size={16} /> Action blocked
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  is currently assigned to{" "}
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.assignedDriverName || "a driver"}
+                  </span>
+                  . Unassign the driver first before you can{" "}
+                  {confirmAction.type === "remove" ? "remove" : "deactivate"} it.
+                </p>
+              </div>
+            ) : confirmAction.type === "remove" ? (
+              <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] p-4 text-sm">
+                <p className="font-bold text-[#D0453A]">
+                  This permanently deletes the vehicle.
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  will be permanently removed from the fleet. This action cannot be
+                  undone.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+                <p className="font-bold text-[#C99A3D]">
+                  This marks the vehicle as inactive.
+                </p>
+                <p className="mt-2 text-[var(--text-soft)]">
+                  <span className="font-bold text-[var(--text)]">
+                    {confirmAction.vehicle.registrationNumber}
+                  </span>{" "}
+                  will be taken out of service. Historical records are kept and it
+                  can be reactivated later.
+                </p>
+              </div>
+            )}
+
+            {confirmError && <div className="form-error">{confirmError}</div>}
+
+            <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={saving || !!confirmAction.vehicle.assignedDriverId}
+                onClick={() => void runConfirm()}
+                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40 ${
+                  confirmAction.type === "remove"
+                    ? "bg-[#D0453A]"
+                    : "bg-[#C99A3D]"
+                }`}
+              >
+                {saving && <Loader2 size={15} className="animate-spin" />}
+                {confirmAction.type === "remove"
+                  ? "Remove Vehicle"
+                  : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

@@ -55,7 +55,6 @@ export default function DashboardOverview({
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRecentShipments(true);
   }, [loadRecentShipments]);
 

@@ -10,6 +10,7 @@ const navItems = [
   { label: "Home", id: "hero", href: "/#hero" },
   { label: "Solutions", id: "solutions", href: "/#solutions" },
   { label: "Network", id: "network", href: "/#network" },
+  { label: "About Us", id: "about", href: "/about" },
   { label: "Contact", id: "contact", href: "/contact" },
 ];
 
@@ -19,7 +20,12 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("hero");
 
-  const activeId = pathname === "/contact" ? "contact" : activeSection;
+  const activeId =
+    pathname === "/about"
+      ? "about"
+      : pathname === "/contact"
+        ? "contact"
+        : activeSection;
 
   useEffect(() => {
     const handleScroll = () => {

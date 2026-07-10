@@ -95,7 +95,12 @@ export default function Hero() {
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/tracking");
+    const normalized = trackingId.trim().toUpperCase();
+    router.push(
+      normalized
+        ? `/tracking?trackingId=${encodeURIComponent(normalized)}`
+        : "/tracking",
+    );
   };
 
   return (
@@ -131,7 +136,7 @@ export default function Hero() {
                 <input
                   value={trackingId}
                   onChange={(e) => setTrackingId(e.target.value)}
-                  placeholder="Enter tracking ID (e.g. CN-84321)"
+                  placeholder="Enter tracking ID (e.g. LN-482913)"
                   className="h-11 w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
                   aria-label="Tracking ID"
                   suppressHydrationWarning

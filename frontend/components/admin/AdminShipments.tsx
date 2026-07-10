@@ -13,6 +13,7 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
+  Camera,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -47,6 +48,9 @@ import {
 import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
+import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
+import LiveMap from "@/components/tracking/LiveMap";
 
 /* Screenshot-matched navy palette (shared app theme is gold/teal) */
 const NAVY = "#0C3B67";
@@ -122,32 +126,11 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function getInitials(name?: string | null): string {
-  if (!name) return "?";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function locLine(city?: string, district?: string): string {
-  return [city, district].filter(Boolean).join(", ") || "—";
+  return [city, district].filter(Boolean).join(", ") || "-";
 }
 
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-}
 
 export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -221,7 +204,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   // Initial load + refetch whenever filters/page/search change.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -241,7 +223,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   }, [token]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDrivers();
   }, [fetchDrivers]);
 
@@ -378,17 +359,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             Manage and monitor logistics flow across all provinces.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => fetchData()}
-          disabled={loading}
-          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-md)] px-5 text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-60 cursor-pointer self-start sm:self-auto"
-          style={{ background: NAVY_BTN, boxShadow: "0 8px 20px rgba(18,62,107,0.22)" }}
-          suppressHydrationWarning
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
       </div>
 
       {/* ============ KPI cards ============ */}
@@ -411,7 +381,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 {card.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
-                {card.value === undefined ? "—" : card.value.toLocaleString()}
+                {card.value === undefined ? "-" : card.value.toLocaleString()}
               </h3>
             </div>
           );
@@ -448,7 +418,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
-                placeholder="Search tracking, sender, driver…"
+                placeholder="Search tracking, sender, driver..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm outline-none transition-all focus:border-[#123E6B]/40 sm:w-64"
@@ -541,7 +511,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         </td>
                         {/* Sender */}
                         <td className="px-5 py-4">
-                          <div className="font-bold text-[var(--text)]">{s.pickup.fullName || "—"}</div>
+                          <div className="font-bold text-[var(--text)]">{s.pickup.fullName || "-"}</div>
                           <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                             {locLine(s.pickup.city, s.pickup.district)}
                           </div>
@@ -549,7 +519,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         {/* Recipient */}
                         <td className="px-5 py-4">
                           <div className="font-semibold text-[var(--text)]">
-                            {s.delivery.recipientName || "—"}
+                            {s.delivery.recipientName || "-"}
                           </div>
                           <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                             {locLine(s.delivery.city, s.delivery.district)}
@@ -687,7 +657,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
                 {getPageNumbers(page, meta.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">…</span>
+                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">...</span>
                   ) : (
                     <button
                       key={p}
@@ -732,7 +702,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <span className="font-bold" style={{ color: NAVY }}>#{selected.trackingId}</span>
               <span className="text-[var(--text-muted)]">
                 {" "}
-                · {selected.pickup.fullName} → {selected.delivery.recipientName}
+                - {selected.pickup.fullName} to {selected.delivery.recipientName}
               </span>
             </div>
           )}
@@ -750,7 +720,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               }
               className="form-input"
             >
-              <option value="">Assigned — awaiting pickup</option>
+              <option value="">Assigned - awaiting pickup</option>
               {ADMIN_DELIVERY_STAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -758,7 +728,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               ))}
             </select>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Leave as &ldquo;Awaiting pickup&rdquo; — drivers update this as they
+              Leave as &ldquo;Awaiting pickup&rdquo; - drivers update this as they
               progress. Change it only to manually override.
             </p>
           </div>
@@ -784,7 +754,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                   }
                 >
                   {d.fullName}
-                  {d.assignedVehicleId ? " · vehicle assigned" : ""}
+                  {d.assignedVehicleId ? " - vehicle assigned" : ""}
                   {d.availabilityStatus && d.availabilityStatus !== "available"
                     ? ` (${d.availabilityStatus.replace("-", " ")})`
                     : ""}
@@ -793,7 +763,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             </select>
             {drivers.length === 0 && (
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                No drivers yet — add them in Driver Management.
+                No drivers yet - add them in Driver Management.
               </p>
             )}
           </div>
@@ -875,6 +845,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
       {/* ============ DETAIL DRAWER ============ */}
       <ShipmentDetailDrawer
+        token={token}
         shipment={detail}
         onClose={() => setDetail(null)}
         onEdit={(s) => {
@@ -886,7 +857,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   );
 }
 
-/* ── Read-only shipment detail drawer (slides in from the right) ──────────── */
+/* -- Read-only shipment detail drawer (slides in from the right) ------------ */
 
 const SERVICE_LABELS: Record<string, string> = {
   standard: "Standard",
@@ -918,14 +889,14 @@ function fmtDateTime(dateStr: string): string {
 
 function addressLine(a: Shipment["pickup"]): string {
   return (
-    [a.streetAddress, a.city, a.district].filter(Boolean).join(", ") || "—"
+    [a.streetAddress, a.city, a.district].filter(Boolean).join(", ") || "-"
   );
 }
 
 function dimsLabel(d: Shipment["package"]["dimensions"]): string {
   return d.length && d.width && d.height
-    ? `${d.length} × ${d.width} × ${d.height} cm`
-    : "—";
+    ? `${d.length} x ${d.width} x ${d.height} cm`
+    : "-";
 }
 
 function DetailSection({
@@ -973,10 +944,12 @@ function DetailTile({
 }
 
 function ShipmentDetailDrawer({
+  token,
   shipment,
   onClose,
   onEdit,
 }: {
+  token: string;
   shipment: Shipment | null;
   onClose: () => void;
   onEdit: (s: Shipment) => void;
@@ -994,6 +967,14 @@ function ShipmentDetailDrawer({
       window.removeEventListener("keydown", onKey);
     };
   }, [shipment, onClose]);
+
+  // Live driver location for the open shipment. The room is joined while the
+  // drawer is open (assigned driver only) and left automatically on close.
+  const { location: liveLocation } = useShipmentLiveLocation(
+    token,
+    shipment?.id,
+    Boolean(shipment?.assignedDriverId && shipment.status !== "cancelled"),
+  );
 
   return (
     <AnimatePresence>
@@ -1055,32 +1036,32 @@ function ShipmentDetailDrawer({
                   <div className="relative pb-5">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Pickup · Sender
+                      Pickup - Sender
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
-                      {shipment.pickup.fullName || "—"}
+                      {shipment.pickup.fullName || "-"}
                     </p>
                     <p className="text-sm text-[var(--text-soft)]">
                       {addressLine(shipment.pickup)}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Phone size={12} /> {shipment.pickup.phoneNumber || "—"}
+                      <Phone size={12} /> {shipment.pickup.phoneNumber || "-"}
                     </p>
                   </div>
                   {/* Delivery */}
                   <div className="relative">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Delivery · Recipient
+                      Delivery - Recipient
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
-                      {shipment.delivery.recipientName || "—"}
+                      {shipment.delivery.recipientName || "-"}
                     </p>
                     <p className="text-sm text-[var(--text-soft)]">
                       {addressLine(shipment.delivery)}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Phone size={12} /> {shipment.delivery.phoneNumber || "—"}
+                      <Phone size={12} /> {shipment.delivery.phoneNumber || "-"}
                     </p>
                   </div>
                 </div>
@@ -1097,7 +1078,7 @@ function ShipmentDetailDrawer({
                   <DetailTile
                     icon={<Weight size={13} />}
                     label="Weight"
-                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "—"}
+                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "-"}
                   />
                   <DetailTile
                     icon={<Boxes size={13} />}
@@ -1171,7 +1152,7 @@ function ShipmentDetailDrawer({
                         </p>
                         <p className="text-xs text-[var(--text-muted)]">
                           {shipment.assignedVehicle
-                            ? `Vehicle · ${shipment.assignedVehicle}`
+                            ? `Vehicle - ${shipment.assignedVehicle}`
                             : "No vehicle linked"}
                         </p>
                       </div>
@@ -1185,6 +1166,78 @@ function ShipmentDetailDrawer({
                 ) : (
                   <p className="flex items-center gap-2 text-sm italic text-[var(--text-muted)]">
                     <User size={15} /> No driver assigned yet.
+                  </p>
+                )}
+              </DetailSection>
+
+              {/* Live Location */}
+              {shipment.assignedDriverId && (
+                <DetailSection icon={<MapPin size={14} />} title="Live Location">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[var(--text-muted)]">
+                      {liveLocation
+                        ? "Driver is sharing live location"
+                        : "Driver location not available"}
+                    </span>
+                    {liveLocation && (
+                      <span
+                        className="flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold text-white"
+                        style={{ backgroundColor: "#1D7A8C" }}
+                      >
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                        </span>
+                        Live
+                      </span>
+                    )}
+                  </div>
+                  <LiveMap
+                    location={liveLocation}
+                    height={220}
+                    accent={NAVY}
+                    waitingLabel="Waiting for driver location..."
+                  />
+                </DetailSection>
+              )}
+
+
+              {/* Proof of Delivery */}
+              <DetailSection icon={<Camera size={14} />} title="Proof of Delivery">
+                {shipment.proofOfDelivery ? (
+                  <div className="space-y-3">
+                    {shipment.proofOfDelivery.photoUrl && (
+                      <img
+                        src={shipment.proofOfDelivery.photoUrl}
+                        alt="Proof of delivery"
+                        className="h-44 w-full rounded-xl border border-[var(--border)] object-cover"
+                      />
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <DetailTile
+                        icon={<User size={13} />}
+                        label="Received By"
+                        value={shipment.proofOfDelivery.recipientName || "-"}
+                      />
+                      <DetailTile
+                        icon={<Clock size={13} />}
+                        label="Confirmed"
+                        value={
+                          shipment.proofOfDelivery.confirmedAt
+                            ? fmtDateTime(shipment.proofOfDelivery.confirmedAt)
+                            : "-"
+                        }
+                      />
+                    </div>
+                    {shipment.proofOfDelivery.notes && (
+                      <p className="rounded-xl bg-[var(--surface-soft)] p-3 text-sm font-medium text-[var(--text-soft)]">
+                        {shipment.proofOfDelivery.notes}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-[var(--text-muted)]">
+                    No proof of delivery recorded yet.
                   </p>
                 )}
               </DetailSection>

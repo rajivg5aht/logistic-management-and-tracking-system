@@ -10,6 +10,7 @@ adminRouter.use(authMiddleware);
 adminRouter.use(adminMiddleware);
 
 adminRouter.get("/", adminController.getUsers);
+adminRouter.get("/stats", adminController.getUserStats);
 adminRouter.get("/:id", adminController.getUserById);
 adminRouter.post("/", adminController.createUser);
 adminRouter.put("/:id", adminController.updateUser);

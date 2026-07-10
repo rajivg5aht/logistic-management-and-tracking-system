@@ -27,6 +27,30 @@ export interface DriverStats {
   codToCollect: number; // Outstanding COD across active assignments
 }
 
+export interface MonthlyRevenue {
+  label: string; // Month abbreviation, e.g. "Jan"
+  revenue: number; // Paid revenue booked that month
+}
+
+export interface RegionVolume {
+  region: string; // Delivery district (or "Unknown")
+  count: number; // Shipments delivered to that region
+}
+
+export interface ShipmentAnalytics {
+  totalRevenue: number; // Paid revenue to date
+  revenueDelta: number; // % change, last 30d vs prior 30d (+100% = grew from zero)
+  deliveries: number; // Delivered to date
+  deliveriesDelta: number;
+  avgDeliveryMs: number | null; // Avg order-to-door time (null when none delivered)
+  avgTimeDelta: number; // % change (negative = faster)
+  successRate: number; // delivered / (delivered + cancelled), 0-100
+  successDelta: number; // percentage-point change
+  monthlyRevenue: MonthlyRevenue[]; // Last 6 months, oldest → newest
+  regionVolume: RegionVolume[]; // Top regions by delivery count
+  totalShipments: number; // All shipments (denominator for region share)
+}
+
 export interface IShipmentRepository {
   create(data: Partial<IShipment>): Promise<IShipment>;
   getById(id: string): Promise<IShipment | null>;
@@ -47,6 +71,7 @@ export interface IShipmentRepository {
   ): Promise<{ shipments: IShipment[]; total: number }>;
   getStats(): Promise<ShipmentStats>;
   getDriverStats(driverId: string): Promise<DriverStats>;
+  getAnalytics(): Promise<ShipmentAnalytics>;
 }
 
 export class ShipmentMongoRepository implements IShipmentRepository {
@@ -271,6 +296,228 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       deliveredToday,
       completed,
       codToCollect: codTotals[0]?.total ?? 0,
+    };
+  }
+
+  async getAnalytics(): Promise<ShipmentAnalytics> {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const last30Start = new Date(now.getTime() - 30 * DAY_MS);
+    const prev30Start = new Date(now.getTime() - 60 * DAY_MS);
+
+    // A delivered shipment's resolution time is deliveredAt, falling back to
+    // updatedAt for older records saved before deliveredAt was tracked.
+    const deliveredIn = (
+      start: Date,
+      end?: Date,
+    ): Record<string, any> => {
+      const range = (extra: Date | undefined) =>
+        extra ? { $gte: start, $lt: extra } : { $gte: start };
+      return {
+        status: "delivered",
+        $or: [
+          { deliveredAt: range(end) },
+          { deliveredAt: null, updatedAt: range(end) },
+        ],
+      };
+    };
+    const cancelledIn = (
+      start: Date,
+      end?: Date,
+    ): Record<string, any> => ({
+      status: "cancelled",
+      updatedAt: end ? { $gte: start, $lt: end } : { $gte: start },
+    });
+    const sumAmount = { $group: { _id: null, total: { $sum: "$amount" } } };
+    const avgDuration = {
+      $group: {
+        _id: null,
+        avg: { $avg: { $subtract: ["$deliveredAt", "$createdAt"] } },
+      },
+    };
+
+    // Six-month revenue window: start of the Nepal-local month five months back.
+    const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+    const nowInNepal = new Date(now.getTime() + nepalOffsetMs);
+    const firstMonthNepal = new Date(
+      Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth() - 5, 1),
+    );
+    const sixMonthsStart = new Date(firstMonthNepal.getTime() - nepalOffsetMs);
+
+    const [
+      totalRevAgg,
+      revLast30Agg,
+      revPrev30Agg,
+      deliveredTotal,
+      deliveredLast30,
+      deliveredPrev30,
+      cancelledTotal,
+      cancelledLast30,
+      cancelledPrev30,
+      avgTotalAgg,
+      avgLast30Agg,
+      avgPrev30Agg,
+      monthlyAgg,
+      regionAgg,
+      totalShipments,
+    ] = await Promise.all([
+      ShipmentModel.aggregate<{ total: number }>([
+        { $match: { paymentStatus: "paid" } },
+        sumAmount,
+      ]),
+      ShipmentModel.aggregate<{ total: number }>([
+        { $match: { paymentStatus: "paid", createdAt: { $gte: last30Start } } },
+        sumAmount,
+      ]),
+      ShipmentModel.aggregate<{ total: number }>([
+        {
+          $match: {
+            paymentStatus: "paid",
+            createdAt: { $gte: prev30Start, $lt: last30Start },
+          },
+        },
+        sumAmount,
+      ]),
+      ShipmentModel.countDocuments({ status: "delivered" }),
+      ShipmentModel.countDocuments(deliveredIn(last30Start)),
+      ShipmentModel.countDocuments(deliveredIn(prev30Start, last30Start)),
+      ShipmentModel.countDocuments({ status: "cancelled" }),
+      ShipmentModel.countDocuments(cancelledIn(last30Start)),
+      ShipmentModel.countDocuments(cancelledIn(prev30Start, last30Start)),
+      ShipmentModel.aggregate<{ avg: number }>([
+        { $match: { status: "delivered", deliveredAt: { $ne: null } } },
+        avgDuration,
+      ]),
+      ShipmentModel.aggregate<{ avg: number }>([
+        { $match: { status: "delivered", deliveredAt: { $gte: last30Start } } },
+        avgDuration,
+      ]),
+      ShipmentModel.aggregate<{ avg: number }>([
+        {
+          $match: {
+            status: "delivered",
+            deliveredAt: { $gte: prev30Start, $lt: last30Start },
+          },
+        },
+        avgDuration,
+      ]),
+      ShipmentModel.aggregate<{ _id: string; revenue: number }>([
+        {
+          $match: {
+            paymentStatus: "paid",
+            createdAt: { $gte: sixMonthsStart },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m",
+                date: "$createdAt",
+                timezone: "+05:45",
+              },
+            },
+            revenue: { $sum: "$amount" },
+          },
+        },
+      ]),
+      ShipmentModel.aggregate<{ _id: string; count: number }>([
+        {
+          $group: {
+            _id: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: ["$delivery.district", null] },
+                    { $eq: ["$delivery.district", ""] },
+                  ],
+                },
+                "Unknown",
+                "$delivery.district",
+              ],
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 6 },
+      ]),
+      ShipmentModel.countDocuments({}),
+    ]);
+
+    // Period-over-period % change. With no prior-period baseline, a metric that
+    // has current activity reads as +100% (grew from zero); a flat/empty metric
+    // reads as 0% so the badge always shows a number instead of a dash.
+    const pctChange = (current: number, prev: number): number => {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return ((current - prev) / prev) * 100;
+    };
+    const round1 = (n: number): number => Math.round(n * 10) / 10;
+
+    const totalRevenue = totalRevAgg[0]?.total ?? 0;
+    const revenueDelta = round1(
+      pctChange(revLast30Agg[0]?.total ?? 0, revPrev30Agg[0]?.total ?? 0),
+    );
+    const deliveriesDelta = round1(pctChange(deliveredLast30, deliveredPrev30));
+
+    const avgDeliveryMs = avgTotalAgg[0]?.avg ?? null;
+    const avgLast = avgLast30Agg[0]?.avg ?? null;
+    const avgPrev = avgPrev30Agg[0]?.avg ?? null;
+    // Averages can't "grow from zero"; without both windows there's no delta → 0%.
+    const avgTimeDelta =
+      avgLast !== null && avgPrev !== null && avgPrev > 0
+        ? round1(((avgLast - avgPrev) / avgPrev) * 100)
+        : 0;
+
+    const resolvedTotal = deliveredTotal + cancelledTotal;
+    const successRate =
+      resolvedTotal > 0 ? (deliveredTotal / resolvedTotal) * 100 : 0;
+    const resolvedLast = deliveredLast30 + cancelledLast30;
+    const resolvedPrev = deliveredPrev30 + cancelledPrev30;
+    const rateLast =
+      resolvedLast > 0 ? (deliveredLast30 / resolvedLast) * 100 : null;
+    const ratePrev =
+      resolvedPrev > 0 ? (deliveredPrev30 / resolvedPrev) * 100 : null;
+    const successDelta =
+      rateLast !== null && ratePrev !== null ? round1(rateLast - ratePrev) : 0;
+
+    // Fill all six month buckets so the chart has a continuous series.
+    const MONTH_LABELS = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    const revenueByMonth = new Map(monthlyAgg.map((m) => [m._id, m.revenue]));
+    const monthlyRevenue: MonthlyRevenue[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(
+        Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth() - i, 1),
+      );
+      const key = `${d.getUTCFullYear()}-${String(
+        d.getUTCMonth() + 1,
+      ).padStart(2, "0")}`;
+      monthlyRevenue.push({
+        label: MONTH_LABELS[d.getUTCMonth()],
+        revenue: revenueByMonth.get(key) ?? 0,
+      });
+    }
+
+    const regionVolume: RegionVolume[] = regionAgg.map((r) => ({
+      region: r._id,
+      count: r.count,
+    }));
+
+    return {
+      totalRevenue,
+      revenueDelta,
+      deliveries: deliveredTotal,
+      deliveriesDelta,
+      avgDeliveryMs,
+      avgTimeDelta,
+      successRate: Math.round(successRate * 10) / 10,
+      successDelta,
+      monthlyRevenue,
+      regionVolume,
+      totalShipments,
     };
   }
 }

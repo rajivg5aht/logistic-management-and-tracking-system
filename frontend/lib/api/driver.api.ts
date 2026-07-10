@@ -1,9 +1,9 @@
 import type { Shipment } from "@/lib/api/shipment.api";
-
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? ""
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import {
+  authenticatedRequest,
+  authenticatedRequestWithMeta,
+  buildQueryString,
+} from "@/lib/api/api-client";
 
 export const VEHICLE_TYPES = [
   "bike",
@@ -91,31 +91,86 @@ export type DriverVehicle = {
   status: string;
 };
 
-// The signed-in driver's own profile + their assigned vehicle (GET /driver/me).
+export type DriverProofPayload = {
+  photo?: File;
+  notes?: string;
+  recipientName?: string;
+};
+
 export type DriverMe = Driver & { vehicle: DriverVehicle | null };
 
-async function authFetch(
-  endpoint: string,
-  token: string,
-  init: RequestInit = {},
-) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    ...init,
-  });
+export type DriverFleetVehicle = DriverVehicle & {
+  year?: number;
+  branch: string;
+  imageUrl: string | null;
+  insuranceExpiry: string | null;
+  registrationExpiry: string | null;
+  lastServiceAt: string | null;
+  nextServiceAt: string | null;
+  odometerKm: number;
+  assignedAt: string | null;
+  updatedAt: string;
+};
 
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Request failed");
-  }
-  return payload;
-}
+export type DriverFleetAssignment = {
+  vehicleId: string;
+  registrationNumber: string;
+  type: VehicleType;
+  make: string;
+  model: string;
+  assignedAt: string;
+  unassignedAt: string | null;
+  status: "current" | "released" | string;
+  odometerKm: number;
+};
 
-// ── Admin: driver management ─────────────────────────────────────────────────
+export type DriverFleetIncident = {
+  id: string;
+  category: string;
+  severity: string;
+  description: string;
+  location: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DriverFuelExpense = {
+  id: string;
+  fuelType: string;
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName: string;
+  notes: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DriverFleet = {
+  vehicle: DriverFleetVehicle | null;
+  assignmentHistory: DriverFleetAssignment[];
+  incidents: DriverFleetIncident[];
+  fuelExpenses: DriverFuelExpense[];
+};
+
+export type DriverFleetIncidentPayload = {
+  category: "mechanical" | "damage" | "tire" | "brake" | "engine" | "other";
+  severity: "low" | "medium" | "high" | "critical";
+  description: string;
+  location?: string;
+};
+
+export type DriverFuelExpensePayload = {
+  fuelType: "petrol" | "diesel" | "electric" | "other";
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName?: string;
+  notes?: string;
+};
+
 export async function adminGetDrivers(
   token: string,
   page: number,
@@ -123,42 +178,45 @@ export async function adminGetDrivers(
   search?: string,
   availability?: AvailabilityStatus | "",
 ): Promise<{ data: Driver[]; meta: DriverMeta }> {
-  let endpoint = `/api/v1/admin/drivers?page=${page}&limit=${limit}`;
-  if (search) endpoint += `&search=${encodeURIComponent(search)}`;
-  if (availability) endpoint += `&availability=${availability}`;
-
-  const payload = await authFetch(endpoint, token, { method: "GET" });
-  return { data: payload.data, meta: payload.meta };
+  return authenticatedRequestWithMeta<Driver[], DriverMeta>(
+    `/api/v1/admin/drivers${buildQueryString({
+      page,
+      limit,
+      search,
+      availability,
+    })}`,
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminGetDriverStats(
   token: string,
 ): Promise<AdminDriverStats> {
-  const payload = await authFetch(`/api/v1/admin/drivers/stats`, token, {
-    method: "GET",
-  });
-  return payload.data;
+  return authenticatedRequest<AdminDriverStats>(
+    "/api/v1/admin/drivers/stats",
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminGetDriverById(
   token: string,
   id: string,
 ): Promise<Driver> {
-  const payload = await authFetch(`/api/v1/admin/drivers/${id}`, token, {
+  return authenticatedRequest<Driver>(`/api/v1/admin/drivers/${id}`, token, {
     method: "GET",
   });
-  return payload.data;
 }
 
 export async function adminCreateDriver(
   token: string,
   payload: CreateDriverPayload,
 ): Promise<Driver> {
-  const data = await authFetch(`/api/v1/admin/drivers`, token, {
+  return authenticatedRequest<Driver>("/api/v1/admin/drivers", token, {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return data.data;
 }
 
 export async function adminUpdateDriver(
@@ -166,52 +224,79 @@ export async function adminUpdateDriver(
   id: string,
   payload: UpdateDriverPayload,
 ): Promise<Driver> {
-  const data = await authFetch(`/api/v1/admin/drivers/${id}`, token, {
+  return authenticatedRequest<Driver>(`/api/v1/admin/drivers/${id}`, token, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
-  return data.data;
 }
 
 export async function adminDeleteDriver(
   token: string,
   id: string,
 ): Promise<void> {
-  await authFetch(`/api/v1/admin/drivers/${id}`, token, { method: "DELETE" });
+  await authenticatedRequest<null>(`/api/v1/admin/drivers/${id}`, token, {
+    method: "DELETE",
+  });
 }
 
-// ── Driver console ───────────────────────────────────────────────────────────
 export async function driverGetMe(token: string): Promise<DriverMe> {
-  const payload = await authFetch(`/api/v1/driver/me`, token, { method: "GET" });
-  return payload.data;
+  return authenticatedRequest<DriverMe>("/api/v1/driver/me", token, {
+    method: "GET",
+  });
 }
 
 export async function driverGetStats(token: string): Promise<DriverStats> {
-  const payload = await authFetch(`/api/v1/driver/stats`, token, {
+  return authenticatedRequest<DriverStats>("/api/v1/driver/stats", token, {
     method: "GET",
   });
-  return payload.data;
+}
+
+export async function driverGetFleet(token: string): Promise<DriverFleet> {
+  return authenticatedRequest<DriverFleet>("/api/v1/driver/fleet", token, {
+    method: "GET",
+  });
+}
+
+export async function driverReportFleetIncident(
+  token: string,
+  payload: DriverFleetIncidentPayload,
+): Promise<DriverFleetIncident> {
+  return authenticatedRequest<DriverFleetIncident>(
+    "/api/v1/driver/fleet/incidents",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function driverLogFuelExpense(
+  token: string,
+  payload: DriverFuelExpensePayload,
+): Promise<DriverFuelExpense> {
+  return authenticatedRequest<DriverFuelExpense>(
+    "/api/v1/driver/fleet/fuel-expenses",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
 }
 
 export async function driverGetAssignments(
   token: string,
   scope?: "active" | "history",
 ): Promise<Shipment[]> {
-  const endpoint = scope
-    ? `/api/v1/driver/shipments?scope=${scope}`
-    : `/api/v1/driver/shipments`;
-  const payload = await authFetch(endpoint, token, { method: "GET" });
-  return payload.data;
+  return authenticatedRequest<Shipment[]>(
+    `/api/v1/driver/shipments${buildQueryString({ scope })}`,
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function driverGetAssignment(
   token: string,
   id: string,
 ): Promise<Shipment> {
-  const payload = await authFetch(`/api/v1/driver/shipments/${id}`, token, {
+  return authenticatedRequest<Shipment>(`/api/v1/driver/shipments/${id}`, token, {
     method: "GET",
   });
-  return payload.data;
 }
 
 export async function driverUpdateStage(
@@ -220,12 +305,11 @@ export async function driverUpdateStage(
   stage: string,
   note?: string,
 ): Promise<Shipment> {
-  const payload = await authFetch(
+  return authenticatedRequest<Shipment>(
     `/api/v1/driver/shipments/${id}/stage`,
     token,
     { method: "PATCH", body: JSON.stringify({ stage, note }) },
   );
-  return payload.data;
 }
 
 export async function driverCollectCod(
@@ -233,20 +317,49 @@ export async function driverCollectCod(
   id: string,
   collected: boolean,
 ): Promise<Shipment> {
-  const payload = await authFetch(`/api/v1/driver/shipments/${id}/cod`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ collected }),
-  });
-  return payload.data;
+  return authenticatedRequest<Shipment>(
+    `/api/v1/driver/shipments/${id}/cod`,
+    token,
+    { method: "PATCH", body: JSON.stringify({ collected }) },
+  );
+}
+
+export async function driverSaveProof(
+  token: string,
+  id: string,
+  payload: DriverProofPayload,
+): Promise<Shipment> {
+  const formData = new FormData();
+  if (payload.photo) formData.append("proofPhoto", payload.photo);
+  if (payload.notes !== undefined) formData.append("notes", payload.notes);
+  if (payload.recipientName !== undefined) {
+    formData.append("recipientName", payload.recipientName);
+  }
+
+  return authenticatedRequest<Shipment>(
+    `/api/v1/driver/shipments/${id}/proof`,
+    token,
+    { method: "PATCH", body: formData },
+  );
+}
+
+export async function driverDeleteProof(
+  token: string,
+  id: string,
+): Promise<Shipment> {
+  return authenticatedRequest<Shipment>(
+    `/api/v1/driver/shipments/${id}/proof`,
+    token,
+    { method: "DELETE" },
+  );
 }
 
 export async function driverUpdateAvailability(
   token: string,
   availabilityStatus: "available" | "off-duty",
 ): Promise<Driver> {
-  const payload = await authFetch(`/api/v1/driver/availability`, token, {
+  return authenticatedRequest<Driver>("/api/v1/driver/availability", token, {
     method: "PATCH",
     body: JSON.stringify({ availabilityStatus }),
   });
-  return payload.data;
 }

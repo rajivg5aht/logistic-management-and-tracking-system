@@ -12,9 +12,19 @@ import {
   Wallet,
   Banknote,
   AlertTriangle,
+  Camera,
+  Image as ImageIcon,
+  Trash2,
   Undo2,
+  Navigation,
+  Square,
 } from "lucide-react";
-import { driverUpdateStage, driverCollectCod } from "@/lib/api/driver.api";
+import {
+  driverUpdateStage,
+  driverCollectCod,
+  driverSaveProof,
+  driverDeleteProof,
+} from "@/lib/api/driver.api";
 import { DRIVER_STAGE_LABELS } from "@/lib/api/shipment.api";
 import type {
   Shipment,
@@ -22,6 +32,8 @@ import type {
   DriverStage,
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
+import { useDriverTracking } from "@/lib/hooks/useDriverTracking";
+import LiveMap from "@/components/tracking/LiveMap";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {
   ...DRIVER_STAGE_LABELS,
@@ -156,6 +168,18 @@ export function ActiveAssignmentCard({
 }) {
   const [busy, setBusy] = useState<DriverStage | null>(null);
   const [codBusy, setCodBusy] = useState(false);
+  const [proofBusy, setProofBusy] = useState(false);
+  const [proofRemoving, setProofRemoving] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(
+    shipment.proofOfDelivery?.photoUrl ?? null,
+  );
+  const [proofNotes, setProofNotes] = useState(
+    shipment.proofOfDelivery?.notes ?? "",
+  );
+  const [proofRecipient, setProofRecipient] = useState(
+    shipment.proofOfDelivery?.recipientName || shipment.delivery.recipientName || "",
+  );
   const [error, setError] = useState<string | null>(null);
 
   const current = shipment.driverStage ?? "assigned";
@@ -163,6 +187,19 @@ export function ActiveAssignmentCard({
   const isCodShipment = shipment.paymentMethod === "cod";
   const codPending = isCodShipment && shipment.paymentStatus === "pending";
   const codPaid = isCodShipment && shipment.paymentStatus === "paid";
+  const proofReady = Boolean(
+    shipment.proofOfDelivery?.confirmedAt && shipment.proofOfDelivery.photoUrl,
+  );
+  const canSaveProof = Boolean(proofFile || shipment.proofOfDelivery?.photoUrl);
+
+  // Live GPS broadcast for this delivery (driver → customer/admin).
+  const tracking = useDriverTracking(token, shipment);
+  const driverLocation = tracking.isTracking ? tracking.lastFix : null;
+  const liveGpsLabel = tracking.isTracking
+    ? driverLocation
+      ? "Sharing live GPS"
+      : "Finding GPS..."
+    : "GPS not shared yet";
 
   const advance = async (stage: DriverStage) => {
     setBusy(stage);
@@ -187,6 +224,48 @@ export function ActiveAssignmentCard({
       setError(err instanceof Error ? err.message : "Failed to update COD payment");
     } finally {
       setCodBusy(false);
+    }
+  };
+
+  const saveProof = async () => {
+    setProofBusy(true);
+    setError(null);
+    try {
+      const updated = await driverSaveProof(token, shipment.id, {
+        photo: proofFile ?? undefined,
+        notes: proofNotes,
+        recipientName: proofRecipient,
+      });
+      setProofFile(null);
+      setProofPreview(updated.proofOfDelivery?.photoUrl ?? null);
+      setProofNotes(updated.proofOfDelivery?.notes ?? "");
+      setProofRecipient(
+        updated.proofOfDelivery?.recipientName ||
+          updated.delivery.recipientName ||
+          "",
+      );
+      await onChanged(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save proof");
+    } finally {
+      setProofBusy(false);
+    }
+  };
+
+  const removeProof = async () => {
+    setProofRemoving(true);
+    setError(null);
+    try {
+      const updated = await driverDeleteProof(token, shipment.id);
+      setProofFile(null);
+      setProofPreview(null);
+      setProofNotes("");
+      setProofRecipient(updated.delivery.recipientName || "");
+      await onChanged(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove proof");
+    } finally {
+      setProofRemoving(false);
     }
   };
 
@@ -258,6 +337,64 @@ export function ActiveAssignmentCard({
         />
       </div>
 
+
+      {/* Live GPS sharing */}
+      <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E5F1F3] text-[#1D7A8C]">
+              <Navigation size={17} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                Live GPS
+              </p>
+              <p className="text-sm font-black text-[var(--text)]">
+                {liveGpsLabel}
+              </p>
+            </div>
+          </div>
+          {tracking.isTracking ? (
+            <button
+              type="button"
+              onClick={tracking.stop}
+              className="flex items-center gap-1.5 rounded-lg border border-[#F3C6BF] bg-[#FBE4E1] px-3 py-2 text-xs font-bold text-[#D0453A] transition-colors hover:bg-[#f7d6d1]"
+            >
+              <Square size={13} />
+              Stop Sharing
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={tracking.start}
+              disabled={!tracking.trackable}
+              className="flex items-center gap-1.5 rounded-lg bg-[#1D7A8C] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+            >
+              <Navigation size={13} />
+              Start Live GPS
+            </button>
+          )}
+        </div>
+        <div className="p-3">
+          <LiveMap
+            location={driverLocation}
+            height={180}
+            accent="#1D7A8C"
+            waitingLabel={
+              tracking.isTracking
+                ? "Finding your GPS signal..."
+                : tracking.trackable
+                  ? "Start live GPS to share your location."
+                  : "Live GPS is closed for this shipment."
+            }
+          />
+        </div>
+        {tracking.error && (
+          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[#D0453A]">
+            {tracking.error}
+          </p>
+        )}
+      </div>
       {/* COD collection */}
       {isCodShipment && (
         <div
@@ -323,6 +460,102 @@ export function ActiveAssignmentCard({
         </div>
       )}
 
+      {/* Proof of delivery */}
+      <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+              <Camera size={17} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                Proof of delivery
+              </p>
+              <p className="text-sm font-black text-[var(--text)]">
+                {proofReady ? "Proof recorded" : "Photo required before delivery"}
+              </p>
+            </div>
+          </div>
+          {shipment.proofOfDelivery && shipment.status !== "delivered" && (
+            <button
+              type="button"
+              onClick={removeProof}
+              disabled={proofRemoving || proofBusy}
+              className="flex items-center gap-1.5 rounded-lg border border-[#F3C6BF] bg-[#FBE4E1] px-3 py-2 text-xs font-bold text-[#D0453A] transition-colors hover:bg-[#f7d6d1] disabled:opacity-60"
+            >
+              {proofRemoving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Trash2 size={13} />
+              )}
+              Remove
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-[8rem_1fr]">
+          <div className="flex h-28 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+            {proofPreview ? (
+              <img
+                src={proofPreview}
+                alt="Proof of delivery"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ImageIcon size={24} className="text-[var(--text-muted)]" />
+            )}
+          </div>
+          <div className="space-y-2">
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setProofFile(file);
+                setProofPreview(
+                  file
+                    ? URL.createObjectURL(file)
+                    : shipment.proofOfDelivery?.photoUrl ?? null,
+                );
+              }}
+              className="block w-full text-xs text-[var(--text-soft)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--surface-muted)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--text)] hover:file:bg-[var(--border)]"
+            />
+            <input
+              value={proofRecipient}
+              onChange={(event) => setProofRecipient(event.target.value)}
+              placeholder="Recipient name"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            />
+            <textarea
+              value={proofNotes}
+              onChange={(event) => setProofNotes(event.target.value)}
+              placeholder="Delivery note"
+              rows={2}
+              className="w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-[var(--text-muted)]">
+            JPG, PNG or GIF up to 5MB. A saved photo unlocks final delivery.
+          </p>
+          <button
+            type="button"
+            onClick={saveProof}
+            disabled={proofBusy || proofRemoving || !canSaveProof}
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+          >
+            {proofBusy ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Camera size={14} />
+            )}
+            Save Proof
+          </button>
+        </div>
+      </div>
+
       {/* Stepper */}
       <div className="mt-6">
         <StageStepper stage={current} />
@@ -333,13 +566,22 @@ export function ActiveAssignmentCard({
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
           {nextStages.map((stage) => {
             const lockedForCod = stage === "delivered" && codPending;
+            const lockedForProof = stage === "delivered" && !proofReady;
             return (
               <button
                 key={stage}
                 type="button"
                 onClick={() => advance(stage)}
-                disabled={busy !== null || codBusy || lockedForCod}
-                title={lockedForCod ? "Collect COD to enable delivery" : undefined}
+                disabled={
+                  busy !== null || codBusy || proofBusy || lockedForCod || lockedForProof
+                }
+                title={
+                  lockedForCod
+                    ? "Collect COD to enable delivery"
+                    : lockedForProof
+                      ? "Upload proof photo to enable delivery"
+                      : undefined
+                }
                 className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-60 ${TONE_CLASS[ACTION_CONFIG[stage].tone]}`}
               >
                 {busy === stage && <Loader2 size={14} className="animate-spin" />}
@@ -350,6 +592,11 @@ export function ActiveAssignmentCard({
           {nextStages.includes("delivered") && codPending && (
             <p className="w-full text-xs font-semibold text-[#B8791B]">
               Collect COD to enable delivery.
+            </p>
+          )}
+          {nextStages.includes("delivered") && !proofReady && (
+            <p className="w-full text-xs font-semibold text-[#B8791B]">
+              Upload proof photo to enable delivery.
             </p>
           )}
         </div>

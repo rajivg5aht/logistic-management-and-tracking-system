@@ -1,15 +1,23 @@
 import { AuthUser } from "./auth.api";
-
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? ""
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import {
+  authenticatedRequest,
+  authenticatedRequestWithMeta,
+  buildQueryString,
+} from "@/lib/api/api-client";
 
 export type AdminUserMeta = {
   page: number;
   limit: number;
   total: number;
   totalPages: number;
+};
+
+export type AdminUserStats = {
+  total: number;
+  newSignups24h: number;
+  signupsThisMonth: number;
+  growthPct: number;
+  registrationTrend: { label: string; count: number }[];
 };
 
 export type AdminUserPayload = {
@@ -28,75 +36,40 @@ export async function adminGetUsers(
   search?: string,
   role?: "admin" | "customer" | "driver",
 ): Promise<{ data: AuthUser[]; meta: AdminUserMeta }> {
-  let endpoint = `${API_BASE_URL}/api/v1/admin/users?page=${page}&limit=${limit}`;
-  if (search) {
-    endpoint += `&search=${encodeURIComponent(search)}`;
-  }
-  if (role) {
-    endpoint += `&role=${role}`;
-  }
+  return authenticatedRequestWithMeta<AuthUser[], AdminUserMeta>(
+    `/api/v1/admin/users${buildQueryString({ page, limit, search, role })}`,
+    token,
+    { method: "GET" },
+  );
+}
 
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Failed to fetch users");
-  }
-
-  return {
-    data: payload.data,
-    meta: payload.meta,
-  };
+export async function adminGetUserStats(
+  token: string,
+): Promise<AdminUserStats> {
+  return authenticatedRequest<AdminUserStats>(
+    "/api/v1/admin/users/stats",
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminGetUserById(
   token: string,
   id: string,
 ): Promise<AuthUser> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
+  return authenticatedRequest<AuthUser>(`/api/v1/admin/users/${id}`, token, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
   });
-
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Failed to fetch user");
-  }
-
-  return payload.data;
 }
 
 export async function adminCreateUser(
   token: string,
   payload: AdminUserPayload,
 ): Promise<AuthUser> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/users`, {
+  return authenticatedRequest<AuthUser>("/api/v1/admin/users", token, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to create user");
-  }
-
-  return data.data;
 }
 
 export async function adminUpdateUser(
@@ -104,39 +77,17 @@ export async function adminUpdateUser(
   id: string,
   payload: Partial<AdminUserPayload>,
 ): Promise<AuthUser> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
+  return authenticatedRequest<AuthUser>(`/api/v1/admin/users/${id}`, token, {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to update user");
-  }
-
-  return data.data;
 }
 
 export async function adminDeleteUser(
   token: string,
   id: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/users/${id}`, {
+  await authenticatedRequest<null>(`/api/v1/admin/users/${id}`, token, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to delete user");
-  }
 }

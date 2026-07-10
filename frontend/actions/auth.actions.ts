@@ -1,4 +1,3 @@
-
 "use server";
 
 import { cookies } from "next/headers";
@@ -8,9 +7,10 @@ import {
   registerUser,
   updateProfile,
   updatePassword,
-  getWhoami,
+  type UpdateProfilePayload,
 } from "@/lib/api/auth.api";
 import { loginSchema, registerSchema } from "@/lib/schemas/auth.schema";
+import { AUTH_COOKIE_MAX_AGE } from "@/lib/config";
 import { z } from "zod";
 
 export type AuthFormState = {
@@ -19,7 +19,15 @@ export type AuthFormState = {
   fieldErrors?: Record<string, string[]>;
 };
 
-const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+async function getAuthToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return (
+    cookieStore.get("token_customer")?.value ||
+    cookieStore.get("token_admin")?.value ||
+    cookieStore.get("token_driver")?.value ||
+    null
+  );
+}
 
 export async function registerAction(
   _prevState: AuthFormState,
@@ -50,8 +58,7 @@ export async function registerAction(
   } catch (error) {
     return {
       success: false,
-      message:
-        error instanceof Error ? error.message : "Registration failed",
+      message: error instanceof Error ? error.message : "Registration failed",
     };
   }
 
@@ -120,7 +127,7 @@ export async function loginAction(
   });
 
   cookieStore.set(userCookieName, JSON.stringify(user), {
-    httpOnly: false, // Allow client-side JS to read via AuthContext
+    httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: AUTH_COOKIE_MAX_AGE,
@@ -142,9 +149,7 @@ export async function updateProfileAction(
 ): Promise<AuthFormState> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token_customer")?.value ||
-                  cookieStore.get("token_admin")?.value ||
-                  cookieStore.get("token_driver")?.value;
+    const token = await getAuthToken();
 
     if (!token) {
       return {
@@ -153,27 +158,21 @@ export async function updateProfileAction(
       };
     }
 
-    const profileImage = formData.get("profileImage") as File | null;
-    const payload: any = {
+    const profileImage = formData.get("profileImage");
+    const payload: UpdateProfilePayload = {
       fullName: formData.get("fullName") as string,
       email: formData.get("email") as string,
       phoneNumber: formData.get("phoneNumber") as string,
     };
 
-    // ✅ Fixed: properly convert File for server-side fetch
-    if (profileImage && profileImage.size > 0) {
-      const arrayBuffer = await profileImage.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const blob = new Blob([buffer], { type: profileImage.type });
-      payload.profileImage = new File([blob], profileImage.name, {
-        type: profileImage.type,
-      });
+    if (profileImage instanceof File && profileImage.size > 0) {
+      payload.profileImage = profileImage;
     }
 
     const updatedUser = await updateProfile(token, payload);
 
     cookieStore.set(`user_${updatedUser.role}`, JSON.stringify(updatedUser), {
-      httpOnly: false, // Allow client-side JS to read via AuthContext
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: AUTH_COOKIE_MAX_AGE,
@@ -187,8 +186,7 @@ export async function updateProfileAction(
   } catch (error) {
     return {
       success: false,
-      message:
-        error instanceof Error ? error.message : "Failed to update profile",
+      message: error instanceof Error ? error.message : "Failed to update profile",
     };
   }
 }
@@ -222,10 +220,7 @@ export async function updatePasswordAction(
   }
 
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token_customer")?.value ||
-                  cookieStore.get("token_admin")?.value ||
-                  cookieStore.get("token_driver")?.value;
+    const token = await getAuthToken();
 
     if (!token) {
       return {
@@ -243,13 +238,14 @@ export async function updatePasswordAction(
   } catch (error) {
     return {
       success: false,
-      message:
-        error instanceof Error ? error.message : "Failed to update password",
+      message: error instanceof Error ? error.message : "Failed to update password",
     };
   }
 }
 
-export async function getUserFromCookie(role: "customer" | "admin" | "driver" = "customer") {
+export async function getUserFromCookie(
+  role: "customer" | "admin" | "driver" = "customer",
+) {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get(`user_${role}`)?.value;
 

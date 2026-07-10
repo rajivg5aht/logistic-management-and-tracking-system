@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Download,
   Eye,
   Filter,
   Inbox,
@@ -29,6 +28,7 @@ import {
   type InquiryStatus,
 } from "@/lib/api/inquiry.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getInitials } from "@/lib/ui-helpers";
 
 const STATUS_LABELS: Record<InquiryStatus, string> = {
   new: "New",
@@ -58,15 +58,6 @@ const AVATAR_STYLES = [
   "bg-red-100 text-red-700",
 ];
 
-function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "CU";
-}
 
 function formatDate(date: string): string {
   return new Date(date).toLocaleDateString("en-GB", {
@@ -81,10 +72,6 @@ function formatTime(date: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function escapeCsv(value: string): string {
-  return '"' + value.replaceAll('"', '""') + '"';
 }
 
 export default function AdminInquiries({ token }: { token: string }) {
@@ -174,27 +161,6 @@ export default function AdminInquiries({ token }: { token: string }) {
     }
   };
 
-  const exportData = () => {
-    const headings = ["Date", "Sender", "Email", "Subject", "Message", "Category", "Status"];
-    const rows = inquiries.map((inquiry) => [
-      inquiry.createdAt,
-      inquiry.fullName,
-      inquiry.email,
-      inquiry.subject,
-      inquiry.message,
-      CATEGORY_LABELS[inquiry.category],
-      STATUS_LABELS[inquiry.status],
-    ]);
-    const csv = [headings, ...rows]
-      .map((row) => row.map(escapeCsv).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "contact-inquiries.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const totalPages = Math.max(1, meta?.totalPages ?? 1);
   const efficiency = stats?.resolvedRate ?? 0;
@@ -210,14 +176,6 @@ export default function AdminInquiries({ token }: { token: string }) {
             Manage and respond to incoming customer messages.
           </p>
         </div>
-        <button suppressHydrationWarning
-          type="button"
-          onClick={exportData}
-          disabled={inquiries.length === 0}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C4F86] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#083E6B] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Download size={15} /> Export Data
-        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -227,7 +185,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Inbox size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.total.toLocaleString("en-IN") ?? "—"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.total.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-emerald-600">Live</span>
           </div>
         </div>
@@ -238,7 +196,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700"><Clock3 size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.pending.toLocaleString("en-IN") ?? "—"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.pending.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-red-600">+{stats?.newToday ?? 0} today</span>
           </div>
         </div>
@@ -249,7 +207,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><CheckCircle2 size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.resolved.toLocaleString("en-IN") ?? "—"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.resolved.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-emerald-600">{efficiency}% rate</span>
           </div>
         </div>
@@ -309,7 +267,7 @@ export default function AdminInquiries({ token }: { token: string }) {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <span className={AVATAR_STYLES[index % AVATAR_STYLES.length] + " flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold"}>{getInitials(inquiry.fullName)}</span>
+                      <span className={AVATAR_STYLES[index % AVATAR_STYLES.length] + " flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold"}>{getInitials(inquiry.fullName, "CU")}</span>
                       <div><p className="text-xs font-extrabold text-[#142B45]">{inquiry.fullName}</p><p className="mt-0.5 text-[10px] font-medium text-[var(--text-muted)]">{inquiry.email}</p></div>
                     </div>
                   </td>
@@ -350,7 +308,7 @@ export default function AdminInquiries({ token }: { token: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Inquiry details">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b border-[var(--border)] px-6 py-5">
-              <div><h2 className="text-lg font-extrabold text-[#0B2440]">{selected.subject}</h2><p className="mt-1 text-xs text-[var(--text-muted)]">From {selected.fullName} · {selected.email}</p></div>
+              <div><h2 className="text-lg font-extrabold text-[#0B2440]">{selected.subject}</h2><p className="mt-1 text-xs text-[var(--text-muted)]">From {selected.fullName} - {selected.email}</p></div>
               <button suppressHydrationWarning type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close inquiry"><X size={18} /></button>
             </div>
             <div className="space-y-5 p-6">

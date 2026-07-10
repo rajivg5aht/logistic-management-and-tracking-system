@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { PageBreadcrumb } from "@/components/dashboard/PageBreadcrumb";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user } = useAuth();
 
   // Initialize collapsed state from localStorage
   useEffect(() => {

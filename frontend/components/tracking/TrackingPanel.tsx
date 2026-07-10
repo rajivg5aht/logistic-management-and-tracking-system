@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  Camera,
   CheckCircle2,
   Clock,
   Loader2,
@@ -24,6 +25,8 @@ import {
   type ShipmentStatus,
 } from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
+import LiveMap from "@/components/tracking/LiveMap";
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   pending: "bg-[#FFF3DD] text-[#A96512]",
@@ -114,7 +117,6 @@ export default function TrackingPanel({
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadShipment();
   }, [loadShipment]);
 
@@ -159,6 +161,26 @@ export default function TrackingPanel({
     : shipment?.status === "delivered"
       ? 100
       : 10;
+
+  // Live driver location for this shipment (read-only; server authorizes that
+  // it belongs to the signed-in customer before broadcasting to them).
+  const { location: liveLocation } = useShipmentLiveLocation(
+    token,
+    shipment?.id,
+    Boolean(shipment && shipment.status !== "cancelled"),
+  );
+  const displayedLocation = liveLocation;
+  const hasAssignedDriver = Boolean(
+    shipment?.assignedDriverId || shipment?.assignedDriver,
+  );
+  const liveStatusLabel = liveLocation
+    ? "Live"
+    : hasAssignedDriver
+      ? "Waiting for driver GPS..."
+      : "Driver not assigned yet";
+  const mapWaitingLabel = hasAssignedDriver
+    ? "Waiting for driver GPS..."
+    : "A driver will appear here after assignment.";
 
   return (
     <div className="space-y-6">
@@ -245,34 +267,40 @@ export default function TrackingPanel({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
             <section className="space-y-4 lg:col-span-3">
               <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
-                <div className="relative h-60 bg-gradient-to-br from-[#EAF1F7] to-[#F3F1E9]">
-                  <svg
-                    viewBox="0 0 600 240"
-                    className="h-full w-full"
-                    preserveAspectRatio="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M65 185 C 190 65, 400 75, 535 50"
-                      fill="none"
-                      stroke="var(--accent)"
-                      strokeWidth="5"
-                      strokeDasharray="10 10"
-                    />
-                    <circle cx="65" cy="185" r="11" fill="#1E9E4C" />
-                    <circle cx="535" cy="50" r="11" fill="var(--accent)" />
-                    <circle
-                      cx={65 + (470 * progress) / 100}
-                      cy={185 - (135 * progress) / 100}
-                      r="13"
-                      fill="#1D7A8C"
-                    />
-                  </svg>
-                  <span className="absolute bottom-4 left-4 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[#18864B]">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2.5 text-xs">
+                  <span className="flex items-center gap-1.5 font-bold text-[var(--text-soft)]">
+                    <MapPin size={14} className="text-[#1D7A8C]" />
+                    Live location
+                    <span className="rounded-md bg-[var(--surface-soft)] px-2 py-0.5 text-[10px] font-black uppercase text-[var(--text)]">
+                      #{shipment.trackingId}
+                    </span>
+                  </span>
+                  {liveLocation ? (
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#1D7A8C] px-2.5 py-1 font-bold text-white">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                      </span>
+                      {liveStatusLabel}
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-[var(--text-muted)]">
+                      {liveStatusLabel}
+                    </span>
+                  )}
+                </div>
+                <div className="relative isolate">
+                  <LiveMap
+                    location={displayedLocation}
+                    height={240}
+                    accent="#1D7A8C"
+                    waitingLabel={mapWaitingLabel}
+                  />
+                  <span className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[#18864B] shadow">
                     <MapPin size={13} className="mr-1 inline" />
                     {shipment.pickup.city || "Pickup"}
                   </span>
-                  <span className="absolute right-4 top-4 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[var(--accent-strong)]">
+                  <span className="pointer-events-none absolute right-4 top-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[var(--accent-strong)] shadow">
                     <MapPin size={13} className="mr-1 inline" />
                     {shipment.delivery.city || "Destination"}
                   </span>
@@ -320,6 +348,43 @@ export default function TrackingPanel({
                   />
                 </div>
               </div>
+
+              {shipment.proofOfDelivery && (
+                <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+                  <h2 className="flex items-center gap-2 font-extrabold text-[var(--text)]">
+                    <Camera size={17} className="text-[var(--accent)]" />
+                    Delivery confirmation
+                  </h2>
+                  {shipment.proofOfDelivery.photoUrl && (
+                    <img
+                      src={shipment.proofOfDelivery.photoUrl}
+                      alt="Proof of delivery"
+                      className="mt-4 h-44 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <Detail
+                      icon={<UserRound size={16} />}
+                      label="Received by"
+                      value={shipment.proofOfDelivery.recipientName || "Not noted"}
+                    />
+                    <Detail
+                      icon={<Clock size={16} />}
+                      label="Confirmed"
+                      value={
+                        shipment.proofOfDelivery.confirmedAt
+                          ? formatDate(shipment.proofOfDelivery.confirmedAt)
+                          : "Not noted"
+                      }
+                    />
+                  </div>
+                  {shipment.proofOfDelivery.notes && (
+                    <p className="mt-3 rounded-xl bg-[var(--surface-soft)] p-3 text-sm font-semibold text-[var(--text-soft)]">
+                      {shipment.proofOfDelivery.notes}
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm lg:col-span-2">

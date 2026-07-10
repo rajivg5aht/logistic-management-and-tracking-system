@@ -17,12 +17,14 @@ import {
   Users,
   Wrench,
   Package,
+  Trash2,
 } from "lucide-react";
 import {
   adminGetDrivers,
   adminGetDriverStats,
   adminCreateDriver,
   adminUpdateDriver,
+  adminDeleteDriver,
   EMPLOYMENT_STATUSES,
   type Driver,
   type DriverMeta,
@@ -34,6 +36,7 @@ import {
 import { adminGetVehicles } from "@/lib/api/fleet.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 
 const AVATAR_STYLES = [
   "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
@@ -85,28 +88,7 @@ const EMPTY_FORM = {
   status: "active" as "active" | "inactive",
 };
 
-function getInitials(name: string) {
-  if (!name) return "?";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-}
 
 export default function AdminDriverManagement({ token }: { token: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -127,6 +109,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Driver | null>(null);
   const [vehicleByDriver, setVehicleByDriver] = useState<
     Record<string, VehicleAssignmentInfo>
   >({});
@@ -186,7 +169,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDrivers();
   }, [fetchDrivers]);
 
@@ -323,6 +305,24 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      setActionLoading(true);
+      setError(null);
+      await adminDeleteDriver(token, deleteTarget.id);
+      setDeleteTarget(null);
+      fetchDrivers();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete driver.",
+      );
+      setDeleteTarget(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
     if (meta && newPage >= 1 && newPage <= meta.totalPages) {
       setPage(newPage);
@@ -353,7 +353,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             Driver Management
           </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
-            Add and manage company drivers. Drivers are internal staff — created here, not via public signup.
+            Add and manage company drivers. Drivers are internal staff - created here, not via public signup.
           </p>
         </div>
         <button
@@ -380,7 +380,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.total.toLocaleString() : "—"}
+            {stats ? stats.total.toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Company drivers
@@ -398,7 +398,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.onDelivery.toLocaleString() : "—"}
+            {stats ? stats.onDelivery.toLocaleString() : "-"}
           </p>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -422,7 +422,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? (stats.offDuty + stats.inactive).toLocaleString() : "—"}
+            {stats ? (stats.offDuty + stats.inactive).toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Currently unavailable
@@ -440,7 +440,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.available.toLocaleString() : "—"}
+            {stats ? stats.available.toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Ready to assign
@@ -465,7 +465,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
             <input
               type="text"
-              placeholder="Filter by name, ID or vehicle…"
+              placeholder="Filter by name, ID or vehicle..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="form-input w-full rounded-full pl-11"
@@ -535,7 +535,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               ) : visibleDrivers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm font-medium text-[var(--text-muted)]">
-                    No drivers found. Click “Add Driver” to create one.
+                    No drivers found. Click &quot;Add Driver&quot; to create one.
                   </td>
                 </tr>
               ) : (
@@ -579,7 +579,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                               <span className="capitalize">{vehicle.type}</span>: {vehicle.registrationNumber}
                             </p>
                             <p className="truncate text-xs text-[var(--text-muted)]">
-                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "—"}
+                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "-"}
                             </p>
                           </div>
                         ) : (
@@ -601,7 +601,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             className="flex items-center gap-1.5 text-[var(--text-soft)] hover:text-[var(--teal)]"
                           >
                             <Phone size={13} className="text-[var(--text-muted)]" />
-                            {driver.phoneNumber || "—"}
+                            {driver.phoneNumber || "-"}
                           </a>
                           <a
                             href={`mailto:${driver.email}`}
@@ -628,10 +628,21 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             type="button"
                             onClick={() => handleToggleStatus(driver)}
                             className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
-                            aria-label={driver.status === "inactive" ? "Activate driver" : "Deactivate driver"}
+                            aria-label={driver.status === "inactive" ? "Unblock driver" : "Block driver"}
+                            title={driver.status === "inactive" ? "Unblock (allow sign-in)" : "Block (prevent sign-in)"}
                             suppressHydrationWarning
                           >
                             {driver.status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(driver)}
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                            aria-label="Delete driver"
+                            title="Delete driver permanently"
+                            suppressHydrationWarning
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -661,7 +672,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               </button>
               {getPageNumbers(page, meta.totalPages).map((p, i) =>
                 p === "..." ? (
-                  <span key={`e${i}`} className="px-2 text-[var(--text-muted)]">…</span>
+                  <span key={`e${i}`} className="px-2 text-[var(--text-muted)]">...</span>
                 ) : (
                   <button
                     key={p}
@@ -714,11 +725,52 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         />
       </Modal>
 
+      {/* Delete confirmation modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => !actionLoading && setDeleteTarget(null)}
+        title="Delete Driver"
+      >
+        <div className="space-y-5">
+          <div className="flex items-start gap-3 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-[#D0453A]" />
+            <p className="text-sm font-medium text-[#D0453A]">
+              This permanently deletes{" "}
+              <span className="font-bold">{deleteTarget?.fullName}</span> and their
+              account. This action cannot be undone.
+            </p>
+          </div>
+          <p className="text-sm text-[var(--text-soft)]">
+            To temporarily bar sign-in instead, use the block action to keep the
+            record.
+          </p>
+          <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(null)}
+              disabled={actionLoading}
+              className="btn-secondary cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#b93b31] disabled:opacity-60 cursor-pointer"
+            >
+              {actionLoading && <Loader2 size={15} className="animate-spin" />}
+              Delete Permanently
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }
 
-/* ── Shared create/edit form ─────────────────────────────────────────────── */
+/* -- Shared create/edit form ----------------------------------------------- */
 function DriverForm({
   form,
   setForm,

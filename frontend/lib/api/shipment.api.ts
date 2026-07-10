@@ -1,7 +1,8 @@
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? ""
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import {
+  authenticatedRequest,
+  authenticatedRequestWithMeta,
+  buildQueryString,
+} from "@/lib/api/api-client";
 
 export type ShipmentStatus = "pending" | "in-transit" | "delivered" | "cancelled";
 export type PaymentMethod = "esewa" | "khalti" | "cod";
@@ -26,8 +27,6 @@ export const DRIVER_STAGE_LABELS: Record<DriverStage, string> = {
   returned: "Returned",
 };
 
-// Keep grouped database statuses for filters/statistics, but show users the
-// exact operational phase currently reported by the driver.
 export function getShipmentDisplayStatus(shipment: {
   status: ShipmentStatus;
   driverStage: DriverStage | null;
@@ -52,6 +51,15 @@ export type TimelineEntry = {
   note?: string;
 };
 
+export type ProofOfDelivery = {
+  photoUrl: string | null;
+  notes: string;
+  recipientName: string;
+  confirmedAt: string | null;
+  confirmedByDriverId: string | null;
+  updatedAt: string | null;
+};
+
 export type ShipmentAddress = {
   fullName?: string;
   recipientName?: string;
@@ -68,6 +76,12 @@ export type ShipmentPackage = {
   dimensions: { length: string; width: string; height: string };
 };
 
+export type CurrentLocation = {
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
+};
+
 export type Shipment = {
   id: string;
   trackingId: string;
@@ -81,6 +95,7 @@ export type Shipment = {
   paymentMethod: PaymentMethod;
   paymentStatus: "paid" | "pending";
   deliveredAt: string | null;
+  proofOfDelivery: ProofOfDelivery | null;
   amount: number;
   status: ShipmentStatus;
   assignedDriver: string | null;
@@ -88,6 +103,7 @@ export type Shipment = {
   assignedVehicle: string | null;
   assignedVehicleId: string | null;
   driverStage: DriverStage | null;
+  currentLocation: CurrentLocation | null;
   timeline: TimelineEntry[];
   createdAt: string;
   updatedAt: string;
@@ -101,9 +117,9 @@ export type ShipmentMeta = {
 };
 
 export type DailyVolume = {
-  date: string; // YYYY-MM-DD in Nepal local time
-  label: string; // Weekday abbreviation, e.g. "Mon"
-  count: number; // Shipments created that day
+  date: string;
+  label: string;
+  count: number;
 };
 
 export type ShipmentStats = {
@@ -114,7 +130,31 @@ export type ShipmentStats = {
   cancelled: number;
   deliveredToday: number;
   pendingCodAmount: number;
-  dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
+  dailyVolume: DailyVolume[];
+};
+
+export type MonthlyRevenue = {
+  label: string;
+  revenue: number;
+};
+
+export type RegionVolume = {
+  region: string;
+  count: number;
+};
+
+export type ShipmentAnalytics = {
+  totalRevenue: number;
+  revenueDelta: number;
+  deliveries: number;
+  deliveriesDelta: number;
+  avgDeliveryMs: number | null;
+  avgTimeDelta: number;
+  successRate: number;
+  successDelta: number;
+  monthlyRevenue: MonthlyRevenue[];
+  regionVolume: RegionVolume[];
+  totalShipments: number;
 };
 
 export type CreateShipmentPayload = {
@@ -150,45 +190,20 @@ export type AdminUpdateShipmentPayload = {
   paymentStatus?: "paid" | "pending";
 };
 
-// ── Customer ────────────────────────────────────────────────────────────────
 export async function createShipment(
   token: string,
   payload: CreateShipmentPayload,
 ): Promise<Shipment> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments`, {
+  return authenticatedRequest<Shipment>("/api/v1/shipments", token, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to create shipment");
-  }
-
-  return data.data;
 }
 
 export async function getMyShipments(token: string): Promise<Shipment[]> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/my`, {
+  return authenticatedRequest<Shipment[]>("/api/v1/shipments/my", token, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to load shipments");
-  }
-
-  return data.data;
 }
 
 export async function updateMyShipment(
@@ -196,84 +211,41 @@ export async function updateMyShipment(
   id: string,
   payload: CustomerUpdateShipmentPayload,
 ): Promise<Shipment> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}`, {
+  return authenticatedRequest<Shipment>(`/api/v1/shipments/${id}`, token, {
     method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to update shipment");
-  }
-
-  return data.data;
 }
 
 export async function cancelMyShipment(
   token: string,
   id: string,
 ): Promise<Shipment> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}/cancel`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to cancel shipment");
-  }
-
-  return data.data;
+  return authenticatedRequest<Shipment>(
+    `/api/v1/shipments/${id}/cancel`,
+    token,
+    { method: "PATCH" },
+  );
 }
 
 export async function deleteMyShipment(
   token: string,
   id: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/${id}`, {
+  await authenticatedRequest<null>(`/api/v1/shipments/${id}`, token, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to delete shipment");
-  }
 }
 
-// Clears the customer's completed history (delivered + cancelled). Active
-// shipments are retained server-side. Returns how many were removed.
 export async function deleteMyShipmentHistory(token: string): Promise<number> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/shipments/history`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to delete shipment history");
-  }
-  return data.data?.deletedCount ?? 0;
+  const result = await authenticatedRequest<{ deletedCount?: number }>(
+    "/api/v1/shipments/history",
+    token,
+    { method: "DELETE" },
+  );
+  return result.deletedCount ?? 0;
 }
 
-// ── Admin ────────────────────────────────────────────────────────────────────
 export async function adminGetShipments(
   token: string,
   page: number,
@@ -281,45 +253,36 @@ export async function adminGetShipments(
   search?: string,
   status?: ShipmentStatus,
 ): Promise<{ data: Shipment[]; meta: ShipmentMeta }> {
-  let endpoint = `${API_BASE_URL}/api/v1/admin/shipments?page=${page}&limit=${limit}`;
-  if (search) endpoint += `&search=${encodeURIComponent(search)}`;
-  if (status) endpoint += `&status=${status}`;
-
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Failed to fetch shipments");
-  }
-
-  return { data: payload.data, meta: payload.meta };
+  return authenticatedRequestWithMeta<Shipment[], ShipmentMeta>(
+    `/api/v1/admin/shipments${buildQueryString({
+      page,
+      limit,
+      search,
+      status,
+    })}`,
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminGetShipmentStats(
   token: string,
 ): Promise<ShipmentStats> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/shipments/stats`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
+  return authenticatedRequest<ShipmentStats>(
+    "/api/v1/admin/shipments/stats",
+    token,
+    { method: "GET" },
+  );
+}
 
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Failed to fetch shipment stats");
-  }
-
-  return payload.data;
+export async function adminGetAnalytics(
+  token: string,
+): Promise<ShipmentAnalytics> {
+  return authenticatedRequest<ShipmentAnalytics>(
+    "/api/v1/admin/shipments/analytics",
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminUpdateShipment(
@@ -327,39 +290,18 @@ export async function adminUpdateShipment(
   id: string,
   payload: AdminUpdateShipmentPayload,
 ): Promise<Shipment> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/shipments/${id}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-    credentials: "include",
-  });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to update shipment");
-  }
-
-  return data.data;
+  return authenticatedRequest<Shipment>(
+    `/api/v1/admin/shipments/${id}`,
+    token,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
 }
 
 export async function adminDeleteShipment(
   token: string,
   id: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/admin/shipments/${id}`, {
+  await authenticatedRequest<null>(`/api/v1/admin/shipments/${id}`, token, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
   });
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.message || "Failed to delete shipment");
-  }
 }

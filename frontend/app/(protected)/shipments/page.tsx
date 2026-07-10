@@ -7,7 +7,7 @@ import { DeliveryAddressCard } from "@/components/shipment/DeliveryAddressCard";
 import { ParcelDetailsCard } from "@/components/shipment/ParcelDetailsCard";
 import { SelectServiceCard } from "@/components/shipment/SelectServiceCard";
 import { DetailedSummaryCard } from "@/components/shipment/DetailedSummaryCard";
-import { MapPanel } from "@/components/shipment/MapPanel";
+import { BookingRouteMap } from "@/components/shipment/BookingRouteMap";
 import { ShipmentSummaryCard } from "@/components/shipment/ShipmentSummaryCard";
 import { ShipmentProvider, useShipment } from "@/context/ShipmentContext";
 import { ReviewAndPayCard } from "@/components/shipment/ReviewAndPayCard";
@@ -229,7 +229,7 @@ function ShipmentPageContent() {
             ) : (
               <>
                 {/* Map Card */}
-                <MapPanel />
+                <BookingRouteMap />
 
                 {/* Summary Card */}
                 <ShipmentSummaryCard currentStep={currentStep} />

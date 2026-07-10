@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { DriverController } from "../controllers/driver.controller";
 import { authMiddleware, driverMiddleware } from "../middleware/auth.middleware";
+import { proofUpload } from "../configs/multer.config";
 
 const driverRouter = Router();
 const driverController = new DriverController();
@@ -12,9 +13,18 @@ driverRouter.use(driverMiddleware);
 driverRouter.get("/me", driverController.getMe);
 driverRouter.get("/stats", driverController.getStats);
 driverRouter.patch("/availability", driverController.updateAvailability);
+driverRouter.get("/fleet", driverController.getFleet);
+driverRouter.post("/fleet/incidents", driverController.reportFleetIncident);
+driverRouter.post("/fleet/fuel-expenses", driverController.logFuelExpense);
 driverRouter.get("/shipments", driverController.getMyAssignments);
 driverRouter.get("/shipments/:id", driverController.getAssignmentById);
 driverRouter.patch("/shipments/:id/stage", driverController.updateStage);
+driverRouter.patch(
+  "/shipments/:id/proof",
+  proofUpload.single("proofPhoto"),
+  driverController.upsertProof,
+);
+driverRouter.delete("/shipments/:id/proof", driverController.deleteProof);
 driverRouter.patch("/shipments/:id/cod", driverController.collectCod);
 
 export default driverRouter;

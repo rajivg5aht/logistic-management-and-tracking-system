@@ -1,13 +1,28 @@
 import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
+import type { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
+import type {
+  AdminCreateDriverDTO,
+  AdminUpdateDriverDTO,
+  DriverFleetIncidentDTO,
+  DriverFuelExpenseDTO,
+} from "../dtos/driver.dto";
 import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
 import { ShipmentModel } from "../models/shipment.model";
-import { VehicleModel } from "../models/vehicle.model";
+import { VehicleModel, type IVehicle } from "../models/vehicle.model";
+import {
+  VehicleIncidentModel,
+  type IVehicleIncident,
+} from "../models/vehicleIncident.model";
+import {
+  VehicleFuelExpenseModel,
+  type IVehicleFuelExpense,
+} from "../models/vehicleFuelExpense.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -44,7 +59,67 @@ export type DriverVehicleSummary = {
 
 export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
 
+export type DriverFleetVehicle = DriverVehicleSummary & {
+  year?: number;
+  branch: string;
+  imageUrl: string | null;
+  insuranceExpiry: Date | null;
+  registrationExpiry: Date | null;
+  lastServiceAt: Date | null;
+  nextServiceAt: Date | null;
+  odometerKm: number;
+  assignedAt: Date | null;
+  updatedAt: Date;
+};
+
+export type DriverFleetAssignment = {
+  vehicleId: string;
+  registrationNumber: string;
+  type: string;
+  make: string;
+  model: string;
+  assignedAt: Date;
+  unassignedAt: Date | null;
+  status: string;
+  odometerKm: number;
+};
+
+export type DriverFleetIncident = {
+  id: string;
+  category: string;
+  severity: string;
+  description: string;
+  location: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DriverFuelExpense = {
+  id: string;
+  fuelType: string;
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName: string;
+  notes: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DriverFleet = {
+  vehicle: DriverFleetVehicle | null;
+  assignmentHistory: DriverFleetAssignment[];
+  incidents: DriverFleetIncident[];
+  fuelExpenses: DriverFuelExpense[];
+};
+
 export class UserService {
+  private hashPassword(password: string): Promise<string> {
+    return bcryptjs.hash(password, 10);
+  }
+
   private sanitizeUser(user: IUser): SafeUser {
     return {
       id: user._id.toString(),
@@ -65,58 +140,99 @@ export class UserService {
     };
   }
 
- async createUser(userData: CreateUserDTO): Promise<SafeUser> {
-  try {
-    console.log("========== REGISTER START ==========");
-    console.log("Incoming Data:", userData);
-
-    console.log("STEP 1: Checking existing email");
-
-    const existingEmail = await userRepository.getUserByEmail(
-      userData.email,
+  private sanitizeDriverFleetVehicle(
+    vehicle: IVehicle,
+    driverId: string,
+  ): DriverFleetVehicle {
+    const matchingAssignments = vehicle.assignmentHistory.filter(
+      (entry) => entry.driverId.toString() === driverId,
     );
+    const currentAssignment =
+      matchingAssignments.find((entry) => !entry.unassignedAt) ??
+      matchingAssignments[matchingAssignments.length - 1] ??
+      null;
 
-    console.log("STEP 2: Email check completed");
+    return {
+      id: vehicle._id.toString(),
+      registrationNumber: vehicle.registrationNumber,
+      type: vehicle.type,
+      make: vehicle.make,
+      model: vehicle.vehicleModel,
+      year: vehicle.year,
+      capacityKg: vehicle.capacityKg ?? null,
+      branch: vehicle.branch,
+      imageUrl: vehicle.imageUrl ?? null,
+      status: vehicle.status,
+      insuranceExpiry: vehicle.insuranceExpiry,
+      registrationExpiry: vehicle.registrationExpiry,
+      lastServiceAt: vehicle.lastServiceAt,
+      nextServiceAt: vehicle.nextServiceAt,
+      odometerKm: vehicle.odometerKm,
+      assignedAt: currentAssignment?.assignedAt ?? null,
+      updatedAt: vehicle.updatedAt,
+    };
+  }
 
-    if (existingEmail) {
-      console.log("STEP 2A: Email already exists");
+  private sanitizeFleetIncident(
+    incident: IVehicleIncident,
+  ): DriverFleetIncident {
+    return {
+      id: incident._id.toString(),
+      category: incident.category,
+      severity: incident.severity,
+      description: incident.description,
+      location: incident.location,
+      status: incident.status,
+      createdAt: incident.createdAt,
+      updatedAt: incident.updatedAt,
+    };
+  }
 
-      throw new HttpException(
-        400,
-        "Email already exists",
-      );
+  private sanitizeFuelExpense(
+    expense: IVehicleFuelExpense,
+  ): DriverFuelExpense {
+    return {
+      id: expense._id.toString(),
+      fuelType: expense.fuelType,
+      liters: expense.liters,
+      amount: expense.amount,
+      odometerKm: expense.odometerKm,
+      stationName: expense.stationName,
+      notes: expense.notes,
+      status: expense.status,
+      createdAt: expense.createdAt,
+      updatedAt: expense.updatedAt,
+    };
+  }
+
+  private async getDriverWithAssignedVehicle(driverId: string) {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
     }
 
-    console.log("STEP 3: Hashing password");
+    const vehicle = driver.assignedVehicleId
+      ? await VehicleModel.findById(driver.assignedVehicleId)
+      : await VehicleModel.findOne({ assignedDriverId: driver._id });
 
-    const hashedPassword = await bcryptjs.hash(
-      userData.password,
-      10,
-    );
+    return { driver, vehicle };
+  }
 
-    console.log("STEP 4: Password hashed");
+  async createUser(userData: CreateUserDTO): Promise<SafeUser> {
+    const existingEmail = await userRepository.getUserByEmail(userData.email);
 
-    console.log("STEP 5: Creating user in database");
+    if (existingEmail) {
+      throw new HttpException(400, "Email already exists");
+    }
 
+    const hashedPassword = await this.hashPassword(userData.password);
     const user = await userRepository.createUser({
       ...userData,
       password: hashedPassword,
     });
 
-    console.log("STEP 6: User created successfully");
-    console.log("User ID:", user._id);
-
-    console.log("========== REGISTER END ==========");
-
     return this.sanitizeUser(user);
-  } catch (error: any) {
-    console.error("========== REGISTER ERROR ==========");
-    console.error(error);
-    console.error("===================================");
-
-    throw error;
   }
- }
 
   async loginUser(loginData: LoginUserDTO) {
     const user = await userRepository.getUserByEmail(loginData.email);
@@ -189,7 +305,7 @@ export class UserService {
 
     // Hash password if it's being updated
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updatedUser = await userRepository.update(userId, updateData);
@@ -220,7 +336,118 @@ export class UserService {
     };
   }
 
-  async adminCreateUser(userData: any): Promise<SafeUser> {
+  // Registration insight for the User Management KPI cards: customer signups in
+  // the last 24h and month-over-month growth. Scoped to customers because that
+  // is the public sign-up flow (drivers/admins are created internally).
+  async adminGetUserStats(): Promise<{
+    total: number;
+    newSignups24h: number;
+    signupsThisMonth: number;
+    growthPct: number;
+    registrationTrend: { label: string; count: number }[];
+  }> {
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Nepal-local month boundaries (UTC+05:45) converted back to UTC for querying.
+    const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+    const nowInNepal = new Date(now.getTime() + nepalOffsetMs);
+    const startOfThisMonth = new Date(
+      Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth(), 1) -
+        nepalOffsetMs,
+    );
+    const startOfLastMonth = new Date(
+      Date.UTC(nowInNepal.getUTCFullYear(), nowInNepal.getUTCMonth() - 1, 1) -
+        nepalOffsetMs,
+    );
+
+    // Start of the 7-day trend window: midnight (Nepal-local) six days ago,
+    // stored as the equivalent UTC instant for querying.
+    const startOfTodayNepal = new Date(
+      Date.UTC(
+        nowInNepal.getUTCFullYear(),
+        nowInNepal.getUTCMonth(),
+        nowInNepal.getUTCDate(),
+      ) - nepalOffsetMs,
+    );
+    const dayMs = 24 * 60 * 60 * 1000;
+    const trendStart = new Date(startOfTodayNepal.getTime() - 6 * dayMs);
+
+    const [
+      total,
+      newSignups24h,
+      signupsThisMonth,
+      signupsLastMonth,
+      trendRaw,
+    ] = await Promise.all([
+      UserModel.countDocuments({}),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: dayAgo },
+      }),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: startOfThisMonth },
+      }),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
+      }),
+      // Daily customer signups over the trend window, bucketed by Nepal-local day.
+      UserModel.aggregate<{ _id: string; count: number }>([
+        { $match: { role: "customer", createdAt: { $gte: trendStart } } },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+                timezone: "Asia/Kathmandu",
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    // Grew-from-zero baseline reads as +100%; a flat/empty prior month is 0%.
+    const growthPct =
+      signupsLastMonth === 0
+        ? signupsThisMonth > 0
+          ? 100
+          : 0
+        : Math.round(
+            ((signupsThisMonth - signupsLastMonth) / signupsLastMonth) * 100,
+          );
+
+    // Fill every day in the window (including zero-signup days) so the chart
+    // always renders exactly 7 ordered bars, oldest → newest.
+    const countByDay = new Map(trendRaw.map((r) => [r._id, r.count]));
+    const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const registrationTrend = Array.from({ length: 7 }, (_, i) => {
+      const dayInNepal = new Date(
+        trendStart.getTime() + i * dayMs + nepalOffsetMs,
+      );
+      const key = `${dayInNepal.getUTCFullYear()}-${String(
+        dayInNepal.getUTCMonth() + 1,
+      ).padStart(2, "0")}-${String(dayInNepal.getUTCDate()).padStart(2, "0")}`;
+      return {
+        label: weekdayLabels[dayInNepal.getUTCDay()],
+        count: countByDay.get(key) ?? 0,
+      };
+    });
+
+    return {
+      total,
+      newSignups24h,
+      signupsThisMonth,
+      growthPct,
+      registrationTrend,
+    };
+  }
+
+  async adminCreateUser(userData: AdminCreateUserDTO): Promise<SafeUser> {
     if (userData.role && userData.role !== "customer") {
       throw new HttpException(
         400,
@@ -233,7 +460,7 @@ export class UserService {
       throw new HttpException(400, "Email already exists");
     }
 
-    const hashedPassword = await bcryptjs.hash(userData.password, 10);
+    const hashedPassword = await this.hashPassword(userData.password);
 
     const user = await userRepository.createUser({
       fullName: userData.fullName,
@@ -247,14 +474,13 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  async adminUpdateUser(userId: string, updateData: any): Promise<SafeUser> {
+  async adminUpdateUser(
+    userId: string,
+    updateData: AdminUpdateUserDTO,
+  ): Promise<SafeUser> {
     const user = await userRepository.getUserById(userId);
     if (!user) {
       throw new HttpException(404, "User not found");
-    }
-
-    if (updateData.role !== undefined) {
-      throw new HttpException(400, "Roles cannot be changed in User Management");
     }
 
     if (user.role === "driver") {
@@ -274,7 +500,7 @@ export class UserService {
     }
 
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updatedUser = await userRepository.update(userId, updateData);
@@ -294,15 +520,24 @@ export class UserService {
     if (user.role === "driver") {
       throw new HttpException(
         400,
-        "Driver accounts must be deactivated in Driver Management",
+        "Driver accounts must be managed in Driver Management",
       );
     }
 
-    const updated = await userRepository.update(userId, { status: "inactive" });
-    return !!updated;
+    const shipmentHistory = await ShipmentModel.countDocuments({
+      customer: user._id,
+    });
+    if (shipmentHistory > 0) {
+      throw new HttpException(
+        409,
+        "User has shipment history and cannot be deleted. Set the account to inactive instead.",
+      );
+    }
+
+    return userRepository.delete(userId);
   }
 
-  // ── Driver management (admin-controlled internal staff) ────────────────────
+  // Driver management (admin-controlled internal staff)
   async adminGetDrivers(
     page: number,
     limit: number,
@@ -379,7 +614,7 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  async adminCreateDriver(driverData: any): Promise<SafeUser> {
+  async adminCreateDriver(driverData: AdminCreateDriverDTO): Promise<SafeUser> {
     const existingEmail = await userRepository.getUserByEmail(driverData.email);
     if (existingEmail) {
       throw new HttpException(400, "Email already exists");
@@ -395,7 +630,7 @@ export class UserService {
       }
     }
 
-    const hashedPassword = await bcryptjs.hash(driverData.password, 10);
+    const hashedPassword = await this.hashPassword(driverData.password);
 
     const driver = await userRepository.createUser({
       fullName: driverData.fullName,
@@ -415,7 +650,7 @@ export class UserService {
 
   async adminUpdateDriver(
     driverId: string,
-    updateData: any,
+    updateData: AdminUpdateDriverDTO,
   ): Promise<SafeUser> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
@@ -503,7 +738,7 @@ export class UserService {
     }
 
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updated = await userRepository.update(driverId, updateData);
@@ -513,11 +748,13 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
+  // Permanently removes a driver account only when it has no operational history.
   async adminDeleteDriver(driverId: string): Promise<boolean> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
       throw new HttpException(404, "Driver not found");
     }
+
     const activeShipments = await ShipmentModel.countDocuments({
       assignedDriverId: driver._id,
       status: { $nin: ["delivered", "cancelled"] },
@@ -525,23 +762,31 @@ export class UserService {
     if (activeShipments > 0) {
       throw new HttpException(
         400,
-        "Driver has active shipments and cannot be deactivated",
+        "Driver has active shipments and cannot be deleted",
       );
     }
+
+    const shipmentHistory = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+    });
+    if (shipmentHistory > 0) {
+      throw new HttpException(
+        409,
+        "Driver has shipment history and cannot be deleted. Set the account to inactive instead.",
+      );
+    }
+
     const assignedVehicle = await VehicleModel.findOne({
       assignedDriverId: driver._id,
     });
     if (assignedVehicle) {
       throw new HttpException(
         400,
-        "Unassign the driver's vehicle before deactivation",
+        "Unassign the driver's vehicle before deletion",
       );
     }
-    const updated = await userRepository.update(driverId, {
-      status: "inactive",
-      availabilityStatus: "inactive",
-    });
-    return !!updated;
+
+    return userRepository.delete(driverId);
   }
 
   // A driver toggles their own availability from the driver console.
@@ -579,6 +824,109 @@ export class UserService {
       throw new HttpException(404, "Driver not found");
     }
     return this.sanitizeUser(updated);
+  }
+
+  async getDriverFleet(driverId: string): Promise<DriverFleet> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+
+    const historyVehicles = await VehicleModel.find({
+      "assignmentHistory.driverId": driver._id,
+    }).sort({ updatedAt: -1 });
+
+    const assignmentHistory = historyVehicles
+      .flatMap((historyVehicle) =>
+        historyVehicle.assignmentHistory
+          .filter((entry) => entry.driverId.toString() === driver._id.toString())
+          .map((entry) => ({
+            vehicleId: historyVehicle._id.toString(),
+            registrationNumber: historyVehicle.registrationNumber,
+            type: historyVehicle.type,
+            make: historyVehicle.make,
+            model: historyVehicle.vehicleModel,
+            assignedAt: entry.assignedAt,
+            unassignedAt: entry.unassignedAt ?? null,
+            status: entry.unassignedAt ? "released" : "current",
+            odometerKm: historyVehicle.odometerKm,
+          })),
+      )
+      .sort(
+        (a, b) => b.assignedAt.getTime() - a.assignedAt.getTime(),
+      );
+
+    const [incidents, fuelExpenses] = vehicle
+      ? await Promise.all([
+          VehicleIncidentModel.find({
+            vehicleId: vehicle._id,
+            driverId: driver._id,
+          })
+            .sort({ createdAt: -1 })
+            .limit(25),
+          VehicleFuelExpenseModel.find({
+            vehicleId: vehicle._id,
+            driverId: driver._id,
+          })
+            .sort({ createdAt: -1 })
+            .limit(25),
+        ])
+      : [[], []];
+
+    return {
+      vehicle: vehicle
+        ? this.sanitizeDriverFleetVehicle(vehicle, driver._id.toString())
+        : null,
+      assignmentHistory,
+      incidents: incidents.map((incident) => this.sanitizeFleetIncident(incident)),
+      fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),
+    };
+  }
+
+  async createDriverFleetIncident(
+    driverId: string,
+    input: DriverFleetIncidentDTO,
+  ): Promise<DriverFleetIncident> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+    if (!vehicle) {
+      throw new HttpException(400, "No vehicle assigned to report an issue");
+    }
+
+    const incident = await VehicleIncidentModel.create({
+      vehicleId: vehicle._id,
+      driverId: driver._id,
+      category: input.category,
+      severity: input.severity,
+      description: input.description,
+      location: input.location,
+    });
+
+    return this.sanitizeFleetIncident(incident);
+  }
+
+  async createDriverFuelExpense(
+    driverId: string,
+    input: DriverFuelExpenseDTO,
+  ): Promise<DriverFuelExpense> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+    if (!vehicle) {
+      throw new HttpException(400, "No vehicle assigned to log fuel expense");
+    }
+
+    const expense = await VehicleFuelExpenseModel.create({
+      vehicleId: vehicle._id,
+      driverId: driver._id,
+      fuelType: input.fuelType,
+      liters: input.liters,
+      amount: input.amount,
+      odometerKm: input.odometerKm,
+      stationName: input.stationName,
+      notes: input.notes,
+    });
+
+    if (input.odometerKm > vehicle.odometerKm) {
+      vehicle.odometerKm = input.odometerKm;
+      await vehicle.save();
+    }
+
+    return this.sanitizeFuelExpense(expense);
   }
 
   // The driver's own profile plus their currently assigned vehicle (if any),

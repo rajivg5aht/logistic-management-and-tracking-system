@@ -13,24 +13,30 @@ import {
   ChevronRight,
   Ban,
   UserCheck,
+  Trash2,
   Shield,
   Truck,
   User,
   Filter,
   MoreVertical,
   TrendingUp,
+  TrendingDown,
   type LucideIcon,
 } from "lucide-react";
 import {
   adminGetUsers,
+  adminGetUserStats,
   adminCreateUser,
   adminUpdateUser,
+  adminDeleteUser,
   AdminUserMeta,
   AdminUserPayload,
+  AdminUserStats,
 } from "@/lib/api/admin.api";
 import { AuthUser } from "@/lib/api/auth.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 
 interface AdminUserManagementProps {
   token: string;
@@ -59,44 +65,24 @@ const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string
   customer: { label: "Customer", Icon: User, cls: "bg-[rgba(95,127,53,0.12)] text-[var(--success)]" },
 };
 
-// Illustrative weekly registration figures for the Quick Insights chart
-const REG_GROWTH = [
-  { d: "Mon", v: 52 },
-  { d: "Tue", v: 78 },
-  { d: "Wed", v: 44 },
-  { d: "Thu", v: 84 },
-  { d: "Fri", v: 72 },
-  { d: "Sat", v: 96 },
-  { d: "Sun", v: 58 },
-];
 
-function getInitials(name: string) {
-  if (!name) return "?";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
+// Registration date shown in the personnel table, e.g. "Jul 10, 2026".
+function formatRegDate(value?: string): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function AdminUserManagement({ token, currentUser, onMutationFinished }: AdminUserManagementProps) {
   // Lists & pagination
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [meta, setMeta] = useState<AdminUserMeta | null>(null);
+  const [stats, setStats] = useState<AdminUserStats | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,11 +97,14 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Form payload states
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
+    phoneNumber: "",
     email: "",
     password: "",
     role: "customer" as "admin" | "customer" | "driver",
@@ -152,6 +141,9 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         );
         setUsers(res.data);
         setMeta(res.meta);
+        // Refresh the signup/growth KPIs alongside, but never let a stats error
+        // block the user table.
+        adminGetUserStats(token).then(setStats).catch(() => {});
         onMutationFinished?.();
       } catch (err: unknown) {
         if (!silent) {
@@ -169,7 +161,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
   }, [fetchUsers]);
 
@@ -181,6 +172,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   const handleCreateOpen = () => {
     setFormData({
       fullName: "",
+      phoneNumber: "",
       email: "",
       password: "",
       role: "customer",
@@ -194,6 +186,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     setSelectedUser(user);
     setFormData({
       fullName: user.fullName,
+      phoneNumber: user.phoneNumber || "",
       email: user.email,
       password: "", // Leave blank unless changing
       role: user.role,
@@ -203,12 +196,23 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     setIsEditOpen(true);
   };
 
+  const handleDeleteOpen = (user: AuthUser) => {
+    setSelectedUser(user);
+    setDeleteError(null);
+    setIsDeleteOpen(true);
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!formData.fullName || !formData.email || !formData.password) {
+    if (!formData.fullName || !formData.phoneNumber || !formData.email || !formData.password) {
       setFormError("All required fields must be filled.");
+      return;
+    }
+
+    if (formData.phoneNumber.trim().length < 10) {
+      setFormError("Phone number must be at least 10 digits long.");
       return;
     }
 
@@ -221,6 +225,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       setActionLoading(true);
       await adminCreateUser(token, {
         fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber.trim(),
         email: formData.email,
         password: formData.password,
         role: "customer",
@@ -241,8 +246,13 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     if (!selectedUser) return;
     setFormError(null);
 
-    if (!formData.fullName || !formData.email) {
-      setFormError("Name and Email are required fields.");
+    if (!formData.fullName || !formData.email || !formData.phoneNumber) {
+      setFormError("Name, Phone and Email are required fields.");
+      return;
+    }
+
+    if (formData.phoneNumber.trim().length < 10) {
+      setFormError("Phone number must be at least 10 digits long.");
       return;
     }
 
@@ -251,6 +261,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       const payload: Partial<AdminUserPayload> = {
         fullName: formData.fullName,
         email: formData.email,
+        phoneNumber: formData.phoneNumber.trim(),
         status: formData.status,
       };
 
@@ -296,6 +307,24 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     }
   };
 
+  const handleDeleteSubmit = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setActionLoading(true);
+      setDeleteError(null);
+      await adminDeleteUser(token, selectedUser.id);
+      setIsDeleteOpen(false);
+      fetchUsers();
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete user.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Pagination helper
   const handlePageChange = (newPage: number) => {
     if (meta && newPage >= 1 && newPage <= meta.totalPages) {
@@ -306,6 +335,12 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   const visibleUsers = users;
   const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
   const rangeEnd = meta ? (meta.page - 1) * meta.limit + users.length : 0;
+
+  // Real daily customer-signup counts for the Quick Insights chart. Bars are
+  // scaled against the busiest day so the tallest fills the plot; a day with
+  // any signups keeps a visible minimum height.
+  const regTrend = stats?.registrationTrend ?? [];
+  const regTrendMax = Math.max(1, ...regTrend.map((b) => b.count));
 
   return (
     <div className="space-y-6 font-sans">
@@ -362,32 +397,38 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {/* Total users (real data) */}
-        <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2" style={{ boxShadow: "var(--shadow-sm)" }}>
-          <Truck
-            className="pointer-events-none absolute -right-3 top-1/2 h-28 w-28 -translate-y-1/2 text-[var(--surface-muted)]"
-            strokeWidth={1.2}
-          />
-          <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
-            <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
-              {meta ? meta.total.toLocaleString() : "—"}
+        <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
+          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
+            {meta ? meta.total.toLocaleString() : "-"}
+          </p>
+          {stats ? (
+            <p
+              className={`mt-2 flex items-center gap-1 text-xs font-bold ${
+                stats.growthPct >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"
+              }`}
+            >
+              {stats.growthPct >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+              {stats.growthPct >= 0 ? "+" : ""}
+              {stats.growthPct}% vs last month
             </p>
-            <p className="mt-2 flex items-center gap-1 text-xs font-bold text-[var(--success)]">
-              <TrendingUp size={14} /> 12% growth this month
-            </p>
-          </div>
+          ) : (
+            <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Registration trend</p>
+          )}
         </div>
 
-        {/* New signups (illustrative) */}
+        {/* New signups (real data - customer registrations in the last 24h) */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">New Signups</p>
-          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">42</p>
+          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">
+            {stats ? stats.newSignups24h.toLocaleString() : "-"}
+          </p>
           <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Last 24 hours</p>
         </div>
 
-        {/* System uptime (illustrative) */}
+        {/* System uptime */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">System Uptime</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--teal)]">99.9%</p>
@@ -433,6 +474,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                   <th>Phone</th>
                   <th>Role</th>
                   <th>Status</th>
+                  <th>Registered</th>
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -452,12 +494,13 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                       <td><div className="h-4 w-24 rounded bg-[var(--border)]" /></td>
                       <td><div className="h-6 w-16 rounded-full bg-[var(--border)]" /></td>
                       <td><div className="h-6 w-16 rounded-full bg-[var(--border)]" /></td>
+                      <td><div className="h-4 w-20 rounded bg-[var(--border)]" /></td>
                       <td><div className="ml-auto h-6 w-20 rounded bg-[var(--border)]" /></td>
                     </tr>
                   ))
                 ) : visibleUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center font-medium text-[var(--text-muted)]">
+                    <td colSpan={6} className="py-12 text-center font-medium text-[var(--text-muted)]">
                       {activeTab === "all" ? "No users found." : `No ${activeTab}s found.`}
                     </td>
                   </tr>
@@ -486,7 +529,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                           </div>
                         </td>
                         <td className="whitespace-nowrap text-sm text-[var(--text-soft)]">
-                          {user.phoneNumber || "—"}
+                          {user.phoneNumber || "-"}
                         </td>
                         <td>
                           <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${roleCfg.cls}`}>
@@ -503,6 +546,9 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                             <span className={`h-1.5 w-1.5 rounded-full ${status === "inactive" ? "bg-[var(--danger)]" : "bg-[var(--success)]"}`} />
                             {status}
                           </span>
+                        </td>
+                        <td className="whitespace-nowrap text-sm text-[var(--text-soft)]">
+                          {formatRegDate(user.createdAt)}
                         </td>
                         <td>
                           <div className="flex items-center justify-end gap-1">
@@ -535,6 +581,15 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                                   title={status === "inactive" ? "Unblock user" : "Block user"}
                                 >
                                   {status === "inactive" ? <UserCheck size={16} /> : <Ban size={16} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteOpen(user)}
+                                  disabled={actionLoading}
+                                  className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[rgba(181,71,59,0.1)] hover:text-[var(--danger)] cursor-pointer disabled:opacity-50"
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 size={16} />
                                 </button>
                               </>
                             ) : (
@@ -579,7 +634,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
 
                 {getPageNumbers(page, meta.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-1.5 text-sm font-semibold text-[var(--text-muted)]">…</span>
+                    <span key={`e${i}`} className="px-1.5 text-sm font-semibold text-[var(--text-muted)]">...</span>
                   ) : (
                     <button
                       key={p}
@@ -616,21 +671,63 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         <h2 className="mb-4 text-lg font-extrabold text-[var(--teal)]">Quick Insights</h2>
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <h3 className="text-sm font-extrabold text-[var(--teal)]">
-            Registration Growth <span className="font-semibold text-[var(--text-muted)]">(Last 30 Days)</span>
+            Registration Growth <span className="font-semibold text-[var(--text-muted)]">(Last 7 Days)</span>
           </h3>
-          <div className="mt-6 flex h-44 items-end justify-between gap-3 sm:gap-5">
-            {REG_GROWTH.map((bar) => (
-              <div key={bar.d} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex w-full flex-1 items-end">
+          {!stats ? (
+            <div className="mt-8">
+              <div className="flex h-40 items-end justify-between gap-3 sm:gap-5">
+                {Array.from({ length: 7 }).map((_, i) => (
                   <div
-                    className="w-full rounded-t-lg bg-[var(--accent)] transition-all duration-500"
-                    style={{ height: `${bar.v}%` }}
+                    key={i}
+                    className="flex-1 animate-pulse rounded-t-lg bg-[var(--border)]"
+                    style={{ height: `${30 + ((i * 37) % 55)}%` }}
                   />
-                </div>
-                <span className="text-[11px] font-semibold text-[var(--text-muted)]">{bar.d}</span>
+                ))}
               </div>
-            ))}
-          </div>
+              <div className="mt-2 flex justify-between gap-3 sm:gap-5">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="h-3 flex-1 animate-pulse rounded bg-[var(--border)]" />
+                ))}
+              </div>
+            </div>
+          ) : regTrendMax === 1 && regTrend.every((b) => b.count === 0) ? (
+            <div className="mt-6 flex h-44 flex-col items-center justify-center gap-1 text-center">
+              <p className="text-sm font-semibold text-[var(--text)]">No new registrations yet</p>
+              <p className="text-xs text-[var(--text-muted)]">Customer signups from the last 7 days will appear here.</p>
+            </div>
+          ) : (
+            <div className="mt-8">
+              {/* Bars are direct children of a fixed-height row so their percentage
+                  heights resolve against it — nested flex-1 columns collapse to 0. */}
+              <div className="flex h-40 items-end justify-between gap-3 sm:gap-5">
+                {regTrend.map((bar, i) => {
+                  // Days with signups keep a 6% floor so a single registration stays visible.
+                  const pct = bar.count === 0 ? 0 : Math.max(6, (bar.count / regTrendMax) * 100);
+                  return (
+                    <div
+                      key={i}
+                      className="relative flex-1 rounded-t-lg bg-[var(--accent)] transition-all duration-500"
+                      style={{ height: `${pct}%` }}
+                      title={`${bar.count} signup${bar.count === 1 ? "" : "s"}`}
+                    >
+                      {bar.count > 0 && (
+                        <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-bold text-[var(--text)]">
+                          {bar.count}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-2 flex justify-between gap-3 sm:gap-5">
+                {regTrend.map((bar, i) => (
+                  <span key={i} className="flex-1 text-center text-[11px] font-semibold text-[var(--text-muted)]">
+                    {bar.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -639,17 +736,33 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
 
-          <div>
-            <label className="form-label" htmlFor="fullName">Full Name *</label>
-            <input
-              type="text"
-              id="fullName"
-              placeholder="e.g. John Doe"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="form-input"
-              required
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label" htmlFor="fullName">Full Name *</label>
+              <input
+                type="text"
+                id="fullName"
+                placeholder="e.g. John Doe"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label" htmlFor="phoneNumber">Phone Number *</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                autoComplete="tel"
+                placeholder="9800000000"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                className="form-input"
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -707,16 +820,32 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         <form onSubmit={handleEditSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
 
-          <div>
-            <label className="form-label" htmlFor="edit-fullName">Full Name *</label>
-            <input
-              type="text"
-              id="edit-fullName"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="form-input"
-              required
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="form-label" htmlFor="edit-fullName">Full Name *</label>
+              <input
+                type="text"
+                id="edit-fullName"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="form-label" htmlFor="edit-phoneNumber">Phone Number *</label>
+              <input
+                type="tel"
+                id="edit-phoneNumber"
+                autoComplete="tel"
+                placeholder="9800000000"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                className="form-input"
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -748,7 +877,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Role</label>
-              <div className="form-input capitalize">{formData.role}</div>
+              <div className="form-input flex items-center capitalize text-[var(--text-muted)]">{formData.role}</div>
             </div>
             <div>
               <label className="form-label" htmlFor="edit-status">Status *</label>
@@ -782,6 +911,46 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* DELETE MODAL */}
+      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete User Permanently">
+        <div className="space-y-4">
+          {deleteError && <div className="form-error">{deleteError}</div>}
+
+          <div className="rounded-xl border border-[rgba(181,71,59,0.18)] bg-[rgba(181,71,59,0.06)] p-4 text-sm text-[var(--text)]">
+            <p className="font-semibold text-[var(--danger)]">This will permanently delete the account.</p>
+            <p className="mt-2 text-[var(--text-soft)]">
+              {selectedUser ? (
+                <>
+                  <span className="font-semibold text-[var(--text)]">{selectedUser.fullName}</span>
+                  {" "}({selectedUser.email}) will be removed from the system.
+                </>
+              ) : (
+                "The selected user will be removed from the system."
+              )}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
+            <button
+              type="button"
+              onClick={() => setIsDeleteOpen(false)}
+              className="btn-secondary btn-sm cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteSubmit}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading && <Loader2 size={16} className="animate-spin" />}
+              Delete
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>
