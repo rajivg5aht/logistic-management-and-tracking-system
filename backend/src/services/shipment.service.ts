@@ -22,8 +22,10 @@ import {
   SHIPMENT_STATUS_TO_DRIVER_STAGE,
 } from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
+import { PaymentService } from "./payment.service";
 
 const shipmentRepository = new ShipmentMongoRepository();
+const paymentService = new PaymentService();
 
 export type SafeProofOfDelivery = {
   photoUrl: string | null;
@@ -145,6 +147,9 @@ export class ShipmentService {
       assignedDriver: null,
       assignedVehicle: null,
     });
+
+    // Record the transaction in the payments ledger (source of truth for money).
+    await paymentService.createChargeForShipment(shipment);
 
     return this.sanitize(shipment);
   }
@@ -714,6 +719,9 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to update payment status");
     }
+
+    // Mirror the cash collection into the payments ledger.
+    await paymentService.recordCodCollection(id, driverId, collected);
 
     return this.sanitize(updated);
   }
