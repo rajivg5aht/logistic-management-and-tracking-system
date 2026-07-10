@@ -35,6 +35,16 @@ import {
   type Driver,
   type VehicleType,
 } from "@/lib/api/driver.api";
+import {
+  adminGetIncidents,
+  adminGetFuelExpenses,
+  type AdminIncident,
+  type AdminFuelExpense,
+} from "@/lib/api/fleetReports.api";
+import {
+  IncidentRow,
+  FuelExpenseRow,
+} from "@/components/admin/fleetReportShared";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_CONFIG: Record<
@@ -140,6 +150,8 @@ export default function VehicleDetails({
 }) {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [incidents, setIncidents] = useState<AdminIncident[]>([]);
+  const [fuelExpenses, setFuelExpenses] = useState<AdminFuelExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,12 +159,17 @@ export default function VehicleDetails({
     async (silent = false) => {
       try {
         if (!silent) setLoading(true);
-        const [vehicleData, driverResult] = await Promise.all([
-          adminGetVehicleById(token, vehicleId),
-          adminGetDrivers(token, 1, 200),
-        ]);
+        const [vehicleData, driverResult, incidentResult, fuelResult] =
+          await Promise.all([
+            adminGetVehicleById(token, vehicleId),
+            adminGetDrivers(token, 1, 200),
+            adminGetIncidents(token, { vehicleId, limit: 50 }),
+            adminGetFuelExpenses(token, { vehicleId, limit: 50 }),
+          ]);
         setVehicle(vehicleData);
         setDrivers(driverResult.data);
+        setIncidents(incidentResult.data);
+        setFuelExpenses(fuelResult.data);
         setError(null);
       } catch (err) {
         if (!silent) {
@@ -419,6 +436,48 @@ export default function VehicleDetails({
               );
             })}
           </ol>
+        )}
+      </SectionCard>
+
+      {/* ============ Incident reports ============ */}
+      <SectionCard title="Incident Reports" Icon={AlertTriangle}>
+        {incidents.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 py-8 text-center text-sm font-medium text-[var(--text-muted)]">
+            No issues reported for this vehicle.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {incidents.map((inc) => (
+              <IncidentRow
+                key={inc.id}
+                incident={inc}
+                token={token}
+                onChanged={() => load(true)}
+                showVehicle={false}
+              />
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+
+      {/* ============ Fuel expenses ============ */}
+      <SectionCard title="Fuel Expenses" Icon={Gauge}>
+        {fuelExpenses.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 py-8 text-center text-sm font-medium text-[var(--text-muted)]">
+            No fuel expenses logged for this vehicle.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {fuelExpenses.map((f) => (
+              <FuelExpenseRow
+                key={f.id}
+                expense={f}
+                token={token}
+                onChanged={() => load(true)}
+                showVehicle={false}
+              />
+            ))}
+          </ul>
         )}
       </SectionCard>
     </div>
