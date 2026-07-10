@@ -8,6 +8,8 @@ import {
   DriverAvailabilityDTO,
   DriverCodUpdateDTO,
   DriverProofUpdateDTO,
+  DriverFleetIncidentDTO,
+  DriverFuelExpenseDTO,
 } from "../dtos/driver.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
@@ -16,7 +18,7 @@ const shipmentService = new ShipmentService();
 const userService = new UserService();
 
 export class DriverController {
-  // â”€â”€ Driver: my profile + assigned vehicle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: my profile + assigned vehicle --------------------------------
   async getMe(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -38,7 +40,89 @@ export class DriverController {
     }
   }
 
-  // â”€â”€ Driver: list shipments assigned to me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: assigned fleet details --------------------------------------
+  async getFleet(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const fleet = await userService.getDriverFleet(req.user.id);
+      return ApiResponseHelper.success(
+        res,
+        fleet,
+        "Driver fleet retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async reportFleetIncident(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = DriverFleetIncidentDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const incident = await userService.createDriverFleetIncident(
+        req.user.id,
+        parsed.data,
+      );
+      return ApiResponseHelper.success(
+        res,
+        incident,
+        "Vehicle issue reported successfully",
+        201,
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async logFuelExpense(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = DriverFuelExpenseDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const expense = await userService.createDriverFuelExpense(
+        req.user.id,
+        parsed.data,
+      );
+      return ApiResponseHelper.success(
+        res,
+        expense,
+        "Fuel expense submitted successfully",
+        201,
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  // -- Driver: list shipments assigned to me --------------------------------
   async getMyAssignments(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -69,7 +153,7 @@ export class DriverController {
     }
   }
 
-  // â”€â”€ Driver: get one of my assignments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: get one of my assignments ------------------------------------
   async getAssignmentById(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -99,7 +183,7 @@ export class DriverController {
     }
   }
 
-  // â”€â”€ Driver: advance the delivery stage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: advance the delivery stage -----------------------------------
   async updateStage(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -235,7 +319,7 @@ export class DriverController {
     }
   }
 
-  // â”€â”€ Driver: my dashboard stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: my dashboard stats -------------------------------------------
   async getStats(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -257,7 +341,7 @@ export class DriverController {
     }
   }
 
-  // â”€â”€ Driver: toggle my own availability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- Driver: toggle my own availability -----------------------------------
   async updateAvailability(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {

@@ -2,14 +2,27 @@ import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
 import type { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
-import type { AdminCreateDriverDTO, AdminUpdateDriverDTO } from "../dtos/driver.dto";
+import type {
+  AdminCreateDriverDTO,
+  AdminUpdateDriverDTO,
+  DriverFleetIncidentDTO,
+  DriverFuelExpenseDTO,
+} from "../dtos/driver.dto";
 import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
 import { ShipmentModel } from "../models/shipment.model";
-import { VehicleModel } from "../models/vehicle.model";
+import { VehicleModel, type IVehicle } from "../models/vehicle.model";
+import {
+  VehicleIncidentModel,
+  type IVehicleIncident,
+} from "../models/vehicleIncident.model";
+import {
+  VehicleFuelExpenseModel,
+  type IVehicleFuelExpense,
+} from "../models/vehicleFuelExpense.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -46,6 +59,62 @@ export type DriverVehicleSummary = {
 
 export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
 
+export type DriverFleetVehicle = DriverVehicleSummary & {
+  year?: number;
+  branch: string;
+  imageUrl: string | null;
+  insuranceExpiry: Date | null;
+  registrationExpiry: Date | null;
+  lastServiceAt: Date | null;
+  nextServiceAt: Date | null;
+  odometerKm: number;
+  assignedAt: Date | null;
+  updatedAt: Date;
+};
+
+export type DriverFleetAssignment = {
+  vehicleId: string;
+  registrationNumber: string;
+  type: string;
+  make: string;
+  model: string;
+  assignedAt: Date;
+  unassignedAt: Date | null;
+  status: string;
+  odometerKm: number;
+};
+
+export type DriverFleetIncident = {
+  id: string;
+  category: string;
+  severity: string;
+  description: string;
+  location: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DriverFuelExpense = {
+  id: string;
+  fuelType: string;
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName: string;
+  notes: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DriverFleet = {
+  vehicle: DriverFleetVehicle | null;
+  assignmentHistory: DriverFleetAssignment[];
+  incidents: DriverFleetIncident[];
+  fuelExpenses: DriverFuelExpense[];
+};
+
 export class UserService {
   private hashPassword(password: string): Promise<string> {
     return bcryptjs.hash(password, 10);
@@ -69,6 +138,84 @@ export class UserService {
       availabilityStatus: user.availabilityStatus,
       assignedVehicleId: user.assignedVehicleId?.toString() ?? null,
     };
+  }
+
+  private sanitizeDriverFleetVehicle(
+    vehicle: IVehicle,
+    driverId: string,
+  ): DriverFleetVehicle {
+    const matchingAssignments = vehicle.assignmentHistory.filter(
+      (entry) => entry.driverId.toString() === driverId,
+    );
+    const currentAssignment =
+      matchingAssignments.find((entry) => !entry.unassignedAt) ??
+      matchingAssignments[matchingAssignments.length - 1] ??
+      null;
+
+    return {
+      id: vehicle._id.toString(),
+      registrationNumber: vehicle.registrationNumber,
+      type: vehicle.type,
+      make: vehicle.make,
+      model: vehicle.vehicleModel,
+      year: vehicle.year,
+      capacityKg: vehicle.capacityKg ?? null,
+      branch: vehicle.branch,
+      imageUrl: vehicle.imageUrl ?? null,
+      status: vehicle.status,
+      insuranceExpiry: vehicle.insuranceExpiry,
+      registrationExpiry: vehicle.registrationExpiry,
+      lastServiceAt: vehicle.lastServiceAt,
+      nextServiceAt: vehicle.nextServiceAt,
+      odometerKm: vehicle.odometerKm,
+      assignedAt: currentAssignment?.assignedAt ?? null,
+      updatedAt: vehicle.updatedAt,
+    };
+  }
+
+  private sanitizeFleetIncident(
+    incident: IVehicleIncident,
+  ): DriverFleetIncident {
+    return {
+      id: incident._id.toString(),
+      category: incident.category,
+      severity: incident.severity,
+      description: incident.description,
+      location: incident.location,
+      status: incident.status,
+      createdAt: incident.createdAt,
+      updatedAt: incident.updatedAt,
+    };
+  }
+
+  private sanitizeFuelExpense(
+    expense: IVehicleFuelExpense,
+  ): DriverFuelExpense {
+    return {
+      id: expense._id.toString(),
+      fuelType: expense.fuelType,
+      liters: expense.liters,
+      amount: expense.amount,
+      odometerKm: expense.odometerKm,
+      stationName: expense.stationName,
+      notes: expense.notes,
+      status: expense.status,
+      createdAt: expense.createdAt,
+      updatedAt: expense.updatedAt,
+    };
+  }
+
+  private async getDriverWithAssignedVehicle(driverId: string) {
+    const driver = await userRepository.getUserById(driverId);
+    if (!driver || driver.role !== "driver") {
+      throw new HttpException(404, "Driver not found");
+    }
+
+    const vehicle = driver.assignedVehicleId
+      ? await VehicleModel.findById(driver.assignedVehicleId)
+      : await VehicleModel.findOne({ assignedDriverId: driver._id });
+
+    return { driver, vehicle };
   }
 
   async createUser(userData: CreateUserDTO): Promise<SafeUser> {
@@ -677,6 +824,109 @@ export class UserService {
       throw new HttpException(404, "Driver not found");
     }
     return this.sanitizeUser(updated);
+  }
+
+  async getDriverFleet(driverId: string): Promise<DriverFleet> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+
+    const historyVehicles = await VehicleModel.find({
+      "assignmentHistory.driverId": driver._id,
+    }).sort({ updatedAt: -1 });
+
+    const assignmentHistory = historyVehicles
+      .flatMap((historyVehicle) =>
+        historyVehicle.assignmentHistory
+          .filter((entry) => entry.driverId.toString() === driver._id.toString())
+          .map((entry) => ({
+            vehicleId: historyVehicle._id.toString(),
+            registrationNumber: historyVehicle.registrationNumber,
+            type: historyVehicle.type,
+            make: historyVehicle.make,
+            model: historyVehicle.vehicleModel,
+            assignedAt: entry.assignedAt,
+            unassignedAt: entry.unassignedAt ?? null,
+            status: entry.unassignedAt ? "released" : "current",
+            odometerKm: historyVehicle.odometerKm,
+          })),
+      )
+      .sort(
+        (a, b) => b.assignedAt.getTime() - a.assignedAt.getTime(),
+      );
+
+    const [incidents, fuelExpenses] = vehicle
+      ? await Promise.all([
+          VehicleIncidentModel.find({
+            vehicleId: vehicle._id,
+            driverId: driver._id,
+          })
+            .sort({ createdAt: -1 })
+            .limit(25),
+          VehicleFuelExpenseModel.find({
+            vehicleId: vehicle._id,
+            driverId: driver._id,
+          })
+            .sort({ createdAt: -1 })
+            .limit(25),
+        ])
+      : [[], []];
+
+    return {
+      vehicle: vehicle
+        ? this.sanitizeDriverFleetVehicle(vehicle, driver._id.toString())
+        : null,
+      assignmentHistory,
+      incidents: incidents.map((incident) => this.sanitizeFleetIncident(incident)),
+      fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),
+    };
+  }
+
+  async createDriverFleetIncident(
+    driverId: string,
+    input: DriverFleetIncidentDTO,
+  ): Promise<DriverFleetIncident> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+    if (!vehicle) {
+      throw new HttpException(400, "No vehicle assigned to report an issue");
+    }
+
+    const incident = await VehicleIncidentModel.create({
+      vehicleId: vehicle._id,
+      driverId: driver._id,
+      category: input.category,
+      severity: input.severity,
+      description: input.description,
+      location: input.location,
+    });
+
+    return this.sanitizeFleetIncident(incident);
+  }
+
+  async createDriverFuelExpense(
+    driverId: string,
+    input: DriverFuelExpenseDTO,
+  ): Promise<DriverFuelExpense> {
+    const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
+    if (!vehicle) {
+      throw new HttpException(400, "No vehicle assigned to log fuel expense");
+    }
+
+    const expense = await VehicleFuelExpenseModel.create({
+      vehicleId: vehicle._id,
+      driverId: driver._id,
+      fuelType: input.fuelType,
+      liters: input.liters,
+      amount: input.amount,
+      odometerKm: input.odometerKm,
+      stationName: input.stationName,
+      notes: input.notes,
+    });
+
+    if (input.odometerKm > vehicle.odometerKm) {
+      vehicle.odometerKm = input.odometerKm;
+      await vehicle.save();
+    }
+
+    return this.sanitizeFuelExpense(expense);
   }
 
   // The driver's own profile plus their currently assigned vehicle (if any),

@@ -62,3 +62,24 @@ export const DriverAvailabilityDTO = z.object({
 });
 
 export type DriverAvailabilityDTO = z.infer<typeof DriverAvailabilityDTO>;
+
+
+export const DriverFleetIncidentDTO = z.object({
+  category: z.enum(["mechanical", "damage", "tire", "brake", "engine", "other"]),
+  severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  description: z.string().trim().min(10, "Describe the issue in at least 10 characters").max(800),
+  location: z.string().trim().max(160).optional().default(""),
+});
+
+export type DriverFleetIncidentDTO = z.infer<typeof DriverFleetIncidentDTO>;
+
+export const DriverFuelExpenseDTO = z.object({
+  fuelType: z.enum(["petrol", "diesel", "electric", "other"]),
+  liters: z.number().min(0).max(500).optional(),
+  amount: z.number().min(1, "Fuel amount is required").max(1_000_000),
+  odometerKm: z.number().min(0).max(5_000_000),
+  stationName: z.string().trim().max(160).optional().default(""),
+  notes: z.string().trim().max(500).optional().default(""),
+});
+
+export type DriverFuelExpenseDTO = z.infer<typeof DriverFuelExpenseDTO>;
