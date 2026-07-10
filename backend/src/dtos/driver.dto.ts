@@ -5,12 +5,16 @@ import {
 } from "../types/user.type";
 import { DRIVER_STAGES } from "../types/shipment.type";
 
-// Admin creates a driver account (internal staff — no public signup).
+const PhoneNumberDTO = z
+  .string()
+  .trim()
+  .min(10, "Phone number must be at least 10 digits long");
+
 export const AdminCreateDriverDTO = z.object({
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
+  phoneNumber: PhoneNumberDTO,
   licenseNumber: z.string().min(1, "License number is required"),
   branch: z.string().optional().default(""),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional().default("full-time"),
@@ -23,7 +27,7 @@ export const AdminUpdateDriverDTO = z.object({
   fullName: z.string().min(1, "Full name is required").optional(),
   email: z.string().email("Invalid email address").optional(),
   password: z.string().min(6, "Password must be at least 6 characters long").optional(),
-  phoneNumber: z.string().optional(),
+  phoneNumber: PhoneNumberDTO.optional(),
   licenseNumber: z.string().min(1, "License number is required").optional(),
   branch: z.string().optional(),
   employmentStatus: z.enum(EMPLOYMENT_STATUSES).optional(),
@@ -33,7 +37,6 @@ export const AdminUpdateDriverDTO = z.object({
 
 export type AdminUpdateDriverDTO = z.infer<typeof AdminUpdateDriverDTO>;
 
-// A driver updates the delivery stage of one of their assigned shipments.
 export const DriverStageUpdateDTO = z.object({
   stage: z.enum(DRIVER_STAGES),
   note: z.string().optional(),
@@ -41,8 +44,6 @@ export const DriverStageUpdateDTO = z.object({
 
 export type DriverStageUpdateDTO = z.infer<typeof DriverStageUpdateDTO>;
 
-// A driver records whether they collected the COD cash for a shipment. Boolean
-// so an accidental tap can be undone (paid -> pending).
 export const DriverCodUpdateDTO = z.object({
   collected: z.boolean(),
 });
@@ -56,7 +57,6 @@ export const DriverProofUpdateDTO = z.object({
 
 export type DriverProofUpdateDTO = z.infer<typeof DriverProofUpdateDTO>;
 
-// A driver toggles their own availability (available / off-duty).
 export const DriverAvailabilityDTO = z.object({
   availabilityStatus: z.enum(["available", "off-duty"]),
 });

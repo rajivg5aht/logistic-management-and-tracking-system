@@ -1,24 +1,29 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import mongoose from "mongoose";
 import { UserService } from "../services/user.service";
 import { AdminCreateDriverDTO, AdminUpdateDriverDTO } from "../dtos/driver.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
-import { AVAILABILITY_STATUSES } from "../types/user.type";
+import {
+  buildPaginationMeta,
+  handleControllerError,
+  isObjectId,
+  parsePagination,
+} from "../utils/request.util";
+import { AVAILABILITY_STATUSES, type AvailabilityStatus } from "../types/user.type";
 
 const userService = new UserService();
 
+const isAvailabilityStatus = (value: string): value is AvailabilityStatus =>
+  AVAILABILITY_STATUSES.includes(value as AvailabilityStatus);
+
 export class AdminDriverController {
-  // ── List drivers (paginated, searchable, filterable by availability) ───────
   async getDrivers(req: Request, res: Response) {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const { page, limit } = parsePagination(req.query);
       const search = (req.query.search as string) || "";
       const availabilityParam = req.query.availability as string | undefined;
       const availability =
-        availabilityParam &&
-        AVAILABILITY_STATUSES.includes(availabilityParam as any)
+        availabilityParam && isAvailabilityStatus(availabilityParam)
           ? availabilityParam
           : undefined;
 
@@ -28,25 +33,19 @@ export class AdminDriverController {
         search,
         availability,
       );
-      const totalPages = Math.ceil(total / limit);
 
       return ApiResponseHelper.success(
         res,
         drivers,
         "Drivers retrieved successfully",
         200,
-        { page, limit, total, totalPages },
+        buildPaginationMeta(page, limit, total),
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
-  // ── Aggregate KPI counts for the driver-management cards ───────────────────
   async getStats(_req: Request, res: Response) {
     try {
       const stats = await userService.adminGetDriverStats();
@@ -55,19 +54,15 @@ export class AdminDriverController {
         stats,
         "Driver stats retrieved successfully",
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
   async getDriverById(req: Request, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid driver ID", 400);
       }
 
@@ -77,12 +72,8 @@ export class AdminDriverController {
         driver,
         "Driver retrieved successfully",
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
@@ -100,19 +91,15 @@ export class AdminDriverController {
         "Driver created successfully",
         201,
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
   async updateDriver(req: Request, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid driver ID", 400);
       }
 
@@ -127,19 +114,15 @@ export class AdminDriverController {
         updated,
         "Driver updated successfully",
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
   async deleteDriver(req: Request, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid driver ID", 400);
       }
 
@@ -149,12 +132,8 @@ export class AdminDriverController {
         null,
         "Driver deleted successfully",
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 }

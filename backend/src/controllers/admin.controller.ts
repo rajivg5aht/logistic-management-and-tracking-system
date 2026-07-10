@@ -1,18 +1,34 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 import { UserService } from "../services/user.service";
 import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
-import mongoose from "mongoose";
-import { z } from "zod";
+import { AuthRequest } from "../middleware/auth.middleware";
+import {
+  buildPaginationMeta,
+  handleControllerError,
+  isObjectId,
+  parsePagination,
+} from "../utils/request.util";
 
 const userService = new UserService();
+
+const normalizeUserBody = (body: Record<string, unknown>) => {
+  const normalized = { ...body };
+
+  if (typeof normalized.name === "string" && !normalized.fullName) {
+    normalized.fullName = normalized.name;
+  }
+  delete normalized.name;
+
+  return normalized;
+};
 
 export class AdminController {
   async getUsers(req: Request, res: Response) {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const search = req.query.search as string || "";
+      const { page, limit } = parsePagination(req.query);
+      const search = (req.query.search as string) || "";
       const requestedRole = req.query.role as string | undefined;
       const role =
         requestedRole && ["admin", "customer", "driver"].includes(requestedRole)
@@ -25,26 +41,16 @@ export class AdminController {
         search,
         role,
       );
-      const totalPages = Math.ceil(total / limit);
 
       return ApiResponseHelper.success(
         res,
         users,
         "Users retrieved successfully",
         200,
-        {
-          page,
-          limit,
-          total,
-          totalPages,
-        }
+        buildPaginationMeta(page, limit, total),
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
@@ -56,40 +62,28 @@ export class AdminController {
         stats,
         "User stats retrieved successfully",
       );
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500,
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
   async getUserById(req: Request, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid user ID", 400);
       }
 
       const user = await userService.getUserById(id);
       return ApiResponseHelper.success(res, user, "User retrieved successfully");
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
   async createUser(req: Request, res: Response) {
     try {
-      const body = { ...req.body };
-      // Map name to fullName if provided by frontend
-      if (body.name && !body.fullName) {
-        body.fullName = body.name;
-      }
+      const body = normalizeUserBody(req.body as Record<string, unknown>);
 
       if (body.role && body.role !== "customer") {
         return ApiResponseHelper.error(
@@ -104,44 +98,33 @@ export class AdminController {
         return ApiResponseHelper.error(
           res,
           z.prettifyError(parsedData.error),
-          400
+          400,
         );
       }
 
       const user = await userService.adminCreateUser(parsedData.data);
       return ApiResponseHelper.success(res, user, "User created successfully", 201);
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
-  async updateUser(req: Request, res: Response) {
+  async updateUser(req: AuthRequest, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid user ID", 400);
       }
 
-      // Security: Administrators cannot modify their own accounts in this panel
-      const authReq = req as any;
-      if (authReq.user?.id === id) {
+      if (req.user?.id === id) {
         return ApiResponseHelper.error(
           res,
           "Forbidden - Administrators cannot edit or modify their own accounts in the management panel",
-          403
+          403,
         );
       }
 
-      const body = { ...req.body };
-      // Map name to fullName if provided by frontend
-      if (body.name && !body.fullName) {
-        body.fullName = body.name;
-      }
-
+      const body = normalizeUserBody(req.body as Record<string, unknown>);
       if (body.role !== undefined) {
         return ApiResponseHelper.error(
           res,
@@ -155,46 +138,40 @@ export class AdminController {
         return ApiResponseHelper.error(
           res,
           z.prettifyError(parsedData.error),
-          400
+          400,
         );
       }
 
       const updatedUser = await userService.adminUpdateUser(id, parsedData.data);
-      return ApiResponseHelper.success(res, updatedUser, "User updated successfully");
-    } catch (error: any) {
-      return ApiResponseHelper.error(
+      return ApiResponseHelper.success(
         res,
-        error.message || "Internal Server Error",
-        error.status || 500
+        updatedUser,
+        "User updated successfully",
       );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 
-  async deleteUser(req: Request, res: Response) {
+  async deleteUser(req: AuthRequest, res: Response) {
     try {
-      const id = req.params.id as string;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      const id = String(req.params.id);
+      if (!isObjectId(id)) {
         return ApiResponseHelper.error(res, "Invalid user ID", 400);
       }
 
-      // Security: Administrators cannot delete their own accounts
-      const authReq = req as any;
-      if (authReq.user?.id === id) {
+      if (req.user?.id === id) {
         return ApiResponseHelper.error(
           res,
           "Forbidden - Administrators cannot delete their own accounts",
-          403
+          403,
         );
       }
 
       await userService.adminDeleteUser(id);
       return ApiResponseHelper.success(res, null, "User deleted successfully");
-    } catch (error: any) {
-      return ApiResponseHelper.error(
-        res,
-        error.message || "Internal Server Error",
-        error.status || 500
-      );
+    } catch (error: unknown) {
+      return handleControllerError(res, error);
     }
   }
 }

@@ -2,7 +2,7 @@ import type { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import { FRONTEND_ORIGIN, SECRET_KEY } from "../configs/constant";
+import { CORS_ORIGINS, SECRET_KEY } from "../configs/constant";
 import { UserModel } from "../models/user.model";
 import { TrackingService, TrackingUser } from "../services/tracking.service";
 
@@ -35,7 +35,7 @@ export const getIO = (): Server | null => io;
 export const initSocketServer = (server: HttpServer): Server => {
   io = new Server(server, {
     cors: {
-      origin: FRONTEND_ORIGIN,
+      origin: CORS_ORIGINS,
       methods: ["GET", "POST"],
       credentials: true,
     },

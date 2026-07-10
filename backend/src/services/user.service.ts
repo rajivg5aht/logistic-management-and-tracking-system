@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
 import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
+import type { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
+import type { AdminCreateDriverDTO, AdminUpdateDriverDTO } from "../dtos/driver.dto";
 import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
 import bcryptjs from "bcryptjs";
@@ -45,6 +47,10 @@ export type DriverVehicleSummary = {
 export type DriverMe = SafeUser & { vehicle: DriverVehicleSummary | null };
 
 export class UserService {
+  private hashPassword(password: string): Promise<string> {
+    return bcryptjs.hash(password, 10);
+  }
+
   private sanitizeUser(user: IUser): SafeUser {
     return {
       id: user._id.toString(),
@@ -65,58 +71,21 @@ export class UserService {
     };
   }
 
- async createUser(userData: CreateUserDTO): Promise<SafeUser> {
-  try {
-    console.log("========== REGISTER START ==========");
-    console.log("Incoming Data:", userData);
-
-    console.log("STEP 1: Checking existing email");
-
-    const existingEmail = await userRepository.getUserByEmail(
-      userData.email,
-    );
-
-    console.log("STEP 2: Email check completed");
+  async createUser(userData: CreateUserDTO): Promise<SafeUser> {
+    const existingEmail = await userRepository.getUserByEmail(userData.email);
 
     if (existingEmail) {
-      console.log("STEP 2A: Email already exists");
-
-      throw new HttpException(
-        400,
-        "Email already exists",
-      );
+      throw new HttpException(400, "Email already exists");
     }
 
-    console.log("STEP 3: Hashing password");
-
-    const hashedPassword = await bcryptjs.hash(
-      userData.password,
-      10,
-    );
-
-    console.log("STEP 4: Password hashed");
-
-    console.log("STEP 5: Creating user in database");
-
+    const hashedPassword = await this.hashPassword(userData.password);
     const user = await userRepository.createUser({
       ...userData,
       password: hashedPassword,
     });
 
-    console.log("STEP 6: User created successfully");
-    console.log("User ID:", user._id);
-
-    console.log("========== REGISTER END ==========");
-
     return this.sanitizeUser(user);
-  } catch (error: any) {
-    console.error("========== REGISTER ERROR ==========");
-    console.error(error);
-    console.error("===================================");
-
-    throw error;
   }
- }
 
   async loginUser(loginData: LoginUserDTO) {
     const user = await userRepository.getUserByEmail(loginData.email);
@@ -189,7 +158,7 @@ export class UserService {
 
     // Hash password if it's being updated
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updatedUser = await userRepository.update(userId, updateData);
@@ -228,6 +197,7 @@ export class UserService {
     newSignups24h: number;
     signupsThisMonth: number;
     growthPct: number;
+    registrationTrend: { label: string; count: number }[];
   }> {
     const now = new Date();
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -244,22 +214,55 @@ export class UserService {
         nepalOffsetMs,
     );
 
-    const [total, newSignups24h, signupsThisMonth, signupsLastMonth] =
-      await Promise.all([
-        UserModel.countDocuments({}),
-        UserModel.countDocuments({
-          role: "customer",
-          createdAt: { $gte: dayAgo },
-        }),
-        UserModel.countDocuments({
-          role: "customer",
-          createdAt: { $gte: startOfThisMonth },
-        }),
-        UserModel.countDocuments({
-          role: "customer",
-          createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
-        }),
-      ]);
+    // Start of the 7-day trend window: midnight (Nepal-local) six days ago,
+    // stored as the equivalent UTC instant for querying.
+    const startOfTodayNepal = new Date(
+      Date.UTC(
+        nowInNepal.getUTCFullYear(),
+        nowInNepal.getUTCMonth(),
+        nowInNepal.getUTCDate(),
+      ) - nepalOffsetMs,
+    );
+    const dayMs = 24 * 60 * 60 * 1000;
+    const trendStart = new Date(startOfTodayNepal.getTime() - 6 * dayMs);
+
+    const [
+      total,
+      newSignups24h,
+      signupsThisMonth,
+      signupsLastMonth,
+      trendRaw,
+    ] = await Promise.all([
+      UserModel.countDocuments({}),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: dayAgo },
+      }),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: startOfThisMonth },
+      }),
+      UserModel.countDocuments({
+        role: "customer",
+        createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
+      }),
+      // Daily customer signups over the trend window, bucketed by Nepal-local day.
+      UserModel.aggregate<{ _id: string; count: number }>([
+        { $match: { role: "customer", createdAt: { $gte: trendStart } } },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+                timezone: "Asia/Kathmandu",
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
 
     // Grew-from-zero baseline reads as +100%; a flat/empty prior month is 0%.
     const growthPct =
@@ -271,10 +274,33 @@ export class UserService {
             ((signupsThisMonth - signupsLastMonth) / signupsLastMonth) * 100,
           );
 
-    return { total, newSignups24h, signupsThisMonth, growthPct };
+    // Fill every day in the window (including zero-signup days) so the chart
+    // always renders exactly 7 ordered bars, oldest → newest.
+    const countByDay = new Map(trendRaw.map((r) => [r._id, r.count]));
+    const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const registrationTrend = Array.from({ length: 7 }, (_, i) => {
+      const dayInNepal = new Date(
+        trendStart.getTime() + i * dayMs + nepalOffsetMs,
+      );
+      const key = `${dayInNepal.getUTCFullYear()}-${String(
+        dayInNepal.getUTCMonth() + 1,
+      ).padStart(2, "0")}-${String(dayInNepal.getUTCDate()).padStart(2, "0")}`;
+      return {
+        label: weekdayLabels[dayInNepal.getUTCDay()],
+        count: countByDay.get(key) ?? 0,
+      };
+    });
+
+    return {
+      total,
+      newSignups24h,
+      signupsThisMonth,
+      growthPct,
+      registrationTrend,
+    };
   }
 
-  async adminCreateUser(userData: any): Promise<SafeUser> {
+  async adminCreateUser(userData: AdminCreateUserDTO): Promise<SafeUser> {
     if (userData.role && userData.role !== "customer") {
       throw new HttpException(
         400,
@@ -287,7 +313,7 @@ export class UserService {
       throw new HttpException(400, "Email already exists");
     }
 
-    const hashedPassword = await bcryptjs.hash(userData.password, 10);
+    const hashedPassword = await this.hashPassword(userData.password);
 
     const user = await userRepository.createUser({
       fullName: userData.fullName,
@@ -301,14 +327,13 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  async adminUpdateUser(userId: string, updateData: any): Promise<SafeUser> {
+  async adminUpdateUser(
+    userId: string,
+    updateData: AdminUpdateUserDTO,
+  ): Promise<SafeUser> {
     const user = await userRepository.getUserById(userId);
     if (!user) {
       throw new HttpException(404, "User not found");
-    }
-
-    if (updateData.role !== undefined) {
-      throw new HttpException(400, "Roles cannot be changed in User Management");
     }
 
     if (user.role === "driver") {
@@ -328,7 +353,7 @@ export class UserService {
     }
 
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updatedUser = await userRepository.update(userId, updateData);
@@ -348,14 +373,24 @@ export class UserService {
     if (user.role === "driver") {
       throw new HttpException(
         400,
-        "Driver accounts must be deactivated in Driver Management",
+        "Driver accounts must be managed in Driver Management",
+      );
+    }
+
+    const shipmentHistory = await ShipmentModel.countDocuments({
+      customer: user._id,
+    });
+    if (shipmentHistory > 0) {
+      throw new HttpException(
+        409,
+        "User has shipment history and cannot be deleted. Set the account to inactive instead.",
       );
     }
 
     return userRepository.delete(userId);
   }
 
-  // ── Driver management (admin-controlled internal staff) ────────────────────
+  // Driver management (admin-controlled internal staff)
   async adminGetDrivers(
     page: number,
     limit: number,
@@ -432,7 +467,7 @@ export class UserService {
     return this.sanitizeUser(user);
   }
 
-  async adminCreateDriver(driverData: any): Promise<SafeUser> {
+  async adminCreateDriver(driverData: AdminCreateDriverDTO): Promise<SafeUser> {
     const existingEmail = await userRepository.getUserByEmail(driverData.email);
     if (existingEmail) {
       throw new HttpException(400, "Email already exists");
@@ -448,7 +483,7 @@ export class UserService {
       }
     }
 
-    const hashedPassword = await bcryptjs.hash(driverData.password, 10);
+    const hashedPassword = await this.hashPassword(driverData.password);
 
     const driver = await userRepository.createUser({
       fullName: driverData.fullName,
@@ -468,7 +503,7 @@ export class UserService {
 
   async adminUpdateDriver(
     driverId: string,
-    updateData: any,
+    updateData: AdminUpdateDriverDTO,
   ): Promise<SafeUser> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
@@ -556,7 +591,7 @@ export class UserService {
     }
 
     if (updateData.password) {
-      updateData.password = await bcryptjs.hash(updateData.password, 10);
+      updateData.password = await this.hashPassword(updateData.password);
     }
 
     const updated = await userRepository.update(driverId, updateData);
@@ -566,13 +601,13 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
-  // Permanently removes a driver account. Guarded so we never orphan an active
-  // shipment or leave a vehicle pointing at a deleted driver.
+  // Permanently removes a driver account only when it has no operational history.
   async adminDeleteDriver(driverId: string): Promise<boolean> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
       throw new HttpException(404, "Driver not found");
     }
+
     const activeShipments = await ShipmentModel.countDocuments({
       assignedDriverId: driver._id,
       status: { $nin: ["delivered", "cancelled"] },
@@ -583,6 +618,17 @@ export class UserService {
         "Driver has active shipments and cannot be deleted",
       );
     }
+
+    const shipmentHistory = await ShipmentModel.countDocuments({
+      assignedDriverId: driver._id,
+    });
+    if (shipmentHistory > 0) {
+      throw new HttpException(
+        409,
+        "Driver has shipment history and cannot be deleted. Set the account to inactive instead.",
+      );
+    }
+
     const assignedVehicle = await VehicleModel.findOne({
       assignedDriverId: driver._id,
     });
@@ -592,6 +638,7 @@ export class UserService {
         "Unassign the driver's vehicle before deletion",
       );
     }
+
     return userRepository.delete(driverId);
   }
 
