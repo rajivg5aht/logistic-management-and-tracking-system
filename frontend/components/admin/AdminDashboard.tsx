@@ -39,7 +39,7 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
 
         setStats({ total, active, inactive, admin });
         setStatsError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to load dashboard stats:", err);
         if (!silent) setStatsError("Failed to load statistics.");
       } finally {

@@ -1,9 +1,9 @@
 import type { VehicleType } from "./driver.api";
-
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? ""
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import {
+  authenticatedRequest,
+  authenticatedRequestWithMeta,
+  buildQueryString,
+} from "@/lib/api/api-client";
 
 export const VEHICLE_STATUSES = [
   "available",
@@ -72,26 +72,6 @@ export type FleetMeta = {
   totalPages: number;
 };
 
-async function authFetch(
-  endpoint: string,
-  token: string,
-  init: RequestInit = {},
-) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    ...init,
-  });
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Fleet request failed");
-  }
-  return payload;
-}
-
 export async function adminGetVehicles(
   token: string,
   page = 1,
@@ -99,27 +79,43 @@ export async function adminGetVehicles(
   search = "",
   status: VehicleStatus | "" = "",
 ): Promise<{ data: Vehicle[]; meta: FleetMeta }> {
-  let endpoint = `/api/v1/admin/vehicles?page=${page}&limit=${limit}`;
-  if (search) endpoint += `&search=${encodeURIComponent(search)}`;
-  if (status) endpoint += `&status=${status}`;
-  const payload = await authFetch(endpoint, token);
-  return { data: payload.data, meta: payload.meta };
+  return authenticatedRequestWithMeta<Vehicle[], FleetMeta>(
+    `/api/v1/admin/vehicles${buildQueryString({
+      page,
+      limit,
+      search,
+      status,
+    })}`,
+    token,
+    { method: "GET" },
+  );
+}
+
+export async function adminGetVehicleById(
+  token: string,
+  id: string,
+): Promise<Vehicle> {
+  return authenticatedRequest<Vehicle>(`/api/v1/admin/vehicles/${id}`, token, {
+    method: "GET",
+  });
 }
 
 export async function adminGetFleetStats(token: string): Promise<FleetStats> {
-  const payload = await authFetch("/api/v1/admin/vehicles/stats", token);
-  return payload.data;
+  return authenticatedRequest<FleetStats>(
+    "/api/v1/admin/vehicles/stats",
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminCreateVehicle(
   token: string,
   data: VehiclePayload,
 ): Promise<Vehicle> {
-  const payload = await authFetch("/api/v1/admin/vehicles", token, {
+  return authenticatedRequest<Vehicle>("/api/v1/admin/vehicles", token, {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return payload.data;
 }
 
 export async function adminUpdateVehicle(
@@ -127,11 +123,10 @@ export async function adminUpdateVehicle(
   id: string,
   data: Partial<Omit<VehiclePayload, "registrationNumber">>,
 ): Promise<Vehicle> {
-  const payload = await authFetch(`/api/v1/admin/vehicles/${id}`, token, {
+  return authenticatedRequest<Vehicle>(`/api/v1/admin/vehicles/${id}`, token, {
     method: "PUT",
     body: JSON.stringify(data),
   });
-  return payload.data;
 }
 
 export async function adminAssignVehicle(
@@ -139,35 +134,33 @@ export async function adminAssignVehicle(
   id: string,
   driverId: string | null,
 ): Promise<Vehicle> {
-  const payload = await authFetch(
+  return authenticatedRequest<Vehicle>(
     `/api/v1/admin/vehicles/${id}/assignment`,
     token,
     { method: "PATCH", body: JSON.stringify({ driverId }) },
   );
-  return payload.data;
 }
 
 export async function adminDeactivateVehicle(
   token: string,
   id: string,
 ): Promise<void> {
-  await authFetch(`/api/v1/admin/vehicles/${id}`, token, {
+  await authenticatedRequest<null>(`/api/v1/admin/vehicles/${id}`, token, {
     method: "DELETE",
   });
 }
 
-// Permanently deletes the vehicle record (distinct from the soft deactivate).
 export async function adminRemoveVehicle(
   token: string,
   id: string,
 ): Promise<void> {
-  await authFetch(`/api/v1/admin/vehicles/${id}/permanent`, token, {
-    method: "DELETE",
-  });
+  await authenticatedRequest<null>(
+    `/api/v1/admin/vehicles/${id}/permanent`,
+    token,
+    { method: "DELETE" },
+  );
 }
 
-// Multipart upload — leaves Content-Type unset so the browser adds the
-// multipart boundary itself (authFetch always forces JSON, so we can't use it).
 export async function adminUploadVehicleImage(
   token: string,
   id: string,
@@ -175,18 +168,10 @@ export async function adminUploadVehicleImage(
 ): Promise<Vehicle> {
   const formData = new FormData();
   formData.append("image", file);
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/admin/vehicles/${id}/image`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-      credentials: "include",
-    },
+
+  return authenticatedRequest<Vehicle>(
+    `/api/v1/admin/vehicles/${id}/image`,
+    token,
+    { method: "POST", body: formData },
   );
-  const payload = await response.json();
-  if (!payload.success) {
-    throw new Error(payload.message || "Failed to upload vehicle image");
-  }
-  return payload.data;
 }

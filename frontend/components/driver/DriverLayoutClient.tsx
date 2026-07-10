@@ -90,7 +90,6 @@ export default function DriverLayoutClient({
   useEffect(() => {
     const saved = localStorage.getItem("driver-sidebar-collapsed");
     if (saved !== null) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCollapsed(JSON.parse(saved));
     }
     setHydrated(true);

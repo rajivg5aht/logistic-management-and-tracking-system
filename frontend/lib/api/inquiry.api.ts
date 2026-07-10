@@ -1,7 +1,9 @@
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? ""
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import {
+  apiRequest,
+  authenticatedRequest,
+  authenticatedRequestWithMeta,
+  buildQueryString,
+} from "@/lib/api/api-client";
 
 export type InquiryStatus = "new" | "in-progress" | "resolved" | "escalated";
 export type InquiryCategory = "support" | "sales" | "general";
@@ -66,78 +68,57 @@ export type AdminUpdateInquiryPayload = {
   adminReply?: string;
 };
 
-async function parseResponse<T>(response: Response): Promise<T> {
-  const payload = await response.json();
-  if (!response.ok || !payload.success) {
-    throw new Error(payload.message || "Request failed");
-  }
-  return payload;
-}
-
-export async function createInquiry(payload: CreateInquiryPayload): Promise<Inquiry> {
-  const response = await fetch(API_BASE_URL + "/api/v1/inquiries", {
+export async function createInquiry(
+  payload: CreateInquiryPayload,
+): Promise<Inquiry> {
+  return apiRequest<Inquiry>("/api/v1/inquiries", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const result = await parseResponse<{ data: Inquiry }>(response);
-  return result.data;
 }
 
 export async function getMyInquiries(token: string): Promise<Inquiry[]> {
-  const response = await fetch(API_BASE_URL + "/api/v1/inquiries/my", {
-    headers: { Authorization: "Bearer " + token },
-    credentials: "include",
+  return authenticatedRequest<Inquiry[]>("/api/v1/inquiries/my", token, {
+    method: "GET",
   });
-  const result = await parseResponse<{ data: Inquiry[] }>(response);
-  return result.data;
 }
 
 export async function createMyInquiry(
   token: string,
   payload: CreateCustomerInquiryPayload,
 ): Promise<Inquiry> {
-  const response = await fetch(API_BASE_URL + "/api/v1/inquiries/my", {
+  return authenticatedRequest<Inquiry>("/api/v1/inquiries/my", token, {
     method: "POST",
-    headers: {
-      Authorization: "Bearer " + token,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-  const result = await parseResponse<{ data: Inquiry }>(response);
-  return result.data;
 }
 
 export async function adminGetInquiries(
   token: string,
   filters: AdminInquiryFilters = {},
 ): Promise<{ data: Inquiry[]; meta: InquiryMeta }> {
-  const params = new URLSearchParams({
-    page: String(filters.page ?? 1),
-    limit: String(filters.limit ?? 5),
-    sort: filters.sort ?? "newest",
-  });
-  if (filters.search) params.set("search", filters.search);
-  if (filters.status) params.set("status", filters.status);
-  if (filters.category) params.set("category", filters.category);
-
-  const response = await fetch(
-    API_BASE_URL + "/api/v1/admin/inquiries?" + params.toString(),
-    { headers: { Authorization: "Bearer " + token }, credentials: "include" },
+  return authenticatedRequestWithMeta<Inquiry[], InquiryMeta>(
+    `/api/v1/admin/inquiries${buildQueryString({
+      page: filters.page ?? 1,
+      limit: filters.limit ?? 5,
+      search: filters.search,
+      status: filters.status,
+      category: filters.category,
+      sort: filters.sort ?? "newest",
+    })}`,
+    token,
+    { method: "GET" },
   );
-  const result = await parseResponse<{ data: Inquiry[]; meta: InquiryMeta }>(response);
-  return { data: result.data, meta: result.meta };
 }
 
-export async function adminGetInquiryStats(token: string): Promise<InquiryStats> {
-  const response = await fetch(API_BASE_URL + "/api/v1/admin/inquiries/stats", {
-    headers: { Authorization: "Bearer " + token },
-    credentials: "include",
-  });
-  const result = await parseResponse<{ data: InquiryStats }>(response);
-  return result.data;
+export async function adminGetInquiryStats(
+  token: string,
+): Promise<InquiryStats> {
+  return authenticatedRequest<InquiryStats>(
+    "/api/v1/admin/inquiries/stats",
+    token,
+    { method: "GET" },
+  );
 }
 
 export async function adminUpdateInquiry(
@@ -145,24 +126,17 @@ export async function adminUpdateInquiry(
   id: string,
   payload: AdminUpdateInquiryPayload,
 ): Promise<Inquiry> {
-  const response = await fetch(API_BASE_URL + "/api/v1/admin/inquiries/" + id, {
+  return authenticatedRequest<Inquiry>(`/api/v1/admin/inquiries/${id}`, token, {
     method: "PATCH",
-    headers: {
-      Authorization: "Bearer " + token,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(payload),
-    credentials: "include",
   });
-  const result = await parseResponse<{ data: Inquiry }>(response);
-  return result.data;
 }
 
-export async function adminDeleteInquiry(token: string, id: string): Promise<void> {
-  const response = await fetch(API_BASE_URL + "/api/v1/admin/inquiries/" + id, {
+export async function adminDeleteInquiry(
+  token: string,
+  id: string,
+): Promise<void> {
+  await authenticatedRequest<null>(`/api/v1/admin/inquiries/${id}`, token, {
     method: "DELETE",
-    headers: { Authorization: "Bearer " + token },
-    credentials: "include",
   });
-  await parseResponse<{ data: null }>(response);
 }

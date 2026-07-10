@@ -32,7 +32,6 @@ export default function DriverRoute({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

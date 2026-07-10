@@ -48,6 +48,7 @@ import {
 import { adminGetDrivers, type Driver } from "@/lib/api/driver.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import LiveMap from "@/components/tracking/LiveMap";
 
@@ -125,32 +126,11 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function getInitials(name?: string | null): string {
-  if (!name) return "?";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function locLine(city?: string, district?: string): string {
-  return [city, district].filter(Boolean).join(", ") || "—";
+  return [city, district].filter(Boolean).join(", ") || "-";
 }
 
-function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "...")[] = [1];
-  if (current > 3) pages.push("...");
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-}
 
 export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -224,7 +204,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   // Initial load + refetch whenever filters/page/search change.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -244,7 +223,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   }, [token]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDrivers();
   }, [fetchDrivers]);
 
@@ -403,7 +381,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 {card.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
-                {card.value === undefined ? "—" : card.value.toLocaleString()}
+                {card.value === undefined ? "â€”" : card.value.toLocaleString()}
               </h3>
             </div>
           );
@@ -440,7 +418,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
-                placeholder="Search tracking, sender, driver…"
+                placeholder="Search tracking, sender, driverâ€¦"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm outline-none transition-all focus:border-[#123E6B]/40 sm:w-64"
@@ -533,7 +511,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         </td>
                         {/* Sender */}
                         <td className="px-5 py-4">
-                          <div className="font-bold text-[var(--text)]">{s.pickup.fullName || "—"}</div>
+                          <div className="font-bold text-[var(--text)]">{s.pickup.fullName || "-"}</div>
                           <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                             {locLine(s.pickup.city, s.pickup.district)}
                           </div>
@@ -541,7 +519,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         {/* Recipient */}
                         <td className="px-5 py-4">
                           <div className="font-semibold text-[var(--text)]">
-                            {s.delivery.recipientName || "—"}
+                            {s.delivery.recipientName || "-"}
                           </div>
                           <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                             {locLine(s.delivery.city, s.delivery.district)}
@@ -679,7 +657,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
                 {getPageNumbers(page, meta.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">…</span>
+                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">â€¦</span>
                   ) : (
                     <button
                       key={p}
@@ -724,7 +702,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <span className="font-bold" style={{ color: NAVY }}>#{selected.trackingId}</span>
               <span className="text-[var(--text-muted)]">
                 {" "}
-                · {selected.pickup.fullName} → {selected.delivery.recipientName}
+                Â· {selected.pickup.fullName} â†’ {selected.delivery.recipientName}
               </span>
             </div>
           )}
@@ -742,7 +720,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               }
               className="form-input"
             >
-              <option value="">Assigned — awaiting pickup</option>
+              <option value="">Assigned â€” awaiting pickup</option>
               {ADMIN_DELIVERY_STAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -750,7 +728,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               ))}
             </select>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Leave as &ldquo;Awaiting pickup&rdquo; — drivers update this as they
+              Leave as &ldquo;Awaiting pickup&rdquo; â€” drivers update this as they
               progress. Change it only to manually override.
             </p>
           </div>
@@ -776,7 +754,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                   }
                 >
                   {d.fullName}
-                  {d.assignedVehicleId ? " · vehicle assigned" : ""}
+                  {d.assignedVehicleId ? " Â· vehicle assigned" : ""}
                   {d.availabilityStatus && d.availabilityStatus !== "available"
                     ? ` (${d.availabilityStatus.replace("-", " ")})`
                     : ""}
@@ -785,7 +763,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             </select>
             {drivers.length === 0 && (
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                No drivers yet — add them in Driver Management.
+                No drivers yet â€” add them in Driver Management.
               </p>
             )}
           </div>
@@ -879,7 +857,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   );
 }
 
-/* ── Read-only shipment detail drawer (slides in from the right) ──────────── */
+/* â”€â”€ Read-only shipment detail drawer (slides in from the right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const SERVICE_LABELS: Record<string, string> = {
   standard: "Standard",
@@ -911,14 +889,14 @@ function fmtDateTime(dateStr: string): string {
 
 function addressLine(a: Shipment["pickup"]): string {
   return (
-    [a.streetAddress, a.city, a.district].filter(Boolean).join(", ") || "—"
+    [a.streetAddress, a.city, a.district].filter(Boolean).join(", ") || "-"
   );
 }
 
 function dimsLabel(d: Shipment["package"]["dimensions"]): string {
   return d.length && d.width && d.height
-    ? `${d.length} × ${d.width} × ${d.height} cm`
-    : "—";
+    ? `${d.length} Ã— ${d.width} Ã— ${d.height} cm`
+    : "â€”";
 }
 
 function DetailSection({
@@ -1058,32 +1036,32 @@ function ShipmentDetailDrawer({
                   <div className="relative pb-5">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Pickup · Sender
+                      Pickup Â· Sender
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
-                      {shipment.pickup.fullName || "—"}
+                      {shipment.pickup.fullName || "-"}
                     </p>
                     <p className="text-sm text-[var(--text-soft)]">
                       {addressLine(shipment.pickup)}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Phone size={12} /> {shipment.pickup.phoneNumber || "—"}
+                      <Phone size={12} /> {shipment.pickup.phoneNumber || "-"}
                     </p>
                   </div>
                   {/* Delivery */}
                   <div className="relative">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Delivery · Recipient
+                      Delivery Â· Recipient
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
-                      {shipment.delivery.recipientName || "—"}
+                      {shipment.delivery.recipientName || "-"}
                     </p>
                     <p className="text-sm text-[var(--text-soft)]">
                       {addressLine(shipment.delivery)}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                      <Phone size={12} /> {shipment.delivery.phoneNumber || "—"}
+                      <Phone size={12} /> {shipment.delivery.phoneNumber || "-"}
                     </p>
                   </div>
                 </div>
@@ -1100,7 +1078,7 @@ function ShipmentDetailDrawer({
                   <DetailTile
                     icon={<Weight size={13} />}
                     label="Weight"
-                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "—"}
+                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "â€”"}
                   />
                   <DetailTile
                     icon={<Boxes size={13} />}
@@ -1174,7 +1152,7 @@ function ShipmentDetailDrawer({
                         </p>
                         <p className="text-xs text-[var(--text-muted)]">
                           {shipment.assignedVehicle
-                            ? `Vehicle · ${shipment.assignedVehicle}`
+                            ? `Vehicle Â· ${shipment.assignedVehicle}`
                             : "No vehicle linked"}
                         </p>
                       </div>
@@ -1218,7 +1196,7 @@ function ShipmentDetailDrawer({
                     location={liveLocation}
                     height={220}
                     accent={NAVY}
-                    waitingLabel="Waiting for driver location…"
+                    waitingLabel="Waiting for driver locationâ€¦"
                   />
                 </DetailSection>
               )}

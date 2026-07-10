@@ -304,7 +304,6 @@ export default function AdminLiveMap({ token }: { token: string }) {
   }, [token]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadShipments();
   }, [loadShipments]);
 

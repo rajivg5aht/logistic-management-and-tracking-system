@@ -45,7 +45,6 @@ export function useAdminLiveLocations(
 
   useEffect(() => {
     const activeIds = new Set(roomIds);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocationsByShipmentId((previous) => {
       const next: Record<string, LiveLocation> = {};
       for (const id of activeIds) {

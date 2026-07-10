@@ -28,7 +28,7 @@ const NAVY = "#0C3B67";
 const WEEKLY_GOAL = 20; // Deliveries that unlock the weekly bonus.
 const PAGE_SIZE = 6;
 
-/* ── Trip bucketing (maps a shipment to a display status) ───────────────────── */
+/* â”€â”€ Trip bucketing (maps a shipment to a display status) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 type TripBucket = "delivered" | "failed" | "in-transit" | "pending";
 
 function bucketOf(s: Shipment): TripBucket {
@@ -64,7 +64,7 @@ const RANGE_OPTIONS = [
   { label: "All Time", days: 0 },
 ];
 
-/* ── Formatting helpers ─────────────────────────────────────────────────────── */
+/* â”€â”€ Formatting helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function money(n: number): string {
   return `NPR ${Math.round(n).toLocaleString("en-IN")}`;
 }
@@ -73,21 +73,21 @@ function formatDateTime(iso: string): string {
   const d = new Date(iso);
   const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  return `${date} · ${time}`;
+  return `${date} Â· ${time}`;
 }
 
 function destinationLines(s: Shipment): { primary: string; secondary: string } {
   const primary =
-    s.delivery.city || s.delivery.district || s.delivery.recipientName || "—";
+    s.delivery.city || s.delivery.district || s.delivery.recipientName || "â€”";
   const secondary =
     [s.delivery.streetAddress, s.delivery.district]
       .filter(Boolean)
       .filter((v) => v !== primary)
-      .join(", ") || s.delivery.recipientName || "—";
+      .join(", ") || s.delivery.recipientName || "â€”";
   return { primary, secondary };
 }
 
-/* ── Component ───────────────────────────────────────────────────────────────── */
+/* â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function DriverAssignments({ token }: { token: string }) {
   const [stats, setStats] = useState<DriverStats | null>(null);
   const [trips, setTrips] = useState<Shipment[]>([]);
@@ -132,7 +132,6 @@ export default function DriverAssignments({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -152,7 +151,7 @@ export default function DriverAssignments({ token }: { token: string }) {
     setPage(1);
   };
 
-  /* ── Derived metrics (all from real data) ─────────────────────────────────── */
+  /* â”€â”€ Derived metrics (all from real data) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const derived = useMemo(() => {
     const now = nowTs;
     const DAY = 86_400_000;
@@ -188,7 +187,7 @@ export default function DriverAssignments({ token }: { token: string }) {
     return { totalEarnings, trendPct, successRate, efficiency, deliveredThisWeek };
   }, [trips, stats, nowTs]);
 
-  /* ── Filtered + paginated trips ───────────────────────────────────────────── */
+  /* â”€â”€ Filtered + paginated trips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const filtered = useMemo(() => {
     const bucket = TABS[tab].bucket;
     const cutoff = rangeDays > 0 && nowTs > 0 ? nowTs - rangeDays * 86_400_000 : 0;
@@ -229,13 +228,13 @@ export default function DriverAssignments({ token }: { token: string }) {
     {
       label: "Completed Trips",
       Icon: CircleCheckBig,
-      value: stats ? String(stats.completed) : "—",
+      value: stats ? String(stats.completed) : "â€”",
       foot: <span className="text-[var(--text-muted)]">{derived.successRate}% Success rate</span>,
     },
     {
       label: "In Transit",
       Icon: Truck,
-      value: stats ? String(stats.active).padStart(2, "0") : "—",
+      value: stats ? String(stats.active).padStart(2, "0") : "â€”",
       foot: <span className="text-[#C77718]">Active deliveries now</span>,
     },
   ];
@@ -261,7 +260,7 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       )}
 
-      {/* ── Stat cards ─────────────────────────────────────────────────────── */}
+      {/* â”€â”€ Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((c) => {
           const Icon = c.Icon;
@@ -276,7 +275,7 @@ export default function DriverAssignments({ token }: { token: string }) {
                 <Icon size={17} className="text-[var(--text-muted)]" />
               </div>
               <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
-                {loading ? "—" : c.value}
+                {loading ? "â€”" : c.value}
               </h3>
               <p className="mt-1.5 text-xs font-semibold">{loading ? "" : c.foot}</p>
             </div>
@@ -293,7 +292,7 @@ export default function DriverAssignments({ token }: { token: string }) {
             <Gauge size={17} className="text-[var(--text-muted)]" />
           </div>
           <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
-            {loading ? "—" : `${derived.efficiency.toFixed(1)}/5.0`}
+            {loading ? "â€”" : `${derived.efficiency.toFixed(1)}/5.0`}
           </h3>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -304,7 +303,7 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ── Trips table ────────────────────────────────────────────────────── */}
+      {/* â”€â”€ Trips table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
         style={{ boxShadow: "var(--shadow-sm)" }}
@@ -500,7 +499,7 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ── Today's assignments + incentive ──────────────────────────────────── */}
+      {/* â”€â”€ Today's assignments + incentive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div>
         <h2 className="mb-3 text-sm font-black tracking-tight" style={{ color: NAVY }}>
           Today&apos;s Assignments
@@ -527,7 +526,7 @@ export default function DriverAssignments({ token }: { token: string }) {
                   {s.pickup.city || s.pickup.streetAddress || "Pickup"}
                 </p>
                 <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
-                  <Package size={13} />#{s.trackingId} · {s.package.quantity} package
+                  <Package size={13} />#{s.trackingId} Â· {s.package.quantity} package
                   {s.package.quantity === 1 ? "" : "s"}
                 </p>
                 <Link
@@ -566,7 +565,7 @@ export default function DriverAssignments({ token }: { token: string }) {
               <p className="mt-2 text-lg font-black">Earn NPR 5,000 Bonus</p>
               <p className="mt-1 text-xs font-medium text-white/70">
                 {derived.deliveredThisWeek >= WEEKLY_GOAL
-                  ? "Goal reached — bonus unlocked!"
+                  ? "Goal reached â€” bonus unlocked!"
                   : `Complete ${WEEKLY_GOAL - derived.deliveredThisWeek} more deliveries this week.`}
               </p>
             </div>

@@ -33,8 +33,9 @@ import {
   adminGetFleetStats,
   type FleetStats,
 } from "@/lib/api/fleet.api";
+import { getInitials } from "@/lib/ui-helpers";
 
-/* Screenshot-matched navy palette (kept local — the shared theme is gold/teal) */
+/* Screenshot-matched navy palette (kept local â€” the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
 const NAVY_BAR = "#123E6B"; // highlighted chart column
 const BAR_IDLE = "#DCE5EE"; // inactive chart columns
@@ -76,20 +77,11 @@ const AVATAR_STYLES = [
   "bg-[#F0ECFB] text-[#6C63FF]",
 ];
 
-function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "CU";
-}
 
 function getDestination(shipment: Shipment): string {
   return [shipment.delivery.city, shipment.delivery.district]
     .filter(Boolean)
-    .join(", ") || "—";
+    .join(", ") || "-";
 }
 
 export default function OverviewDashboard({ token }: { token: string }) {
@@ -120,7 +112,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
   }, [token]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRecentShipments();
   }, [loadRecentShipments]);
 
@@ -130,25 +121,25 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const kpis = [
     {
       label: "Total Shipments",
-      value: shipmentStats?.total.toLocaleString("en-IN") ?? "—",
+      value: shipmentStats?.total.toLocaleString("en-IN") ?? "â€”",
       Icon: Package,
       tint: "bg-[#E8F0FB] text-[#2E6FD6]",
     },
     {
       label: "Active Now",
-      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "—",
+      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "â€”",
       Icon: Radio,
       tint: "bg-[#E6F4EC] text-[#1F9D57]",
     },
     {
       label: "Delivered Today",
-      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "—",
+      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "â€”",
       Icon: CircleCheckBig,
       tint: "bg-[#E5F1F3] text-[#1D7A8C]",
     },
     {
       label: "Pending COD",
-      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "—",
+      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "â€”",
       Icon: Wallet,
       tint: "bg-[#FBE9E5] text-[#D0533F]",
     },
@@ -166,7 +157,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const fleetHealthPct =
     fleetTotal > 0 ? Math.round((fleetOperational / fleetTotal) * 100) : 0;
   const systemStatusMessage = !fleetStats
-    ? "Checking fleet status…"
+    ? "Checking fleet statusâ€¦"
     : fleetTotal === 0
       ? "No vehicles registered in the fleet yet."
       : `${fleetOperational} of ${fleetTotal} vehicle${fleetTotal === 1 ? "" : "s"} operational across all hubs.`;
@@ -312,7 +303,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     : "font-semibold text-[var(--text-muted)]"
                 }`}
               >
-                {bar?.day ?? "—"}
+                {bar?.day ?? "â€”"}
               </span>
             ))}
           </div>
@@ -461,7 +452,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                           <span
                             className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${AVATAR_STYLES[index % AVATAR_STYLES.length]}`}
                           >
-                            {getInitials(customer)}
+                            {getInitials(customer, "CU")}
                           </span>
                           <span className="font-semibold text-[var(--text)]">
                             {customer}

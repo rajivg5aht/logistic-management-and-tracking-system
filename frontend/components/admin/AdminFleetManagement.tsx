@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   AlertTriangle,
@@ -217,7 +218,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
   }, [loadData]);
 
@@ -428,7 +428,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               suppressHydrationWarning
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search registration, make, branch…"
+              placeholder="Search registration, make, branchâ€¦"
               className="form-input w-full pl-9 sm:w-72"
             />
           </div>
@@ -444,13 +444,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total vehicles — with an operational-utilisation bar */}
+        {/* Total vehicles â€” with an operational-utilisation bar */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Total Vehicles
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.total : "—"}
+            {stats ? stats.total : "â€”"}
           </p>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -468,13 +468,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Active units — vehicles currently assigned/in service */}
+        {/* Active units â€” vehicles currently assigned/in service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Active Units
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.assigned : "—"}
+            {stats ? stats.assigned : "â€”"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
             <TrendingUp size={14} /> In active service
@@ -487,20 +487,20 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             In Maintenance
           </p>
           <p className="mt-2 text-3xl font-black text-[#C99A3D]">
-            {stats ? stats.maintenance : "—"}
+            {stats ? stats.maintenance : "â€”"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#D0453A]">
             <AlertTriangle size={14} /> Needs attention
           </p>
         </div>
 
-        {/* Inactive — retired / out of service */}
+        {/* Inactive â€” retired / out of service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Inactive
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.inactive : "—"}
+            {stats ? stats.inactive : "â€”"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
             <Ban size={14} /> Out of service
@@ -572,14 +572,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               );
               const isAssignPrimary =
                 vehicle.status === "available" || vehicle.status === "assigned";
-              const primaryLabel =
-                vehicle.status === "available"
-                  ? "Assign Driver"
-                  : vehicle.status === "assigned"
-                    ? "Reassign"
-                    : vehicle.status === "maintenance"
-                      ? "Service Log"
-                      : "Edit Details";
 
               return (
                 <div
@@ -730,27 +722,25 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Actions â€” assignment is a card-level action; editing lives
+                        in the kebab menu, and "Details" opens the full read-only page. */}
                     <div className="mt-4 flex items-center gap-2">
-                      <button
-                        type="button"
-                        suppressHydrationWarning
-                        onClick={() =>
-                          isAssignPrimary
-                            ? openAssignment(vehicle)
-                            : openEdit(vehicle)
-                        }
-                        className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                      {isAssignPrimary && (
+                        <button
+                          type="button"
+                          suppressHydrationWarning
+                          onClick={() => openAssignment(vehicle)}
+                          className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                        >
+                          {vehicle.status === "available" ? "Assign Driver" : "Reassign"}
+                        </button>
+                      )}
+                      <Link
+                        href={`/admin/fleet/${vehicle.id}`}
+                        className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-center text-sm font-bold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
                       >
-                        {primaryLabel}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openEdit(vehicle)}
-                        className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-bold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
-                      >
-                        Details
-                      </button>
+                        View Details
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -837,7 +827,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               <option value="">Unassigned</option>
               {assignableDrivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
-                  {driver.fullName} · {driver.licenseNumber}
+                  {driver.fullName} Â· {driver.licenseNumber}
                 </option>
               ))}
             </select>

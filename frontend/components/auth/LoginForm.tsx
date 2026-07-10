@@ -9,7 +9,7 @@ const initialState: AuthFormState = {
   success: false,
 };
 
-/* ─── Envelope Icon ─── */
+/* â”€â”€â”€ Envelope Icon â”€â”€â”€ */
 function EnvelopeIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -29,7 +29,7 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* ─── Lock Icon ─── */
+/* â”€â”€â”€ Lock Icon â”€â”€â”€ */
 function LockIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -49,7 +49,7 @@ function LockIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* ─── Eye Icon ─── */
+/* â”€â”€â”€ Eye Icon â”€â”€â”€ */
 function EyeIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,7 +59,7 @@ function EyeIcon() {
   );
 }
 
-/* ─── Eye Off Icon ─── */
+/* â”€â”€â”€ Eye Off Icon â”€â”€â”€ */
 function EyeOffIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -168,7 +168,7 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
 
       {/* Create Account Link */}
       <p className="text-sm text-center text-[var(--text-muted)] mt-5">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link className="font-semibold hover:underline text-[var(--accent)] transition-colors duration-200" href="/register">
           Create Account
         </Link>

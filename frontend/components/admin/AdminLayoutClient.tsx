@@ -49,7 +49,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   useEffect(() => {
     const savedState = localStorage.getItem("admin-sidebar-collapsed");
     if (savedState !== null) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCollapsed(JSON.parse(savedState));
     }
     // Mark hydrated only after the persisted state is applied so the initial
