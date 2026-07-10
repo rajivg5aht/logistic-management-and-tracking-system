@@ -99,6 +99,78 @@ export type DriverProofPayload = {
 
 export type DriverMe = Driver & { vehicle: DriverVehicle | null };
 
+export type DriverFleetVehicle = DriverVehicle & {
+  year?: number;
+  branch: string;
+  imageUrl: string | null;
+  insuranceExpiry: string | null;
+  registrationExpiry: string | null;
+  lastServiceAt: string | null;
+  nextServiceAt: string | null;
+  odometerKm: number;
+  assignedAt: string | null;
+  updatedAt: string;
+};
+
+export type DriverFleetAssignment = {
+  vehicleId: string;
+  registrationNumber: string;
+  type: VehicleType;
+  make: string;
+  model: string;
+  assignedAt: string;
+  unassignedAt: string | null;
+  status: "current" | "released" | string;
+  odometerKm: number;
+};
+
+export type DriverFleetIncident = {
+  id: string;
+  category: string;
+  severity: string;
+  description: string;
+  location: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DriverFuelExpense = {
+  id: string;
+  fuelType: string;
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName: string;
+  notes: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DriverFleet = {
+  vehicle: DriverFleetVehicle | null;
+  assignmentHistory: DriverFleetAssignment[];
+  incidents: DriverFleetIncident[];
+  fuelExpenses: DriverFuelExpense[];
+};
+
+export type DriverFleetIncidentPayload = {
+  category: "mechanical" | "damage" | "tire" | "brake" | "engine" | "other";
+  severity: "low" | "medium" | "high" | "critical";
+  description: string;
+  location?: string;
+};
+
+export type DriverFuelExpensePayload = {
+  fuelType: "petrol" | "diesel" | "electric" | "other";
+  liters?: number;
+  amount: number;
+  odometerKm: number;
+  stationName?: string;
+  notes?: string;
+};
+
 export async function adminGetDrivers(
   token: string,
   page: number,
@@ -177,6 +249,34 @@ export async function driverGetStats(token: string): Promise<DriverStats> {
   return authenticatedRequest<DriverStats>("/api/v1/driver/stats", token, {
     method: "GET",
   });
+}
+
+export async function driverGetFleet(token: string): Promise<DriverFleet> {
+  return authenticatedRequest<DriverFleet>("/api/v1/driver/fleet", token, {
+    method: "GET",
+  });
+}
+
+export async function driverReportFleetIncident(
+  token: string,
+  payload: DriverFleetIncidentPayload,
+): Promise<DriverFleetIncident> {
+  return authenticatedRequest<DriverFleetIncident>(
+    "/api/v1/driver/fleet/incidents",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
+export async function driverLogFuelExpense(
+  token: string,
+  payload: DriverFuelExpensePayload,
+): Promise<DriverFuelExpense> {
+  return authenticatedRequest<DriverFuelExpense>(
+    "/api/v1/driver/fleet/fuel-expenses",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
 }
 
 export async function driverGetAssignments(

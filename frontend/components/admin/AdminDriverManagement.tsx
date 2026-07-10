@@ -353,7 +353,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             Driver Management
           </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
-            Add and manage company drivers. Drivers are internal staff â€” created here, not via public signup.
+            Add and manage company drivers. Drivers are internal staff - created here, not via public signup.
           </p>
         </div>
         <button
@@ -380,7 +380,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.total.toLocaleString() : "â€”"}
+            {stats ? stats.total.toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Company drivers
@@ -398,7 +398,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.onDelivery.toLocaleString() : "â€”"}
+            {stats ? stats.onDelivery.toLocaleString() : "-"}
           </p>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -422,7 +422,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? (stats.offDuty + stats.inactive).toLocaleString() : "â€”"}
+            {stats ? (stats.offDuty + stats.inactive).toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Currently unavailable
@@ -440,7 +440,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
           </div>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.available.toLocaleString() : "â€”"}
+            {stats ? stats.available.toLocaleString() : "-"}
           </p>
           <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">
             Ready to assign
@@ -465,7 +465,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             </span>
             <input
               type="text"
-              placeholder="Filter by name, ID or vehicleâ€¦"
+              placeholder="Filter by name, ID or vehicle..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="form-input w-full rounded-full pl-11"
@@ -535,7 +535,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               ) : visibleDrivers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm font-medium text-[var(--text-muted)]">
-                    No drivers found. Click â€œAdd Driverâ€ to create one.
+                    No drivers found. Click &quot;Add Driver&quot; to create one.
                   </td>
                 </tr>
               ) : (
@@ -579,7 +579,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                               <span className="capitalize">{vehicle.type}</span>: {vehicle.registrationNumber}
                             </p>
                             <p className="truncate text-xs text-[var(--text-muted)]">
-                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "â€”"}
+                              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "-"}
                             </p>
                           </div>
                         ) : (
@@ -601,7 +601,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                             className="flex items-center gap-1.5 text-[var(--text-soft)] hover:text-[var(--teal)]"
                           >
                             <Phone size={13} className="text-[var(--text-muted)]" />
-                            {driver.phoneNumber || "â€”"}
+                            {driver.phoneNumber || "-"}
                           </a>
                           <a
                             href={`mailto:${driver.email}`}
@@ -672,7 +672,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               </button>
               {getPageNumbers(page, meta.totalPages).map((p, i) =>
                 p === "..." ? (
-                  <span key={`e${i}`} className="px-2 text-[var(--text-muted)]">â€¦</span>
+                  <span key={`e${i}`} className="px-2 text-[var(--text-muted)]">...</span>
                 ) : (
                   <button
                     key={p}
@@ -770,7 +770,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
   );
 }
 
-/* â”€â”€ Shared create/edit form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Shared create/edit form ----------------------------------------------- */
 function DriverForm({
   form,
   setForm,

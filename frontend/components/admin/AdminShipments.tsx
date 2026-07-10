@@ -381,7 +381,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 {card.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
-                {card.value === undefined ? "â€”" : card.value.toLocaleString()}
+                {card.value === undefined ? "-" : card.value.toLocaleString()}
               </h3>
             </div>
           );
@@ -418,7 +418,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
-                placeholder="Search tracking, sender, driverâ€¦"
+                placeholder="Search tracking, sender, driver..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm outline-none transition-all focus:border-[#123E6B]/40 sm:w-64"
@@ -657,7 +657,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
                 {getPageNumbers(page, meta.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">â€¦</span>
+                    <span key={`e${i}`} className="px-1 text-sm font-semibold text-[var(--text-muted)]">...</span>
                   ) : (
                     <button
                       key={p}
@@ -702,7 +702,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               <span className="font-bold" style={{ color: NAVY }}>#{selected.trackingId}</span>
               <span className="text-[var(--text-muted)]">
                 {" "}
-                Â· {selected.pickup.fullName} â†’ {selected.delivery.recipientName}
+                - {selected.pickup.fullName} to {selected.delivery.recipientName}
               </span>
             </div>
           )}
@@ -720,7 +720,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               }
               className="form-input"
             >
-              <option value="">Assigned â€” awaiting pickup</option>
+              <option value="">Assigned - awaiting pickup</option>
               {ADMIN_DELIVERY_STAGE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -728,7 +728,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               ))}
             </select>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Leave as &ldquo;Awaiting pickup&rdquo; â€” drivers update this as they
+              Leave as &ldquo;Awaiting pickup&rdquo; - drivers update this as they
               progress. Change it only to manually override.
             </p>
           </div>
@@ -754,7 +754,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                   }
                 >
                   {d.fullName}
-                  {d.assignedVehicleId ? " Â· vehicle assigned" : ""}
+                  {d.assignedVehicleId ? " - vehicle assigned" : ""}
                   {d.availabilityStatus && d.availabilityStatus !== "available"
                     ? ` (${d.availabilityStatus.replace("-", " ")})`
                     : ""}
@@ -763,7 +763,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
             </select>
             {drivers.length === 0 && (
               <p className="mt-1 text-xs text-[var(--text-muted)]">
-                No drivers yet â€” add them in Driver Management.
+                No drivers yet - add them in Driver Management.
               </p>
             )}
           </div>
@@ -857,7 +857,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   );
 }
 
-/* â”€â”€ Read-only shipment detail drawer (slides in from the right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Read-only shipment detail drawer (slides in from the right) ------------ */
 
 const SERVICE_LABELS: Record<string, string> = {
   standard: "Standard",
@@ -895,8 +895,8 @@ function addressLine(a: Shipment["pickup"]): string {
 
 function dimsLabel(d: Shipment["package"]["dimensions"]): string {
   return d.length && d.width && d.height
-    ? `${d.length} Ã— ${d.width} Ã— ${d.height} cm`
-    : "â€”";
+    ? `${d.length} x ${d.width} x ${d.height} cm`
+    : "-";
 }
 
 function DetailSection({
@@ -1036,7 +1036,7 @@ function ShipmentDetailDrawer({
                   <div className="relative pb-5">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Pickup Â· Sender
+                      Pickup - Sender
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
                       {shipment.pickup.fullName || "-"}
@@ -1052,7 +1052,7 @@ function ShipmentDetailDrawer({
                   <div className="relative">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Delivery Â· Recipient
+                      Delivery - Recipient
                     </p>
                     <p className="mt-0.5 font-bold text-[var(--text)]">
                       {shipment.delivery.recipientName || "-"}
@@ -1078,7 +1078,7 @@ function ShipmentDetailDrawer({
                   <DetailTile
                     icon={<Weight size={13} />}
                     label="Weight"
-                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "â€”"}
+                    value={shipment.package.weight ? `${shipment.package.weight} kg` : "-"}
                   />
                   <DetailTile
                     icon={<Boxes size={13} />}
@@ -1152,7 +1152,7 @@ function ShipmentDetailDrawer({
                         </p>
                         <p className="text-xs text-[var(--text-muted)]">
                           {shipment.assignedVehicle
-                            ? `Vehicle Â· ${shipment.assignedVehicle}`
+                            ? `Vehicle - ${shipment.assignedVehicle}`
                             : "No vehicle linked"}
                         </p>
                       </div>
@@ -1196,7 +1196,7 @@ function ShipmentDetailDrawer({
                     location={liveLocation}
                     height={220}
                     accent={NAVY}
-                    waitingLabel="Waiting for driver locationâ€¦"
+                    waitingLabel="Waiting for driver location..."
                   />
                 </DetailSection>
               )}

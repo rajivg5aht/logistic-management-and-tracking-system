@@ -9,7 +9,7 @@ const initialState: AuthFormState = {
   success: false,
 };
 
-/* â”€â”€â”€ Envelope Icon â”€â”€â”€ */
+/* --- Envelope Icon --- */
 function EnvelopeIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -29,7 +29,7 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* â”€â”€â”€ Lock Icon â”€â”€â”€ */
+/* --- Lock Icon --- */
 function LockIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -49,7 +49,7 @@ function LockIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* â”€â”€â”€ Eye Icon â”€â”€â”€ */
+/* --- Eye Icon --- */
 function EyeIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,7 +59,7 @@ function EyeIcon() {
   );
 }
 
-/* â”€â”€â”€ Eye Off Icon â”€â”€â”€ */
+/* --- Eye Off Icon --- */
 function EyeOffIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

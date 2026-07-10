@@ -35,7 +35,7 @@ import {
 } from "@/lib/api/fleet.api";
 import { getInitials } from "@/lib/ui-helpers";
 
-/* Screenshot-matched navy palette (kept local â€” the shared theme is gold/teal) */
+/* Screenshot-matched navy palette (kept local - the shared theme is gold/teal) */
 const NAVY = "#0C3B67"; // headings + KPI values
 const NAVY_BAR = "#123E6B"; // highlighted chart column
 const BAR_IDLE = "#DCE5EE"; // inactive chart columns
@@ -121,25 +121,25 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const kpis = [
     {
       label: "Total Shipments",
-      value: shipmentStats?.total.toLocaleString("en-IN") ?? "â€”",
+      value: shipmentStats?.total.toLocaleString("en-IN") ?? "-",
       Icon: Package,
       tint: "bg-[#E8F0FB] text-[#2E6FD6]",
     },
     {
       label: "Active Now",
-      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "â€”",
+      value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "-",
       Icon: Radio,
       tint: "bg-[#E6F4EC] text-[#1F9D57]",
     },
     {
       label: "Delivered Today",
-      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "â€”",
+      value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "-",
       Icon: CircleCheckBig,
       tint: "bg-[#E5F1F3] text-[#1D7A8C]",
     },
     {
       label: "Pending COD",
-      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "â€”",
+      value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "-",
       Icon: Wallet,
       tint: "bg-[#FBE9E5] text-[#D0533F]",
     },
@@ -157,7 +157,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const fleetHealthPct =
     fleetTotal > 0 ? Math.round((fleetOperational / fleetTotal) * 100) : 0;
   const systemStatusMessage = !fleetStats
-    ? "Checking fleet statusâ€¦"
+    ? "Checking fleet status..."
     : fleetTotal === 0
       ? "No vehicles registered in the fleet yet."
       : `${fleetOperational} of ${fleetTotal} vehicle${fleetTotal === 1 ? "" : "s"} operational across all hubs.`;
@@ -303,7 +303,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     : "font-semibold text-[var(--text-muted)]"
                 }`}
               >
-                {bar?.day ?? "â€”"}
+                {bar?.day ?? "-"}
               </span>
             ))}
           </div>

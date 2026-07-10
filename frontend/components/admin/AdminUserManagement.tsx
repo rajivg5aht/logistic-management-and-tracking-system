@@ -68,9 +68,9 @@ const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string
 
 // Registration date shown in the personnel table, e.g. "Jul 10, 2026".
 function formatRegDate(value?: string): string {
-  if (!value) return "â€”";
+  if (!value) return "-";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "â€”";
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -402,7 +402,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
-            {meta ? meta.total.toLocaleString() : "â€”"}
+            {meta ? meta.total.toLocaleString() : "-"}
           </p>
           {stats ? (
             <p
@@ -419,11 +419,11 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           )}
         </div>
 
-        {/* New signups (real data â€” customer registrations in the last 24h) */}
+        {/* New signups (real data - customer registrations in the last 24h) */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">New Signups</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">
-            {stats ? stats.newSignups24h.toLocaleString() : "â€”"}
+            {stats ? stats.newSignups24h.toLocaleString() : "-"}
           </p>
           <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Last 24 hours</p>
         </div>
@@ -529,7 +529,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                           </div>
                         </td>
                         <td className="whitespace-nowrap text-sm text-[var(--text-soft)]">
-                          {user.phoneNumber || "â€”"}
+                          {user.phoneNumber || "-"}
                         </td>
                         <td>
                           <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${roleCfg.cls}`}>
@@ -634,7 +634,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
 
                 {getPageNumbers(page, meta.totalPages).map((p, i) =>
                   p === "..." ? (
-                    <span key={`e${i}`} className="px-1.5 text-sm font-semibold text-[var(--text-muted)]">â€¦</span>
+                    <span key={`e${i}`} className="px-1.5 text-sm font-semibold text-[var(--text-muted)]">...</span>
                   ) : (
                     <button
                       key={p}

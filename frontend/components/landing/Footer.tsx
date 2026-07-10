@@ -5,10 +5,11 @@ import { Send } from "lucide-react";
 
 const footerLinks = {
   Company: [
+    { label: "Home", href: "/" },
     { label: "About Us", href: "/about" },
-    { label: "Our Riders", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Newsroom", href: "#" },
+    { label: "Contact", href: "/contact" },
+    { label: "Solutions", href: "/#solutions" },
+    { label: "Network", href: "/#network" },
   ],
   Services: [
     { label: "Book a Shipment", href: "/login" },

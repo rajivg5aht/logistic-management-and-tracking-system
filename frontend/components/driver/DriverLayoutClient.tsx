@@ -33,6 +33,7 @@ interface DriverLayoutClientProps {
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/driver", icon: LayoutDashboard, exact: true },
   { label: "My Assignments", href: "/driver/assignments", icon: ClipboardList },
+  { label: "Fleet", href: "/driver/fleet", icon: Truck },
   { label: "Route", href: "/driver/route", icon: MapPinned },
 ];
 

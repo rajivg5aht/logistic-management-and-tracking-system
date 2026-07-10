@@ -185,7 +185,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Inbox size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.total.toLocaleString("en-IN") ?? "â€”"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.total.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-emerald-600">Live</span>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700"><Clock3 size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.pending.toLocaleString("en-IN") ?? "â€”"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.pending.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-red-600">+{stats?.newToday ?? 0} today</span>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function AdminInquiries({ token }: { token: string }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><CheckCircle2 size={17} /></span>
           </div>
           <div className="mt-3 flex items-end gap-2">
-            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.resolved.toLocaleString("en-IN") ?? "â€”"}</span>
+            <span className="text-3xl font-black tracking-tight text-[#0B2440]">{stats?.resolved.toLocaleString("en-IN") ?? "-"}</span>
             <span className="mb-1 text-xs font-bold text-emerald-600">{efficiency}% rate</span>
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function AdminInquiries({ token }: { token: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Inquiry details">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b border-[var(--border)] px-6 py-5">
-              <div><h2 className="text-lg font-extrabold text-[#0B2440]">{selected.subject}</h2><p className="mt-1 text-xs text-[var(--text-muted)]">From {selected.fullName} Â· {selected.email}</p></div>
+              <div><h2 className="text-lg font-extrabold text-[#0B2440]">{selected.subject}</h2><p className="mt-1 text-xs text-[var(--text-muted)]">From {selected.fullName} - {selected.email}</p></div>
               <button suppressHydrationWarning type="button" onClick={() => setSelected(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close inquiry"><X size={18} /></button>
             </div>
             <div className="space-y-5 p-6">

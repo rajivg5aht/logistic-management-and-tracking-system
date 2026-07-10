@@ -26,7 +26,7 @@ import type { AuthUser } from "@/lib/api/auth.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { getPageNumbers } from "@/lib/ui-helpers";
 
-// An invoice is derived directly from a confirmed shipment â€” the data model has
+// An invoice is derived directly from a confirmed shipment - the data model has
 // no separate invoice entity, so each shipment the customer books *is* an invoice.
 type InvoiceStatus = "paid" | "due" | "cancelled";
 
@@ -94,12 +94,12 @@ function invoiceStatusOf(s: Shipment): InvoiceStatus {
 
 function toInvoice(s: Shipment): Invoice {
   const destination =
-    s.delivery.city || s.delivery.district || s.delivery.recipientName || "â€”";
+    s.delivery.city || s.delivery.district || s.delivery.recipientName || "-";
   return {
     id: s.id,
     invoiceId: `#INV-${s.trackingId}`,
     trackingId: s.trackingId,
-    description: `${SERVICE_LABEL[s.service]} â†’ ${destination}`,
+    description: `${SERVICE_LABEL[s.service]} -> ${destination}`,
     date: fmtDate(s.createdAt),
     rawDate: s.createdAt,
     amount: s.amount,
@@ -256,7 +256,7 @@ export default function PaymentsBilling({
                   Total Paid
                 </p>
                 <p className="text-3xl font-extrabold text-[var(--text)] mt-2">
-                  {loading ? "â€”" : formatNPR(totalPaid)}
+                  {loading ? "-" : formatNPR(totalPaid)}
                 </p>
               </div>
               <div className="p-2 bg-white/50 rounded-lg">
@@ -264,7 +264,7 @@ export default function PaymentsBilling({
               </div>
             </div>
             <p className="text-xs font-medium text-[var(--text-muted)]">
-              Across {loading ? "â€”" : invoices.length}{" "}
+              Across {loading ? "-" : invoices.length}{" "}
               {invoices.length === 1 ? "invoice" : "invoices"}
             </p>
           </div>
@@ -279,7 +279,7 @@ export default function PaymentsBilling({
                 </p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text)] mt-1">
-                {loading ? "â€”" : formatNPR(codDue)}
+                {loading ? "-" : formatNPR(codDue)}
               </p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-[var(--border)] shadow-sm">
@@ -290,7 +290,7 @@ export default function PaymentsBilling({
                 </p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text)] mt-1">
-                {loading ? "â€”" : formatNPR(thisMonth)}
+                {loading ? "-" : formatNPR(thisMonth)}
               </p>
             </div>
           </div>
@@ -580,7 +580,7 @@ export default function PaymentsBilling({
                   href="/inquiries"
                   className="text-sm font-bold text-[#3E80E5] hover:underline no-underline"
                 >
-                  Contact Support â†’
+                  Contact Support {"->"}
                 </Link>
               </div>
             </div>

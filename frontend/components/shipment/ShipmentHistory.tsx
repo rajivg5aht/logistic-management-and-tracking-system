@@ -94,7 +94,7 @@ function displayDate(s: Shipment): string {
   if (s.status === "delivered") return fmtDate(s.deliveredAt ?? s.updatedAt);
   if (s.status === "cancelled") return fmtDate(s.updatedAt);
   if (s.status === "in-transit") return estimatedArrival(s.createdAt, s.service);
-  return fmtDate(s.createdAt); // pending â†’ Order Date
+  return fmtDate(s.createdAt); // pending -> Order Date
 }
 
 function getIcon(s: Shipment) {
@@ -313,7 +313,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
             {pageItems.map((shipment) => {
               const meta = STATUS_META[shipment.status];
               const isCancelled = shipment.status === "cancelled";
-              const route = `${shipment.pickup.city || "â€”"} â†’ ${shipment.delivery.city || "â€”"}`;
+              const route = `${shipment.pickup.city || "-"} -> ${shipment.delivery.city || "-"}`;
 
               return (
                 <div
@@ -337,7 +337,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                           #{shipment.trackingId}
                         </p>
                         <p className="text-xs text-[var(--text-muted)] mt-1">
-                          {shipment.delivery.city || shipment.delivery.district || "â€”"}
+                          {shipment.delivery.city || shipment.delivery.district || "-"}
                         </p>
                       </div>
 

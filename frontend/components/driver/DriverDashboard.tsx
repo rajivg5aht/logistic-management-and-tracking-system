@@ -70,25 +70,25 @@ export default function DriverDashboard({
   const tiles = [
     {
       label: "Active Delivery",
-      value: stats ? String(stats.active) : "Ã¢â‚¬â€",
+      value: stats ? String(stats.active) : "-",
       Icon: Package,
       tint: "bg-[#E8F0FB] text-[#2E6FD6]",
     },
     {
       label: "Delivered Today",
-      value: stats ? String(stats.deliveredToday) : "Ã¢â‚¬â€",
+      value: stats ? String(stats.deliveredToday) : "-",
       Icon: CircleCheckBig,
       tint: "bg-[#E6F4EC] text-[#1F9D57]",
     },
     {
       label: "Total Completed",
-      value: stats ? String(stats.completed) : "Ã¢â‚¬â€",
+      value: stats ? String(stats.completed) : "-",
       Icon: TrendingUp,
       tint: "bg-[#E5F1F3] text-[#1D7A8C]",
     },
     {
       label: "COD to Collect",
-      value: stats ? formatNPR(stats.codToCollect) : "Ã¢â‚¬â€",
+      value: stats ? formatNPR(stats.codToCollect) : "-",
       Icon: Wallet,
       tint: "bg-[#FBE9E5] text-[#D0533F]",
     },
@@ -132,7 +132,7 @@ export default function DriverDashboard({
                 {t.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight text-[var(--text)]">
-                {loading ? "Ã¢â‚¬â€" : t.value}
+                {loading ? "-" : t.value}
               </h3>
             </div>
           );
@@ -186,7 +186,7 @@ export default function DriverDashboard({
                 </p>
                 <p className="capitalize text-[var(--text-muted)]">
                   {me.vehicle.type}
-                  {me.vehicle.make ? ` Ã‚Â· ${me.vehicle.make}` : ""}
+                  {me.vehicle.make ? ` - ${me.vehicle.make}` : ""}
                   {me.vehicle.model ? ` ${me.vehicle.model}` : ""}
                 </p>
                 {me.vehicle.capacityKg != null && (

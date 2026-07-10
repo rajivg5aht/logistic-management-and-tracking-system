@@ -421,7 +421,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               suppressHydrationWarning
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search registration, make, branchâ€¦"
+              placeholder="Search registration, make, branch..."
               className="form-input w-full pl-9 sm:w-72"
             />
           </div>
@@ -437,13 +437,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total vehicles â€” with an operational-utilisation bar */}
+        {/* Total vehicles - with an operational-utilisation bar */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Total Vehicles
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.total : "â€”"}
+            {stats ? stats.total : "-"}
           </p>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
@@ -461,13 +461,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Active units â€” vehicles currently assigned/in service */}
+        {/* Active units - vehicles currently assigned/in service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Active Units
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.assigned : "â€”"}
+            {stats ? stats.assigned : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
             <TrendingUp size={14} /> In active service
@@ -480,20 +480,20 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             In Maintenance
           </p>
           <p className="mt-2 text-3xl font-black text-[#C99A3D]">
-            {stats ? stats.maintenance : "â€”"}
+            {stats ? stats.maintenance : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#D0453A]">
             <AlertTriangle size={14} /> Needs attention
           </p>
         </div>
 
-        {/* Inactive â€” retired / out of service */}
+        {/* Inactive - retired / out of service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Inactive
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.inactive : "â€”"}
+            {stats ? stats.inactive : "-"}
           </p>
           <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
             <Ban size={14} /> Out of service
@@ -713,7 +713,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Actions â€” assignment is a card-level action; editing lives
+                    {/* Actions - assignment is a card-level action; editing lives
                         in the kebab menu, and "Details" opens the full read-only page. */}
                     <div className="mt-4 flex items-center gap-2">
                       {isAssignPrimary && (
@@ -818,7 +818,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               <option value="">Unassigned</option>
               {assignableDrivers.map((driver) => (
                 <option key={driver.id} value={driver.id}>
-                  {driver.fullName} Â· {driver.licenseNumber}
+                  {driver.fullName} - {driver.licenseNumber}
                 </option>
               ))}
             </select>
