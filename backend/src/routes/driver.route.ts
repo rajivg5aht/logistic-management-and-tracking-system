@@ -21,7 +21,10 @@ driverRouter.get("/shipments/:id", driverController.getAssignmentById);
 driverRouter.patch("/shipments/:id/stage", driverController.updateStage);
 driverRouter.patch(
   "/shipments/:id/proof",
-  proofUpload.single("proofPhoto"),
+  proofUpload.fields([
+    { name: "proofPhoto", maxCount: 1 },
+    { name: "signature", maxCount: 1 },
+  ]),
   driverController.upsertProof,
 );
 driverRouter.delete("/shipments/:id/proof", driverController.deleteProof);

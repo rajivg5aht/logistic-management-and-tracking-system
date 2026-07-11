@@ -8,6 +8,7 @@ import {
 
 export interface IProofOfDelivery {
   photoUrl: string | null;
+  signatureUrl: string | null;
   notes: string;
   recipientName: string;
   confirmedAt: Date | null;
@@ -62,6 +63,7 @@ const AddressSchema = new Schema(
 const ProofOfDeliverySchema = new Schema<IProofOfDelivery>(
   {
     photoUrl: { type: String, default: null },
+    signatureUrl: { type: String, default: null },
     notes: { type: String, trim: true, default: "" },
     recipientName: { type: String, trim: true, default: "" },
     confirmedAt: { type: Date, default: null },
