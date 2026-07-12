@@ -236,12 +236,22 @@ export class DriverController {
         return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
       }
 
-      const photoUrl = req.file
-        ? `/uploads/proofs/${req.file.filename}`
+      // Proof photo and recipient signature arrive as two separate file fields.
+      const files = req.files as
+        | { [field: string]: Express.Multer.File[] }
+        | undefined;
+      const photoFile = files?.proofPhoto?.[0];
+      const signatureFile = files?.signature?.[0];
+      const photoUrl = photoFile
+        ? `/uploads/proofs/${photoFile.filename}`
+        : undefined;
+      const signatureUrl = signatureFile
+        ? `/uploads/proofs/${signatureFile.filename}`
         : undefined;
       const updated = await shipmentService.driverUpsertProof(req.user.id, id, {
         ...parsed.data,
         photoUrl,
+        signatureUrl,
       });
       return ApiResponseHelper.success(
         res,

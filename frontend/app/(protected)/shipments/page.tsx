@@ -245,16 +245,14 @@ function ShipmentPageContent() {
           <ReviewAndPayCard onEditStep={(step) => setCurrentStep(step)} />
 
           {/* Back button */}
-          <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setCurrentStep(3)}
-              className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
-              suppressHydrationWarning
-            >
-              ← Back to Service Type
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setCurrentStep(3)}
+            className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+            suppressHydrationWarning
+          >
+            ← Back to Service Type
+          </button>
         </div>
       )}
     </div>

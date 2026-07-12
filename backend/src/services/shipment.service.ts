@@ -29,6 +29,7 @@ const paymentService = new PaymentService();
 
 export type SafeProofOfDelivery = {
   photoUrl: string | null;
+  signatureUrl: string | null;
   notes: string;
   recipientName: string;
   confirmedAt: Date | null;
@@ -81,6 +82,7 @@ export class ShipmentService {
     if (!proof) return null;
     return {
       photoUrl: proof.photoUrl ?? null,
+      signatureUrl: proof.signatureUrl ?? null,
       notes: proof.notes ?? "",
       recipientName: proof.recipientName ?? "",
       confirmedAt: proof.confirmedAt ?? null,
@@ -637,7 +639,7 @@ export class ShipmentService {
   async driverUpsertProof(
     driverId: string,
     id: string,
-    data: DriverProofUpdateDTO & { photoUrl?: string },
+    data: DriverProofUpdateDTO & { photoUrl?: string; signatureUrl?: string },
   ): Promise<SafeShipment> {
     const shipment = await this.getOwnedAssignment(driverId, id);
     if (shipment.status === "cancelled") {
@@ -652,6 +654,7 @@ export class ShipmentService {
         ? data.recipientName.trim()
         : existing?.recipientName || shipment.delivery.recipientName || "";
     const photoUrl = data.photoUrl ?? existing?.photoUrl ?? null;
+    const signatureUrl = data.signatureUrl ?? existing?.signatureUrl ?? null;
 
     if (!photoUrl) {
       throw new HttpException(
@@ -664,6 +667,7 @@ export class ShipmentService {
     const updated = await shipmentRepository.update(id, {
       proofOfDelivery: {
         photoUrl,
+        signatureUrl,
         notes,
         recipientName,
         confirmedAt: existing?.confirmedAt ?? now,

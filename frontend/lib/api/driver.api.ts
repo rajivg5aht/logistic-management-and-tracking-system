@@ -93,6 +93,7 @@ export type DriverVehicle = {
 
 export type DriverProofPayload = {
   photo?: File;
+  signature?: File;
   notes?: string;
   recipientName?: string;
 };
@@ -331,6 +332,7 @@ export async function driverSaveProof(
 ): Promise<Shipment> {
   const formData = new FormData();
   if (payload.photo) formData.append("proofPhoto", payload.photo);
+  if (payload.signature) formData.append("signature", payload.signature);
   if (payload.notes !== undefined) formData.append("notes", payload.notes);
   if (payload.recipientName !== undefined) {
     formData.append("recipientName", payload.recipientName);
