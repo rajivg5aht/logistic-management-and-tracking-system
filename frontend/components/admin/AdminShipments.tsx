@@ -109,12 +109,6 @@ const PAYMENT_STYLES: Record<string, string> = {
   prepaid: "bg-[#DEF3E6] text-[#1E9E4C]",
 };
 
-// Whether the money has actually been collected (COD is settled by the driver).
-const PAYMENT_STATUS_STYLES: Record<string, string> = {
-  paid: "bg-[#DEF3E6] text-[#1E9E4C]",
-  pending: "bg-[#FDECD8] text-[#C77718]",
-};
-
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -156,8 +150,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [form, setForm] = useState<{
     driverStage: AdminDeliveryStage | "";
     assignedDriverId: string;
-    paymentStatus: "paid" | "pending";
-  }>({ driverStage: "", assignedDriverId: "", paymentStatus: "pending" });
+  }>({ driverStage: "", assignedDriverId: "" });
 
   const limit = 10;
 
@@ -236,7 +229,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     setForm({
       driverStage: editableDeliveryStage(s),
       assignedDriverId: s.assignedDriverId ?? "",
-      paymentStatus: s.paymentStatus,
     });
     setFormError(null);
     setIsEditOpen(true);
@@ -263,7 +255,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       const payload: AdminUpdateShipmentPayload = {
         // Server resolves the driver name from the id and starts the timeline.
         assignedDriverId: form.assignedDriverId || null,
-        paymentStatus: form.paymentStatus,
       };
       // Only send a stage when the admin is manually overriding it. Left empty,
       // the shipment stays Pending/Assigned and progresses from driver updates.
@@ -306,7 +297,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       "Recipient",
       "Recipient Location",
       "Payment",
-      "Payment Status",
       "Amount",
       "Status",
       "Driver",
@@ -319,7 +309,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
       s.delivery.recipientName ?? "",
       locLine(s.delivery.city, s.delivery.district),
       s.paymentMethod === "cod" ? "COD" : "PREPAID",
-      s.paymentStatus === "paid" ? "Paid" : "Pending",
       s.amount,
       getShipmentDisplayStatus(s),
       s.assignedDriver ?? "Unassigned",
@@ -527,22 +516,13 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         </td>
                         {/* Payment */}
                         <td className="px-5 py-4">
-                          <div className="flex flex-col items-start gap-1">
-                            <span
-                              className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                                PAYMENT_STYLES[isCod ? "cod" : "prepaid"]
-                              }`}
-                            >
-                              {isCod ? "COD" : "PREPAID"}
-                            </span>
-                            <span
-                              className={`inline-flex rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                PAYMENT_STATUS_STYLES[s.paymentStatus]
-                              }`}
-                            >
-                              {s.paymentStatus === "paid" ? "Paid" : "Pending"}
-                            </span>
-                          </div>
+                          <span
+                            className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                              PAYMENT_STYLES[isCod ? "cod" : "prepaid"]
+                            }`}
+                          >
+                            {isCod ? "COD" : "PREPAID"}
+                          </span>
                         </td>
                         {/* Amount */}
                         <td className="px-5 py-4">
@@ -766,19 +746,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 No drivers yet - add them in Driver Management.
               </p>
             )}
-          </div>
-
-          <div>
-            <label className="form-label" htmlFor="ship-payment">Payment Status *</label>
-            <select
-              id="ship-payment"
-              value={form.paymentStatus}
-              onChange={(e) => setForm({ ...form, paymentStatus: e.target.value as "paid" | "pending" })}
-              className="form-input"
-            >
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-            </select>
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] pt-3">
@@ -1126,13 +1093,6 @@ function ShipmentDetailDrawer({
                       }`}
                     >
                       {PAYMENT_METHOD_LABELS[shipment.paymentMethod] ?? shipment.paymentMethod}
-                    </span>
-                    <span
-                      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                        PAYMENT_STATUS_STYLES[shipment.paymentStatus]
-                      }`}
-                    >
-                      {shipment.paymentStatus === "paid" ? "Paid" : "Pending"}
                     </span>
                   </div>
                 </div>

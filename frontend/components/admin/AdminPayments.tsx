@@ -176,6 +176,7 @@ export default function AdminPayments({ token }: { token: string }) {
             <button
               key={m || "all-method"}
               type="button"
+              suppressHydrationWarning
               onClick={() => setMethod(m)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
                 method === m
@@ -192,6 +193,7 @@ export default function AdminPayments({ token }: { token: string }) {
             <button
               key={s || "all-status"}
               type="button"
+              suppressHydrationWarning
               onClick={() => setStatus(s)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
                 status === s

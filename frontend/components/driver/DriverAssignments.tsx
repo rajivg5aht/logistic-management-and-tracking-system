@@ -18,6 +18,7 @@ import {
   Gift,
   ArrowRight,
   ClipboardList,
+  Navigation,
 } from "lucide-react";
 import { driverGetAssignments, driverGetStats } from "@/lib/api/driver.api";
 import type { DriverStats } from "@/lib/api/driver.api";
@@ -62,6 +63,13 @@ const RANGE_OPTIONS = [
   { label: "Last 30 Days", days: 30 },
   { label: "Last 90 Days", days: 90 },
   { label: "All Time", days: 0 },
+];
+
+// Tinted icon chips for the stat cards (Earnings, Completed, In Transit).
+const STAT_TINTS = [
+  "bg-[#DEF3E6] text-[#1E9E4C]",
+  "bg-[#E8F0FB] text-[#2E6FD6]",
+  "bg-[#FDECD8] text-[#C77718]",
 ];
 
 /* -- Formatting helpers ------------------------------------------------------- */
@@ -262,19 +270,25 @@ export default function DriverAssignments({ token }: { token: string }) {
 
       {/* -- Stat cards ------------------------------------------------------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((c) => {
+        {statCards.map((c, idx) => {
           const Icon = c.Icon;
           return (
             <div
               key={c.label}
-              className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+              className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
               style={{ boxShadow: "var(--shadow-sm)" }}
             >
               <div className="flex items-start justify-between">
                 <p className="text-[12px] font-bold text-[var(--text-muted)]">{c.label}</p>
-                <Icon size={17} className="text-[var(--text-muted)]" />
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                    STAT_TINTS[idx] ?? "bg-[var(--surface-soft)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  <Icon size={17} />
+                </span>
               </div>
-              <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
+              <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
                 {loading ? "-" : c.value}
               </h3>
               <p className="mt-1.5 text-xs font-semibold">{loading ? "" : c.foot}</p>
@@ -284,14 +298,16 @@ export default function DriverAssignments({ token }: { token: string }) {
 
         {/* Efficiency score with progress bar */}
         <div
-          className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
+          className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
           <div className="flex items-start justify-between">
             <p className="text-[12px] font-bold text-[var(--text-muted)]">Efficiency Score</p>
-            <Gauge size={17} className="text-[var(--text-muted)]" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[#6C63FF]">
+              <Gauge size={17} />
+            </span>
           </div>
-          <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
+          <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
             {loading ? "-" : `${derived.efficiency.toFixed(1)}/5.0`}
           </h3>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
@@ -303,14 +319,171 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* -- Trips table ------------------------------------------------------ */}
-      <div
-        className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
-        style={{ boxShadow: "var(--shadow-sm)" }}
-      >
+      {/* -- Today's assignments (priority work) ---------------------------- */}
+      <div className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2
+              className="flex items-center gap-2 text-lg font-black tracking-tight"
+              style={{ color: NAVY }}
+            >
+              <Navigation size={18} />
+              Today&apos;s Assignments
+            </h2>
+            <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+              Your active pickups and deliveries — start here.
+            </p>
+          </div>
+          {active.length > 0 && (
+            <span className="shrink-0 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-black text-[var(--accent-strong)]">
+              {active.length} active
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {(active.length > 0 ? active.slice(0, 2) : [null]).map((s, i) => {
+            if (!s) {
+              return (
+                <div
+                  key={`empty-${i}`}
+                  className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface-soft)] text-[var(--text-muted)]">
+                    <ClipboardList size={20} />
+                  </span>
+                  <p className="mt-3 text-sm font-bold text-[var(--text)]">
+                    No assignments today
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                    New assignments from dispatch appear here.
+                  </p>
+                </div>
+              );
+            }
+            const meta = BUCKET_META[bucketOf(s)];
+            return (
+              <div
+                key={s.id}
+                className="group relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+                style={{ boxShadow: "var(--shadow-sm)" }}
+              >
+                <span
+                  className="absolute inset-x-0 top-0 h-1"
+                  style={{ background: `linear-gradient(90deg, ${NAVY}, #16548C)` }}
+                />
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${meta.bg} ${meta.text}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                    {meta.label}
+                  </span>
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    {new Date(s.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+
+                <p className="mt-3 text-base font-black" style={{ color: NAVY }}>
+                  #{s.trackingId}
+                </p>
+
+                <div className="mt-3 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#1E9E4C]" />
+                    <p className="truncate text-sm font-semibold text-[var(--text)]">
+                      {s.pickup.city || s.pickup.streetAddress || "Pickup"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" />
+                    <p className="truncate text-sm font-semibold text-[var(--text)]">
+                      {s.delivery.city || s.delivery.district || "Delivery"}
+                    </p>
+                  </div>
+                  <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-[var(--text-muted)]">
+                    <Package size={13} />
+                    {s.package.quantity} package{s.package.quantity === 1 ? "" : "s"} ·{" "}
+                    {s.package.parcelType}
+                  </p>
+                </div>
+
+                <Link
+                  href="/driver/route"
+                  className="mt-4 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: NAVY }}
+                >
+                  View Route
+                  <ArrowRight size={15} />
+                </Link>
+              </div>
+            );
+          })}
+
+          {/* Weekly incentive (derived from real weekly deliveries) */}
+          <div
+            className="flex flex-col justify-between overflow-hidden rounded-[var(--radius-lg)] p-5 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${NAVY} 0%, #16548C 100%)`,
+              boxShadow: "var(--shadow-md)",
+            }}
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
+                  <Gift size={16} />
+                </span>
+                <span className="text-sm font-black">Weekly Incentive</span>
+              </div>
+              <p className="mt-3 text-xl font-black">Earn NPR 5,000 Bonus</p>
+              <p className="mt-1 text-xs font-medium text-white/70">
+                {derived.deliveredThisWeek >= WEEKLY_GOAL
+                  ? "Goal reached - bonus unlocked!"
+                  : `Complete ${WEEKLY_GOAL - derived.deliveredThisWeek} more deliveries this week.`}
+              </p>
+            </div>
+            <div className="mt-4">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
+                <div
+                  className="h-full rounded-full bg-white"
+                  style={{
+                    width: `${Math.min(100, (derived.deliveredThisWeek / WEEKLY_GOAL) * 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-1.5 text-right text-xs font-bold text-white/80">
+                {Math.min(derived.deliveredThisWeek, WEEKLY_GOAL)}/{WEEKLY_GOAL} Completed
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* -- Trip history --------------------------------------------------- */}
+      <div className="space-y-3">
+        <div>
+          <h2
+            className="flex items-center gap-2 text-lg font-black tracking-tight"
+            style={{ color: NAVY }}
+          >
+            <Receipt size={18} />
+            Trip History
+          </h2>
+          <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+            Your completed and past delivery trips.
+          </p>
+        </div>
+
+        <div
+          className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
+          style={{ boxShadow: "var(--shadow-sm)" }}
+        >
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="inline-flex gap-1 rounded-xl bg-[var(--surface-soft)] p-1">
             {TABS.map((t, i) => (
               <button
                 key={t.label}
@@ -318,8 +491,8 @@ export default function DriverAssignments({ token }: { token: string }) {
                 onClick={() => selectTab(i)}
                 className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors ${
                   tab === i
-                    ? "text-white"
-                    : "bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
+                    ? "text-white shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
                 style={tab === i ? { backgroundColor: NAVY } : undefined}
               >
@@ -381,13 +554,13 @@ export default function DriverAssignments({ token }: { token: string }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left">
             <thead>
-              <tr className="bg-[var(--surface-soft)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                <th className="px-5 py-3">Shipment ID</th>
-                <th className="px-5 py-3">Destination</th>
-                <th className="px-5 py-3">Date &amp; Time</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Payout</th>
-                <th className="px-5 py-3" />
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)] text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                <th className="px-5 py-3.5">Shipment ID</th>
+                <th className="px-5 py-3.5">Destination</th>
+                <th className="px-5 py-3.5">Date &amp; Time</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5">Payout</th>
+                <th className="px-5 py-3.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-light)]">
@@ -401,8 +574,16 @@ export default function DriverAssignments({ token }: { token: string }) {
                 ))
               ) : pageRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-[var(--text-muted)]">
-                    No trips match this filter.
+                  <td colSpan={6} className="px-5 py-14 text-center">
+                    <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-soft)] text-[var(--text-muted)]">
+                      <Receipt size={22} />
+                    </span>
+                    <p className="mt-3 text-sm font-semibold text-[var(--text)]">
+                      No trips match this filter.
+                    </p>
+                    <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                      Try a different range or status.
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -412,15 +593,27 @@ export default function DriverAssignments({ token }: { token: string }) {
                   const dest = destinationLines(s);
                   const failed = bucket === "failed";
                   return (
-                    <tr key={s.id} className="transition-colors hover:bg-[var(--surface-soft)]">
+                    <tr
+                      key={s.id}
+                      className="group transition-colors hover:bg-[var(--surface-soft)]"
+                    >
                       <td className="px-5 py-4">
                         <span className="text-sm font-bold" style={{ color: NAVY }}>
                           #{s.trackingId}
                         </span>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="text-sm font-bold text-[var(--text)]">{dest.primary}</p>
-                        <p className="truncate text-xs text-[var(--text-muted)]">{dest.secondary}</p>
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--teal)]">
+                            <MapPin size={14} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-[var(--text)]">{dest.primary}</p>
+                            <p className="truncate text-xs text-[var(--text-muted)]">
+                              {dest.secondary}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-sm font-medium text-[var(--text-soft)]">
                         {formatDateTime(s.deliveredAt ?? s.createdAt)}
@@ -442,8 +635,12 @@ export default function DriverAssignments({ token }: { token: string }) {
                           {money(s.amount)}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-right">
-                        <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors group-hover:bg-[var(--surface-muted)] group-hover:text-[var(--text)]">
+                            <ChevronRight size={15} />
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -498,92 +695,6 @@ export default function DriverAssignments({ token }: { token: string }) {
           </div>
         </div>
       </div>
-
-      {/* -- Today's assignments + incentive ------------------------------------ */}
-      <div>
-        <h2 className="mb-3 text-sm font-black tracking-tight" style={{ color: NAVY }}>
-          Today&apos;s Assignments
-        </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Real active assignments as schedule cards */}
-          {(active.length > 0 ? active.slice(0, 2) : [null]).map((s, i) =>
-            s ? (
-              <div
-                key={s.id}
-                className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
-                style={{ boxShadow: "var(--shadow-sm)" }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--accent-strong)]">
-                    {bucketOf(s) === "pending" ? "Pickup" : "In progress"}
-                  </span>
-                  <span className="text-xs font-bold text-[var(--text-muted)]">
-                    {new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </span>
-                </div>
-                <p className="mt-3 flex items-center gap-1.5 text-sm font-black text-[var(--text)]">
-                  <MapPin size={14} className="text-[var(--accent)]" />
-                  {s.pickup.city || s.pickup.streetAddress || "Pickup"}
-                </p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)]">
-                  <Package size={13} />#{s.trackingId} - {s.package.quantity} package
-                  {s.package.quantity === 1 ? "" : "s"}
-                </p>
-                <Link
-                  href="/driver/route"
-                  className="mt-4 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: NAVY }}
-                >
-                  View Route
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            ) : (
-              <div
-                key={`empty-${i}`}
-                className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-center"
-              >
-                <ClipboardList size={22} className="text-[var(--text-muted)]" />
-                <p className="mt-2 text-sm font-semibold text-[var(--text)]">No assignments today</p>
-                <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                  New assignments from dispatch appear here.
-                </p>
-              </div>
-            ),
-          )}
-
-          {/* Weekly incentive (derived from real weekly deliveries) */}
-          <div
-            className="flex flex-col justify-between rounded-[var(--radius-lg)] p-5 text-white"
-            style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #16548C 100%)` }}
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <Gift size={17} />
-                <span className="text-sm font-black">Weekly Incentive</span>
-              </div>
-              <p className="mt-2 text-lg font-black">Earn NPR 5,000 Bonus</p>
-              <p className="mt-1 text-xs font-medium text-white/70">
-                {derived.deliveredThisWeek >= WEEKLY_GOAL
-                  ? "Goal reached - bonus unlocked!"
-                  : `Complete ${WEEKLY_GOAL - derived.deliveredThisWeek} more deliveries this week.`}
-              </p>
-            </div>
-            <div className="mt-4">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-                <div
-                  className="h-full rounded-full bg-white"
-                  style={{
-                    width: `${Math.min(100, (derived.deliveredThisWeek / WEEKLY_GOAL) * 100)}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-1.5 text-right text-xs font-bold text-white/80">
-                {Math.min(derived.deliveredThisWeek, WEEKLY_GOAL)}/{WEEKLY_GOAL} Completed
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

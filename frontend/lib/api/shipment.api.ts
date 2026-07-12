@@ -53,6 +53,7 @@ export type TimelineEntry = {
 
 export type ProofOfDelivery = {
   photoUrl: string | null;
+  signatureUrl: string | null;
   notes: string;
   recipientName: string;
   confirmedAt: string | null;
