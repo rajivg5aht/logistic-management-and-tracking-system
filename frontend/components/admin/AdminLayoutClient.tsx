@@ -16,7 +16,6 @@ import {
   Wallet,
   LogOut,
   Menu,
-  Search,
   Bell,
   ChevronRight,
   MessageSquareText,
@@ -26,6 +25,7 @@ import { AuthUser } from "@/lib/api/auth.api";
 
 const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
+  "/admin/profile": "Profile",
   "/admin/live-map": "Live Map",
   "/admin/shipments": "Shipments",
   "/admin/drivers": "Driver Management",
@@ -231,20 +231,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
-          <div className="relative w-full max-w-md">
-            <Search
-              size={17}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-            />
-            <input
-              type="text"
-              placeholder="Search shipments, IDs, or drivers..."
-              className="h-10 w-full rounded-xl border border-[var(--border)] bg-[#F1F3F6] pl-10 pr-4 text-sm font-medium text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[#123E6B]/40 focus:bg-white"
-              suppressHydrationWarning
-            />
-          </div>
-
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-end gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -264,12 +251,16 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               <HelpCircle size={19} />
             </button>
 
-            <div className="ml-1 flex items-center gap-3 border-l border-[var(--border)] pl-3">
+            <Link
+              href="/admin/profile"
+              className={`ml-1 flex items-center gap-3 rounded-xl border-l border-[var(--border)] py-1 pl-3 pr-2 transition-colors hover:bg-[var(--surface-soft)] ${
+                pathname.startsWith("/admin/profile") ? "bg-[var(--accent-soft)]" : ""
+              }`}
+              aria-current={pathname.startsWith("/admin/profile") ? "page" : undefined}
+              aria-label="Open admin profile"
+            >
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Senior Admin
-                </p>
               </div>
               <div
                 className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shrink-0"
@@ -277,7 +268,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               >
                 {initials}
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
