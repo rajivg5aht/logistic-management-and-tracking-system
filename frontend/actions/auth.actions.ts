@@ -7,6 +7,7 @@ import {
   registerUser,
   updateProfile,
   updatePassword,
+  type AuthUser,
   type UpdateProfilePayload,
 } from "@/lib/api/auth.api";
 import { loginSchema, registerSchema } from "@/lib/schemas/auth.schema";
@@ -17,6 +18,7 @@ export type AuthFormState = {
   success: boolean;
   message?: string;
   fieldErrors?: Record<string, string[]>;
+  user?: AuthUser;
 };
 
 async function getAuthToken(): Promise<string | null> {
@@ -183,6 +185,7 @@ export async function updateProfileAction(
     return {
       success: true,
       message: "Profile updated successfully",
+      user: updatedUser,
     };
   } catch (error) {
     return {
