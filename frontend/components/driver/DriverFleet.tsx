@@ -13,20 +13,27 @@ import {
   Wrench,
   History,
   Package,
+  ExternalLink,
+  Pencil,
+  Trash2,
   X,
   Loader2,
 } from "lucide-react";
 import {
   driverGetFleet,
   driverReportFleetIncident,
+  driverUpdateFleetIncident,
+  driverDeleteFleetIncident,
   driverLogFuelExpense,
+  driverUpdateFuelExpense,
+  driverDeleteFuelExpense,
   type DriverFleet,
+  type DriverFleetIncident,
   type DriverFleetIncidentPayload,
+  type DriverFuelExpense,
 } from "@/lib/api/driver.api";
 import { formatNPR } from "@/lib/pricing";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
-
-// ── Presentation helpers ─────────────────────────────────────────────────────
 
 const VEHICLE_STATUS_META: Record<string, { label: string; cls: string }> = {
   available: { label: "Available", cls: "bg-[#E6F4EC] text-[#1F9D57]" },
@@ -45,10 +52,14 @@ const SEVERITY_META: Record<string, string> = {
 const STATUS_META: Record<string, string> = {
   open: "bg-[#FBE9E5] text-[#D0533F]",
   reviewing: "bg-[#FBF0DA] text-[#C08A2D]",
+  maintenance_required: "bg-[#FCE8D8] text-[#C06A2D]",
+  in_repair: "bg-[#E8F0FB] text-[#2E6FD6]",
   resolved: "bg-[#E6F4EC] text-[#1F9D57]",
-  submitted: "bg-[#E8F0FB] text-[#2E6FD6]",
-  approved: "bg-[#E6F4EC] text-[#1F9D57]",
   rejected: "bg-[#FBE9E5] text-[#D0533F]",
+  submitted: "bg-[#E8F0FB] text-[#2E6FD6]",
+  under_review: "bg-[#FBF0DA] text-[#C08A2D]",
+  approved: "bg-[#E6F4EC] text-[#1F9D57]",
+  reimbursed: "bg-[#E7F5F2] text-[var(--teal)]",
 };
 
 const INCIDENT_CATEGORIES: DriverFleetIncidentPayload["category"][] = [
@@ -70,9 +81,9 @@ const INCIDENT_SEVERITIES: DriverFleetIncidentPayload["severity"][] = [
 const FUEL_TYPES = ["petrol", "diesel", "electric", "other"] as const;
 
 function fmtDate(value: string | null | undefined): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -80,8 +91,12 @@ function fmtDate(value: string | null | undefined): string {
   });
 }
 
-// Tone for a future-dated field (service / insurance / registration): red once
-// past, amber within 30 days, otherwise neutral. Nudges the driver to act.
+function formatStatus(value: string): string {
+  return value
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function expiryTone(value: string | null | undefined): string {
   if (!value) return "text-[var(--text)]";
   const target = new Date(value).getTime();
@@ -106,14 +121,17 @@ const TABS: { key: TabKey; label: string; icon: typeof Truck }[] = [
   { key: "fuel", label: "Fuel Expenses", icon: Fuel },
 ];
 
-// ── Main component ───────────────────────────────────────────────────────────
+type FleetModal =
+  | { type: "incident"; incident?: DriverFleetIncident }
+  | { type: "fuel"; expense?: DriverFuelExpense }
+  | null;
 
 export default function DriverFleet({ token }: { token: string }) {
   const [fleet, setFleet] = useState<DriverFleet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("overview");
-  const [modal, setModal] = useState<"incident" | "fuel" | null>(null);
+  const [modal, setModal] = useState<FleetModal>(null);
 
   const load = useCallback(
     async (silent = false) => {
@@ -149,7 +167,6 @@ export default function DriverFleet({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           My Fleet
@@ -174,15 +191,12 @@ export default function DriverFleet({ token }: { token: string }) {
         <EmptyState />
       ) : (
         <>
-          {/* Hero + quick actions */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Vehicle hero */}
             <div
               className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] lg:col-span-2"
               style={{ boxShadow: "var(--shadow-sm)" }}
             >
               <div className="flex flex-col sm:flex-row">
-                {/* Image */}
                 <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#1E293B] to-[#334155] sm:h-auto sm:w-52">
                   {vehicle.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- arbitrary remote vehicle photos, matches AdminFleetManagement
@@ -203,7 +217,6 @@ export default function DriverFleet({ token }: { token: string }) {
                   )}
                 </div>
 
-                {/* Summary */}
                 <div className="flex flex-1 flex-col justify-center gap-2 p-6">
                   <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--accent-strong)]">
                     <Truck size={12} />
@@ -215,7 +228,7 @@ export default function DriverFleet({ token }: { token: string }) {
                   </h2>
                   <p className="text-sm font-semibold text-[var(--text-muted)]">
                     ID: {vehicle.registrationNumber}
-                    {vehicle.year ? ` · ${vehicle.year}` : ""}
+                    {vehicle.year ? ` Â· ${vehicle.year}` : ""}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs font-medium text-[var(--text-muted)]">
                     <span className="inline-flex items-center gap-1.5">
@@ -239,26 +252,24 @@ export default function DriverFleet({ token }: { token: string }) {
               </div>
             </div>
 
-            {/* Quick actions */}
             <div className="space-y-4">
               <ActionCard
                 Icon={AlertTriangle}
                 title="Report an Issue"
                 subtitle="Log a mechanical or safety problem"
                 tint="bg-[#FBE9E5] text-[#D0533F]"
-                onClick={() => setModal("incident")}
+                onClick={() => setModal({ type: "incident" })}
               />
               <ActionCard
                 Icon={Fuel}
                 title="Log Fuel Expense"
                 subtitle="Record a refuelling stop"
                 tint="bg-[#E8F0FB] text-[#2E6FD6]"
-                onClick={() => setModal("fuel")}
+                onClick={() => setModal({ type: "fuel" })}
               />
             </div>
           </div>
 
-          {/* Tabs */}
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -288,16 +299,31 @@ export default function DriverFleet({ token }: { token: string }) {
             <div className="p-5 sm:p-6">
               {tab === "overview" && <OverviewTab fleet={fleet!} />}
               {tab === "history" && <HistoryTab fleet={fleet!} />}
-              {tab === "incidents" && <IncidentsTab fleet={fleet!} />}
-              {tab === "fuel" && <FuelTab fleet={fleet!} />}
+              {tab === "incidents" && (
+                <IncidentsTab
+                  fleet={fleet!}
+                  token={token}
+                  onChanged={() => load(true)}
+                  onEdit={(incident) => setModal({ type: "incident", incident })}
+                />
+              )}
+              {tab === "fuel" && (
+                <FuelTab
+                  fleet={fleet!}
+                  token={token}
+                  onChanged={() => load(true)}
+                  onEdit={(expense) => setModal({ type: "fuel", expense })}
+                />
+              )}
             </div>
           </div>
         </>
       )}
 
-      {modal === "incident" && (
+      {modal?.type === "incident" && (
         <ReportIssueModal
           token={token}
+          incident={modal.incident}
           onClose={() => setModal(null)}
           onDone={() => {
             setModal(null);
@@ -306,9 +332,10 @@ export default function DriverFleet({ token }: { token: string }) {
           }}
         />
       )}
-      {modal === "fuel" && (
+      {modal?.type === "fuel" && (
         <LogFuelModal
           token={token}
+          expense={modal.expense}
           onClose={() => setModal(null)}
           onDone={() => {
             setModal(null);
@@ -320,8 +347,6 @@ export default function DriverFleet({ token }: { token: string }) {
     </div>
   );
 }
-
-// ── Sub-views ────────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -404,11 +429,11 @@ function OverviewTab({ fleet }: { fleet: DriverFleet }) {
   const v = fleet.vehicle!;
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <DetailRow Icon={MapPin} label="Branch" value={v.branch || "—"} />
+      <DetailRow Icon={MapPin} label="Branch" value={v.branch || "â€”"} />
       <DetailRow
         Icon={Package}
         label="Capacity"
-        value={v.capacityKg != null ? `${v.capacityKg} kg` : "—"}
+        value={v.capacityKg != null ? `${v.capacityKg} kg` : "â€”"}
       />
       <DetailRow
         Icon={Gauge}
@@ -476,7 +501,7 @@ function HistoryTab({ fleet }: { fleet: DriverFleet }) {
               </td>
               <td className="py-3 pr-4 text-[var(--text-soft)]">{fmtDate(a.assignedAt)}</td>
               <td className="py-3 pr-4 text-[var(--text-soft)]">
-                {a.unassignedAt ? fmtDate(a.unassignedAt) : "—"}
+                {a.unassignedAt ? fmtDate(a.unassignedAt) : "â€”"}
               </td>
               <td className="py-3">
                 <span
@@ -497,93 +522,225 @@ function HistoryTab({ fleet }: { fleet: DriverFleet }) {
   );
 }
 
-function IncidentsTab({ fleet }: { fleet: DriverFleet }) {
+function DriverNote({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-xs font-medium text-[var(--text-soft)]">{value}</p>
+    </div>
+  );
+}
+
+function SmallActionButton({
+  Icon,
+  label,
+  pending,
+  onClick,
+}: {
+  Icon: typeof Truck;
+  label: string;
+  pending?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={pending}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-bold text-[var(--text-soft)] transition-colors hover:bg-[var(--surface)] disabled:opacity-60 cursor-pointer"
+    >
+      {pending ? <Loader2 size={12} className="animate-spin" /> : <Icon size={12} />}
+      {label}
+    </button>
+  );
+}
+
+function IncidentsTab({
+  fleet,
+  token,
+  onChanged,
+  onEdit,
+}: {
+  fleet: DriverFleet;
+  token: string;
+  onChanged: () => void;
+  onEdit: (incident: DriverFleetIncident) => void;
+}) {
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const cancel = async (incident: DriverFleetIncident) => {
+    if (!window.confirm("Cancel this issue report?")) return;
+    setPendingId(incident.id);
+    try {
+      await driverDeleteFleetIncident(token, incident.id);
+      onChanged();
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   if (fleet.incidents.length === 0) {
-    return <TabEmpty Icon={AlertTriangle} text="No issues reported. Use “Report an Issue” to log one." />;
+    return <TabEmpty Icon={AlertTriangle} text="No issues reported. Use Report an Issue to log one." />;
   }
   return (
     <ul className="space-y-3">
-      {fleet.incidents.map((inc) => (
-        <li
-          key={inc.id}
-          className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold capitalize text-[var(--text)]">
-              {inc.category}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                SEVERITY_META[inc.severity] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
-              }`}
-            >
-              {inc.severity}
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                STATUS_META[inc.status] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
-              }`}
-            >
-              {inc.status}
-            </span>
-            <span className="ml-auto text-xs font-medium text-[var(--text-muted)]">
-              {fmtDate(inc.createdAt)}
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-[var(--text-soft)]">{inc.description}</p>
-          {inc.location && (
-            <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-muted)]">
-              <MapPin size={12} /> {inc.location}
-            </p>
-          )}
-        </li>
-      ))}
+      {fleet.incidents.map((inc) => {
+        const editable = inc.status === "open";
+        return (
+          <li
+            key={inc.id}
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold capitalize text-[var(--text)]">
+                {inc.category}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                  SEVERITY_META[inc.severity] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
+                }`}
+              >
+                {inc.severity}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                  STATUS_META[inc.status] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
+                }`}
+              >
+                {formatStatus(inc.status)}
+              </span>
+              <span className="ml-auto text-xs font-medium text-[var(--text-muted)]">
+                {fmtDate(inc.createdAt)}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-[var(--text-soft)]">{inc.description}</p>
+            {inc.location && (
+              <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-muted)]">
+                <MapPin size={12} /> {inc.location}
+              </p>
+            )}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <DriverNote label="Admin note" value={inc.adminNote} />
+              <DriverNote label="Maintenance action" value={inc.maintenanceAction} />
+              <DriverNote label="Resolution" value={inc.resolutionNote} />
+              <DriverNote label="Rejection reason" value={inc.rejectionReason} />
+            </div>
+            {editable && (
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+                <SmallActionButton Icon={Pencil} label="Edit" onClick={() => onEdit(inc)} />
+                <SmallActionButton
+                  Icon={Trash2}
+                  label="Cancel"
+                  pending={pendingId === inc.id}
+                  onClick={() => cancel(inc)}
+                />
+              </div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-function FuelTab({ fleet }: { fleet: DriverFleet }) {
+function FuelTab({
+  fleet,
+  token,
+  onChanged,
+  onEdit,
+}: {
+  fleet: DriverFleet;
+  token: string;
+  onChanged: () => void;
+  onEdit: (expense: DriverFuelExpense) => void;
+}) {
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const cancel = async (expense: DriverFuelExpense) => {
+    if (!window.confirm("Cancel this fuel expense?")) return;
+    setPendingId(expense.id);
+    try {
+      await driverDeleteFuelExpense(token, expense.id);
+      onChanged();
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   if (fleet.fuelExpenses.length === 0) {
     return <TabEmpty Icon={Fuel} text="No fuel expenses logged yet." />;
   }
   return (
     <ul className="space-y-3">
-      {fleet.fuelExpenses.map((f) => (
-        <li
-          key={f.id}
-          className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F0FB] text-[#2E6FD6]">
-            <Fuel size={18} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-[var(--text)]">{formatNPR(f.amount)}</p>
-            <p className="text-xs capitalize text-[var(--text-muted)]">
-              {f.fuelType}
-              {f.liters != null ? ` · ${f.liters} L` : ""} · {f.odometerKm.toLocaleString()} km
-              {f.stationName ? ` · ${f.stationName}` : ""}
-            </p>
-          </div>
-          <div className="ml-auto flex flex-col items-end gap-1">
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                STATUS_META[f.status] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
-              }`}
-            >
-              {f.status}
-            </span>
-            <span className="text-xs font-medium text-[var(--text-muted)]">
-              {fmtDate(f.createdAt)}
-            </span>
-          </div>
-        </li>
-      ))}
+      {fleet.fuelExpenses.map((f) => {
+        const editable = f.status === "submitted";
+        return (
+          <li
+            key={f.id}
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F0FB] text-[#2E6FD6]">
+                <Fuel size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-[var(--text)]">{formatNPR(f.amount)}</p>
+                <p className="text-xs capitalize text-[var(--text-muted)]">
+                  {f.fuelType}
+                  {f.liters != null ? ` - ${f.liters} L` : ""} - {f.odometerKm.toLocaleString()} km
+                  {f.stationName ? ` - ${f.stationName}` : ""}
+                </p>
+              </div>
+              <div className="ml-auto flex flex-col items-end gap-1">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    STATUS_META[f.status] ?? "bg-[var(--surface)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {formatStatus(f.status)}
+                </span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">
+                  {fmtDate(f.createdAt)}
+                </span>
+              </div>
+            </div>
+            {f.notes && <p className="mt-2 text-sm text-[var(--text-soft)]">{f.notes}</p>}
+            {f.receiptUrl && (
+              <a
+                href={f.receiptUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-strong)] hover:underline"
+              >
+                <ExternalLink size={12} /> View receipt
+              </a>
+            )}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <DriverNote label="Admin note" value={f.adminNote} />
+              <DriverNote label="Rejection reason" value={f.rejectionReason} />
+              <DriverNote label="Payment reference" value={f.paymentReference} />
+              <DriverNote label="Reimbursed" value={f.reimbursedAt ? fmtDate(f.reimbursedAt) : ""} />
+            </div>
+            {editable && (
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
+                <SmallActionButton Icon={Pencil} label="Edit" onClick={() => onEdit(f)} />
+                <SmallActionButton
+                  Icon={Trash2}
+                  label="Cancel"
+                  pending={pendingId === f.id}
+                  onClick={() => cancel(f)}
+                />
+              </div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
-
-// ── Modals ───────────────────────────────────────────────────────────────────
-
 function ModalShell({
   title,
   Icon,
@@ -665,19 +822,26 @@ function SubmitRow({
 
 function ReportIssueModal({
   token,
+  incident,
   onClose,
   onDone,
 }: {
   token: string;
+  incident?: DriverFleetIncident;
   onClose: () => void;
   onDone: () => void;
 }) {
+  const isEdit = Boolean(incident);
   const [category, setCategory] =
-    useState<DriverFleetIncidentPayload["category"]>("mechanical");
+    useState<DriverFleetIncidentPayload["category"]>(
+      (incident?.category as DriverFleetIncidentPayload["category"]) ?? "mechanical",
+    );
   const [severity, setSeverity] =
-    useState<DriverFleetIncidentPayload["severity"]>("medium");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
+    useState<DriverFleetIncidentPayload["severity"]>(
+      (incident?.severity as DriverFleetIncidentPayload["severity"]) ?? "medium",
+    );
+  const [description, setDescription] = useState(incident?.description ?? "");
+  const [location, setLocation] = useState(incident?.location ?? "");
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -690,21 +854,26 @@ function ReportIssueModal({
     setPending(true);
     setErr(null);
     try {
-      await driverReportFleetIncident(token, {
+      const payload = {
         category,
         severity,
         description: description.trim(),
         location: location.trim() || undefined,
-      });
+      };
+      if (incident) {
+        await driverUpdateFleetIncident(token, incident.id, payload);
+      } else {
+        await driverReportFleetIncident(token, payload);
+      }
       onDone();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Failed to report issue");
+      setErr(e2 instanceof Error ? e2.message : "Failed to save issue");
       setPending(false);
     }
   };
 
   return (
-    <ModalShell title="Report an Issue" Icon={AlertTriangle} onClose={onClose}>
+    <ModalShell title={isEdit ? "Edit Issue" : "Report an Issue"} Icon={AlertTriangle} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         {err && <FormError message={err} />}
         <div className="grid grid-cols-2 gap-3">
@@ -763,28 +932,37 @@ function ReportIssueModal({
             className={FIELD_BASE}
           />
         </div>
-        <SubmitRow pending={pending} label="Submit Report" onCancel={onClose} />
+        <SubmitRow pending={pending} label={isEdit ? "Save Report" : "Submit Report"} onCancel={onClose} />
       </form>
     </ModalShell>
   );
 }
-
 function LogFuelModal({
   token,
+  expense,
   onClose,
   onDone,
 }: {
   token: string;
+  expense?: DriverFuelExpense;
   onClose: () => void;
   onDone: () => void;
 }) {
+  const isEdit = Boolean(expense);
   const [fuelType, setFuelType] =
-    useState<(typeof FUEL_TYPES)[number]>("diesel");
-  const [amount, setAmount] = useState("");
-  const [odometerKm, setOdometerKm] = useState("");
-  const [liters, setLiters] = useState("");
-  const [stationName, setStationName] = useState("");
-  const [notes, setNotes] = useState("");
+    useState<(typeof FUEL_TYPES)[number]>(
+      (expense?.fuelType as (typeof FUEL_TYPES)[number]) ?? "diesel",
+    );
+  const [amount, setAmount] = useState(expense ? String(expense.amount) : "");
+  const [odometerKm, setOdometerKm] = useState(
+    expense ? String(expense.odometerKm) : "",
+  );
+  const [liters, setLiters] = useState(
+    expense?.liters != null ? String(expense.liters) : "",
+  );
+  const [stationName, setStationName] = useState(expense?.stationName ?? "");
+  const [notes, setNotes] = useState(expense?.notes ?? "");
+  const [receipt, setReceipt] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -803,23 +981,29 @@ function LogFuelModal({
     setPending(true);
     setErr(null);
     try {
-      await driverLogFuelExpense(token, {
+      const payload = {
         fuelType,
         amount: amountNum,
         odometerKm: odoNum,
         liters: liters.trim() ? Number(liters) : undefined,
         stationName: stationName.trim() || undefined,
         notes: notes.trim() || undefined,
-      });
+        receipt,
+      };
+      if (expense) {
+        await driverUpdateFuelExpense(token, expense.id, payload);
+      } else {
+        await driverLogFuelExpense(token, payload);
+      }
       onDone();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Failed to log fuel expense");
+      setErr(e2 instanceof Error ? e2.message : "Failed to save fuel expense");
       setPending(false);
     }
   };
 
   return (
-    <ModalShell title="Log Fuel Expense" Icon={Fuel} onClose={onClose}>
+    <ModalShell title={isEdit ? "Edit Fuel Expense" : "Log Fuel Expense"} Icon={Fuel} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         {err && <FormError message={err} />}
         <div className="grid grid-cols-2 gap-3">
@@ -886,6 +1070,25 @@ function LogFuelModal({
           />
         </div>
         <div>
+          <label className={FIELD_LABEL}>Receipt (optional)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+            className={FIELD_BASE}
+          />
+          {expense?.receiptUrl && !receipt && (
+            <a
+              href={expense.receiptUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-strong)] hover:underline"
+            >
+              <ExternalLink size={12} /> Current receipt
+            </a>
+          )}
+        </div>
+        <div>
           <label className={FIELD_LABEL}>Notes (optional)</label>
           <textarea
             value={notes}
@@ -895,7 +1098,7 @@ function LogFuelModal({
             className={`${FIELD_BASE} resize-none`}
           />
         </div>
-        <SubmitRow pending={pending} label="Submit Expense" onCancel={onClose} />
+        <SubmitRow pending={pending} label={isEdit ? "Save Expense" : "Submit Expense"} onCancel={onClose} />
       </form>
     </ModalShell>
   );
