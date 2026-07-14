@@ -5,7 +5,6 @@ import { authMiddleware } from "../middleware/auth.middleware";
 const shipmentRouter = Router();
 const shipmentController = new ShipmentController();
 
-// Customer routes (must be authenticated)
 shipmentRouter.use(authMiddleware);
 
 shipmentRouter.post("/", shipmentController.createShipment);

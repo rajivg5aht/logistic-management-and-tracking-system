@@ -1,10 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Latest known GPS position reported by a driver for a specific shipment.
-// One document per shipment (upserted on every location ping), so this
-// collection always holds the current live location, not a historical trail.
-// `updatedAt` is the moment the fix was recorded, so it is managed explicitly
-// rather than through Mongoose timestamps.
 export interface IDriverLocation extends Document {
   _id: mongoose.Types.ObjectId;
   driverId: mongoose.Types.ObjectId;

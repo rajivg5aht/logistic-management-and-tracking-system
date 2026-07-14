@@ -3,7 +3,6 @@ import { UserModel, IUser } from "../models/user.model";
 export interface IUserRepository {
   getUserByEmail(email: string): Promise<IUser | null>;
 
-  // 5 common mandatory methods for a repository
   createUser(user: Partial<IUser>): Promise<IUser>;
   getUserById(id: string): Promise<IUser | null>;
   getAll(): Promise<IUser[]>;

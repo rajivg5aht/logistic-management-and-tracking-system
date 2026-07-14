@@ -5,7 +5,6 @@ import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 const adminDriverRouter = Router();
 const adminDriverController = new AdminDriverController();
 
-// Protect all routes: authenticated admins only.
 adminDriverRouter.use(authMiddleware);
 adminDriverRouter.use(adminMiddleware);
 

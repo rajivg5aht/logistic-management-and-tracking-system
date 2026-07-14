@@ -8,7 +8,6 @@ const startServer = async () => {
   try {
     await connectToMongoDB();
 
-    // Wrap Express in an HTTP server so Socket.IO can share the same port.
     const server = http.createServer(app);
     initSocketServer(server);
 

@@ -339,8 +339,6 @@ export class VehicleService {
     await vehicle.save();
   }
 
-  // Permanently removes a vehicle from the fleet. Guarded so we never delete a
-  // vehicle that is still assigned to a driver or tied to an active shipment.
   async removeVehicle(id: string): Promise<void> {
     const vehicle = await VehicleModel.findById(id);
     if (!vehicle) throw new HttpException(404, "Vehicle not found");

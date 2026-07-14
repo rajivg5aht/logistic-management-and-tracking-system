@@ -3,9 +3,9 @@ import { ShipmentModel, IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 
 export interface DailyVolume {
-  date: string; // YYYY-MM-DD in Nepal local time
-  label: string; // Weekday abbreviation, e.g. "Mon"
-  count: number; // Shipments created that day
+  date: string;
+  label: string;
+  count: number;
 }
 
 export interface ShipmentStats {
@@ -16,39 +16,39 @@ export interface ShipmentStats {
   cancelled: number;
   deliveredToday: number;
   pendingCodAmount: number;
-  dailyVolume: DailyVolume[]; // Last 7 days, oldest → today
+  dailyVolume: DailyVolume[];
 }
 
 export interface DriverStats {
-  total: number; // All shipments ever assigned to the driver
-  active: number; // Currently pending or in-transit
+  total: number;
+  active: number;
   deliveredToday: number;
-  completed: number; // Total delivered
-  codToCollect: number; // Outstanding COD across active assignments
+  completed: number;
+  codToCollect: number;
 }
 
 export interface MonthlyRevenue {
-  label: string; // Month abbreviation, e.g. "Jan"
-  revenue: number; // Paid revenue booked that month
+  label: string;
+  revenue: number;
 }
 
 export interface RegionVolume {
-  region: string; // Delivery district (or "Unknown")
-  count: number; // Shipments delivered to that region
+  region: string;
+  count: number;
 }
 
 export interface ShipmentAnalytics {
-  totalRevenue: number; // Paid revenue to date
-  revenueDelta: number; // % change, last 30d vs prior 30d (+100% = grew from zero)
-  deliveries: number; // Delivered to date
+  totalRevenue: number;
+  revenueDelta: number;
+  deliveries: number;
   deliveriesDelta: number;
-  avgDeliveryMs: number | null; // Avg order-to-door time (null when none delivered)
-  avgTimeDelta: number; // % change (negative = faster)
-  successRate: number; // delivered / (delivered + cancelled), 0-100
-  successDelta: number; // percentage-point change
-  monthlyRevenue: MonthlyRevenue[]; // Last 6 months, oldest → newest
-  regionVolume: RegionVolume[]; // Top regions by delivery count
-  totalShipments: number; // All shipments (denominator for region share)
+  avgDeliveryMs: number | null;
+  avgTimeDelta: number;
+  successRate: number;
+  successDelta: number;
+  monthlyRevenue: MonthlyRevenue[];
+  regionVolume: RegionVolume[];
+  totalShipments: number;
 }
 
 export interface IShipmentRepository {
@@ -146,8 +146,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
   }
 
   async getStats(): Promise<ShipmentStats> {
-    // Nepal uses UTC+05:45 year-round. Convert today's Nepal boundaries to UTC
-    // before querying MongoDB so "Delivered Today" is accurate for local users.
     const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
     const nowInNepal = new Date(Date.now() + nepalOffsetMs);
     const startOfToday = new Date(
@@ -158,7 +156,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       ) - nepalOffsetMs,
     );
     const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
-    // Beginning of the 7-day window (today plus the six preceding days).
     const startOfWindow = new Date(
       startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000,
     );
@@ -198,7 +195,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
         },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
-      // Shipments created per Nepal-local day over the 7-day window.
       ShipmentModel.aggregate<{ _id: string; count: number }>([
         { $match: { createdAt: { $gte: startOfWindow, $lt: startOfTomorrow } } },
         {
@@ -216,13 +212,10 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       ]),
     ]);
 
-    // Fill every day in the window, defaulting to 0 where no shipments exist.
     const countsByDate = new Map(dailyCounts.map((d) => [d._id, d.count]));
     const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const dailyVolume: DailyVolume[] = [];
     for (let offset = 6; offset >= 0; offset--) {
-      // nowInNepal's UTC fields represent Nepal local time, so shifting by whole
-      // days and reading the UTC getters yields the correct Nepal calendar day.
       const dayInNepal = new Date(
         nowInNepal.getTime() - offset * 24 * 60 * 60 * 1000,
       );
@@ -250,7 +243,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
   }
 
   async getDriverStats(driverId: string): Promise<DriverStats> {
-    // Reuse the same Nepal-local "today" boundary logic as getStats().
     const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
     const nowInNepal = new Date(Date.now() + nepalOffsetMs);
     const startOfToday = new Date(
@@ -305,8 +297,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const last30Start = new Date(now.getTime() - 30 * DAY_MS);
     const prev30Start = new Date(now.getTime() - 60 * DAY_MS);
 
-    // A delivered shipment's resolution time is deliveredAt, falling back to
-    // updatedAt for older records saved before deliveredAt was tracked.
     const deliveredIn = (
       start: Date,
       end?: Date,
@@ -336,7 +326,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       },
     };
 
-    // Six-month revenue window: start of the Nepal-local month five months back.
     const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
     const nowInNepal = new Date(now.getTime() + nepalOffsetMs);
     const firstMonthNepal = new Date(
@@ -445,9 +434,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
       ShipmentModel.countDocuments({}),
     ]);
 
-    // Period-over-period % change. With no prior-period baseline, a metric that
-    // has current activity reads as +100% (grew from zero); a flat/empty metric
-    // reads as 0% so the badge always shows a number instead of a dash.
     const pctChange = (current: number, prev: number): number => {
       if (prev === 0) return current > 0 ? 100 : 0;
       return ((current - prev) / prev) * 100;
@@ -463,7 +449,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const avgDeliveryMs = avgTotalAgg[0]?.avg ?? null;
     const avgLast = avgLast30Agg[0]?.avg ?? null;
     const avgPrev = avgPrev30Agg[0]?.avg ?? null;
-    // Averages can't "grow from zero"; without both windows there's no delta → 0%.
     const avgTimeDelta =
       avgLast !== null && avgPrev !== null && avgPrev > 0
         ? round1(((avgLast - avgPrev) / avgPrev) * 100)
@@ -481,7 +466,6 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     const successDelta =
       rateLast !== null && ratePrev !== null ? round1(rateLast - ratePrev) : 0;
 
-    // Fill all six month buckets so the chart has a continuous series.
     const MONTH_LABELS = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",

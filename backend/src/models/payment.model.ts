@@ -4,10 +4,6 @@ import { PAYMENT_METHODS, type PaymentMethod } from "../types/shipment.type";
 export const PAYMENT_TYPES = ["charge", "refund"] as const;
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
 
-// Lifecycle:
-//   prepaid charge (esewa/khalti): paid          (mock, captured up front)
-//   cod charge:                    pending -> collected -> settled
-//   refund:                        refunded
 export const PAYMENT_STATUSES = [
   "pending",
   "paid",

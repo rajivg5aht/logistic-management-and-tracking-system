@@ -6,7 +6,6 @@ async function migrateRoles() {
     await connectToMongoDB();
     console.log("Connected to MongoDB for role migration...");
 
-    // Update all users where role is "user" to "customer"
     const result = await UserModel.updateMany(
       { role: "user" as any },
       { $set: { role: "customer" as any } }

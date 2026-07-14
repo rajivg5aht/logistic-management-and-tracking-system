@@ -16,7 +16,6 @@ const shipmentService = new ShipmentService();
 const trackingService = new TrackingService();
 
 export class ShipmentController {
-  // ── Customer: create a shipment (confirm & pay) ──────────────────────────
   async createShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -48,7 +47,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Customer: list own shipments ─────────────────────────────────────────
   async getMyShipments(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -70,9 +68,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Live tracking: last saved driver location for a shipment ─────────────
-  // Authorization branches by role inside the service: admin any, customer
-  // only their own shipment, driver only their assignment.
   async getShipmentLocation(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -104,7 +99,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Customer: edit own pending shipment ──────────────────────────────────
   async customerUpdateShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -140,7 +134,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Customer: cancel own pending shipment ────────────────────────────────
   async customerCancelShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -170,7 +163,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Customer: delete own cancelled shipment ──────────────────────────────
   async customerDeleteShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -197,8 +189,6 @@ export class ShipmentController {
     }
   }
 
-  // Customer: clear delivered/cancelled shipment history while retaining all
-  // active operational records.
   async customerDeleteHistory(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -222,7 +212,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: paginated list ────────────────────────────────────────────────
   async adminGetShipments(req: Request, res: Response) {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -258,7 +247,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: aggregated stats for KPI cards ────────────────────────────────
   async adminGetStats(req: Request, res: Response) {
     try {
       const stats = await shipmentService.getStats();
@@ -276,7 +264,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: revenue / delivery analytics for the Analytics page ───────────
   async adminGetAnalytics(req: Request, res: Response) {
     try {
       const analytics = await shipmentService.getAnalytics();
@@ -294,7 +281,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: get one ───────────────────────────────────────────────────────
   async adminGetShipmentById(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
@@ -317,7 +303,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: update (status / driver) ──────────────────────────────────────
   async adminUpdateShipment(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
@@ -345,7 +330,6 @@ export class ShipmentController {
     }
   }
 
-  // ── Admin: delete ────────────────────────────────────────────────────────
   async adminDeleteShipment(req: Request, res: Response) {
     try {
       const id = req.params.id as string;

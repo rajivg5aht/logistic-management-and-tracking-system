@@ -10,10 +10,8 @@ const trackingService = new TrackingService();
 
 let io: Server | null = null;
 
-// Room that scopes location broadcasts to a single shipment.
 const roomName = (shipmentId: string): string => `shipment-${shipmentId}`;
 
-// Accepts either a bare id string or a `{ shipmentId }` object from the client.
 const extractShipmentId = (payload: unknown): string | null => {
   if (typeof payload === "string") return payload;
   if (payload && typeof payload === "object") {
@@ -41,8 +39,6 @@ export const initSocketServer = (server: HttpServer): Server => {
     },
   });
 
-  // Authenticate the handshake with the same JWT the REST API uses. The token
-  // is expected on `auth.token`, falling back to the Authorization header.
   io.use(async (socket, next) => {
     try {
       const header = socket.handshake.headers.authorization;
@@ -83,7 +79,6 @@ export const initSocketServer = (server: HttpServer): Server => {
   io.on("connection", (socket) => {
     const user = socket.data.user as TrackingUser;
 
-    // Viewer (customer/admin/driver) subscribes to a shipment's live location.
     socket.on("join-shipment-room", async (payload) => {
       try {
         const shipmentId = extractShipmentId(payload);
@@ -93,7 +88,6 @@ export const initSocketServer = (server: HttpServer): Server => {
         await trackingService.assertCanRead(user, shipmentId);
         socket.join(roomName(shipmentId));
 
-        // Seed the newcomer with the latest known position, if any.
         const latest = await trackingService.getLatestLocation(shipmentId);
         if (latest) {
           socket.emit("shipment-location-updated", latest);
@@ -103,7 +97,6 @@ export const initSocketServer = (server: HttpServer): Server => {
       }
     });
 
-    // Assigned driver streams a GPS fix; broadcast it to that shipment's room.
     socket.on("driver-location-update", async (payload) => {
       try {
         const shipmentId = extractShipmentId(payload);

@@ -90,7 +90,6 @@ export class UserController {
 
       const updateData: any = { ...req.body };
 
-      // If file was uploaded, add the file path
       if (req.file) {
         updateData.profileImage = `/uploads/profiles/${req.file.filename}`;
       }

@@ -5,7 +5,6 @@ import { authMiddleware } from "../middleware/auth.middleware";
 const paymentRouter = Router();
 const paymentController = new PaymentController();
 
-// Customer routes (must be authenticated)
 paymentRouter.use(authMiddleware);
 
 paymentRouter.get("/mine", paymentController.getMine);
