@@ -11,7 +11,7 @@ export const AdminCreateUserDTO = z.object({
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters long"),
-  role: z.enum(["customer", "maintenance"]).default("customer"),
+  role: z.literal("customer").optional().default("customer"),
   phoneNumber: OptionalPhoneNumberDTO.optional().default(""),
   status: z.enum(["active", "inactive"]).optional().default("active"),
 });

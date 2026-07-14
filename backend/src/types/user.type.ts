@@ -42,7 +42,7 @@ export const UserSchema = z.object({
 
   profileImage: z.string().nullable().optional(),
 
-  role: z.enum(["admin", "customer", "driver", "maintenance"]).default("customer"),
+  role: z.enum(["admin", "customer", "driver"]).default("customer"),
 
   licenseNumber: z.string().optional(),
   vehicleType: z.enum(VEHICLE_TYPES).optional(),

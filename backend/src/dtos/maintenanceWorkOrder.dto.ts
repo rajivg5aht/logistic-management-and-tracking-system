@@ -14,32 +14,26 @@ const OptionalDate = z
   })
   .optional();
 
-export const CreateMaintenanceWorkOrderDTO = z
-  .object({
-    maintenanceUserId: z.string().trim().length(24).nullable().optional(),
-    vendorName: z.string().trim().max(160).optional(),
-    priority: z.enum(MAINTENANCE_WORK_ORDER_PRIORITIES).optional().default("medium"),
-    expectedCompletionAt: OptionalDate,
-    vehicleOutOfService: z.boolean().optional().default(true),
-    adminNote: OptionalText,
-  })
-  .superRefine((value, ctx) => {
-    if (!value.maintenanceUserId && !value.vendorName?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["maintenanceUserId"],
-        message: "Assign a maintenance user or specify an external workshop",
-      });
-    }
-  });
+const WorkshopName = z
+  .string()
+  .trim()
+  .min(1, "External workshop is required")
+  .max(160);
+
+export const CreateMaintenanceWorkOrderDTO = z.object({
+  vendorName: WorkshopName,
+  priority: z.enum(MAINTENANCE_WORK_ORDER_PRIORITIES).optional().default("medium"),
+  expectedCompletionAt: OptionalDate,
+  vehicleOutOfService: z.boolean().optional().default(true),
+  adminNote: OptionalText,
+});
 
 export type CreateMaintenanceWorkOrderDTO = z.infer<
   typeof CreateMaintenanceWorkOrderDTO
 >;
 
 export const AdminUpdateMaintenanceWorkOrderDTO = z.object({
-  maintenanceUserId: z.string().trim().length(24).nullable().optional(),
-  vendorName: z.string().trim().max(160).optional(),
+  vendorName: WorkshopName.optional(),
   priority: z.enum(MAINTENANCE_WORK_ORDER_PRIORITIES).optional(),
   expectedCompletionAt: OptionalDate,
   vehicleOutOfService: z.boolean().optional(),
@@ -51,21 +45,6 @@ export const AdminUpdateMaintenanceWorkOrderDTO = z.object({
 
 export type AdminUpdateMaintenanceWorkOrderDTO = z.infer<
   typeof AdminUpdateMaintenanceWorkOrderDTO
->;
-
-export const MaintenanceWorkOrderUpdateDTO = z.object({
-  status: z.enum(["in_repair", "awaiting_verification"]).optional(),
-  diagnosis: OptionalText,
-  repairNotes: OptionalText,
-  partsUsed: OptionalText,
-  partsCost: z.coerce.number().min(0).max(100000000).optional(),
-  laborCost: z.coerce.number().min(0).max(100000000).optional(),
-  invoiceUrl: z.string().trim().max(500).optional(),
-  activityNote: OptionalText,
-});
-
-export type MaintenanceWorkOrderUpdateDTO = z.infer<
-  typeof MaintenanceWorkOrderUpdateDTO
 >;
 
 export type MaintenanceWorkOrderListStatus =

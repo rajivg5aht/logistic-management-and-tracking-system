@@ -31,7 +31,7 @@ export class AdminController {
       const search = (req.query.search as string) || "";
       const requestedRole = req.query.role as string | undefined;
       const role =
-        requestedRole && ["admin", "customer", "driver", "maintenance"].includes(requestedRole)
+        requestedRole && ["admin", "customer", "driver"].includes(requestedRole)
           ? requestedRole
           : undefined;
 
@@ -88,7 +88,7 @@ export class AdminController {
       if (body.role && body.role !== "customer") {
         return ApiResponseHelper.error(
           res,
-          "Drivers must be created in Driver Management",
+          "Only customer accounts can be created here. Drivers must be created in Driver Management",
           400,
         );
       }

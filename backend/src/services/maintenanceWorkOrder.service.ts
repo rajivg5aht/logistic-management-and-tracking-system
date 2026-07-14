@@ -11,7 +11,6 @@ import { VehicleIncidentModel } from "../models/vehicleIncident.model";
 import type {
   AdminUpdateMaintenanceWorkOrderDTO,
   CreateMaintenanceWorkOrderDTO,
-  MaintenanceWorkOrderUpdateDTO,
 } from "../dtos/maintenanceWorkOrder.dto";
 
 const ACTIVE_WORK_ORDER_STATUSES: MaintenanceWorkOrderStatus[] = [
@@ -61,7 +60,7 @@ export type MaintenanceWorkOrder = {
     toStatus: string;
     actorId: string;
     actorName: string | null;
-    actorRole: "admin" | "maintenance";
+    actorRole: "admin";
     note: string;
     createdAt: Date;
   }>;
@@ -88,22 +87,6 @@ function parseOptionalDate(value?: string): Date | null {
 }
 
 export class MaintenanceWorkOrderService {
-  private async getMaintenanceUser(id: string | null | undefined) {
-    if (!id) return null;
-    if (!mongoose.isValidObjectId(id)) {
-      throw new HttpException(400, "Invalid maintenance user");
-    }
-
-    const user = await UserModel.findById(id).select("_id fullName role status");
-    if (!user || user.role !== "maintenance") {
-      throw new HttpException(404, "Maintenance user not found");
-    }
-    if (user.status !== "active") {
-      throw new HttpException(400, "Inactive maintenance users cannot receive work orders");
-    }
-    return user;
-  }
-
   private async getLookups(workOrders: IMaintenanceWorkOrder[]) {
     const userIds = new Set<string>();
     const vehicleIds = new Set<string>();
@@ -209,7 +192,7 @@ export class MaintenanceWorkOrderService {
     fromStatus: MaintenanceWorkOrderStatus | null,
     toStatus: MaintenanceWorkOrderStatus,
     actorId: string,
-    actorRole: "admin" | "maintenance",
+    actorRole: "admin",
     note = "",
   ) {
     workOrder.events.push({
@@ -267,30 +250,6 @@ export class MaintenanceWorkOrderService {
     };
   }
 
-  async listForMaintenance(
-    maintenanceUserId: string,
-    { status, page, limit }: ListParams,
-  ) {
-    const query: Record<string, unknown> = {
-      assignedTo: objectId(maintenanceUserId),
-    };
-    if (status) query.status = status;
-
-    const [workOrders, total] = await Promise.all([
-      MaintenanceWorkOrderModel.find(query)
-        .sort({ updatedAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit),
-      MaintenanceWorkOrderModel.countDocuments(query),
-    ]);
-    const lookups = await this.getLookups(workOrders);
-
-    return {
-      items: workOrders.map((workOrder) => this.sanitize(workOrder, lookups)),
-      total,
-    };
-  }
-
   async createForIncident(
     incidentId: string,
     input: CreateMaintenanceWorkOrderDTO,
@@ -312,23 +271,18 @@ export class MaintenanceWorkOrderService {
       throw new HttpException(400, "Closed or rejected incidents cannot be sent to maintenance");
     }
 
-    const [maintenanceUser, expectedCompletionAt] = await Promise.all([
-      this.getMaintenanceUser(input.maintenanceUserId),
-      Promise.resolve(parseOptionalDate(input.expectedCompletionAt)),
-    ]);
+    const expectedCompletionAt = parseOptionalDate(input.expectedCompletionAt);
     const vendorName = clean(input.vendorName);
-    if (!maintenanceUser && !vendorName) {
-      throw new HttpException(400, "Assign a maintenance user or specify an external workshop");
+    if (!vendorName) {
+      throw new HttpException(400, "External workshop is required");
     }
 
-    const assignedLabel = maintenanceUser
-      ? "Assigned to " + maintenanceUser.fullName
-      : "Assigned to " + vendorName;
+    const assignedLabel = "Assigned to " + vendorName;
     const workOrder = await MaintenanceWorkOrderModel.create({
       incidentId: incident._id,
       vehicleId: incident.vehicleId,
       driverId: incident.driverId,
-      assignedTo: maintenanceUser?._id ?? null,
+      assignedTo: null,
       vendorName,
       priority: input.priority,
       expectedCompletionAt,
@@ -440,21 +394,12 @@ export class MaintenanceWorkOrderService {
       throw new HttpException(400, "Closed work orders cannot be changed");
     }
 
-    const maintenanceUser =
-      input.maintenanceUserId === undefined
-        ? undefined
-        : await this.getMaintenanceUser(input.maintenanceUserId);
     const vendorName =
       input.vendorName === undefined ? workOrder.vendorName : clean(input.vendorName);
-    const assignedTo =
-      input.maintenanceUserId === undefined
-        ? workOrder.assignedTo
-        : maintenanceUser?._id ?? null;
-    if (!assignedTo && !vendorName) {
-      throw new HttpException(400, "Assign a maintenance user or specify an external workshop");
+    if (!vendorName) {
+      throw new HttpException(400, "External workshop is required");
     }
 
-    if (input.maintenanceUserId !== undefined) workOrder.assignedTo = assignedTo;
     if (input.vendorName !== undefined) workOrder.vendorName = vendorName;
     if (input.priority !== undefined) workOrder.priority = input.priority;
     if (input.expectedCompletionAt !== undefined) {
@@ -465,12 +410,9 @@ export class MaintenanceWorkOrderService {
     }
     if (input.adminNote !== undefined) workOrder.adminNote = clean(input.adminNote);
 
-    const assignmentChanged =
-      input.maintenanceUserId !== undefined || input.vendorName !== undefined;
+    const assignmentChanged = input.vendorName !== undefined;
     if (assignmentChanged || input.adminNote !== undefined) {
-      const target = workOrder.assignedTo
-        ? "Assigned to " + (maintenanceUser?.fullName ?? "maintenance team")
-        : "Assigned to " + workOrder.vendorName;
+      const target = "Assigned to " + workOrder.vendorName;
       this.recordStatusChange(
         workOrder,
         workOrder.status,
@@ -491,87 +433,4 @@ export class MaintenanceWorkOrderService {
     return this.sanitizeOne(workOrder);
   }
 
-  async updateAsMaintenance(
-    workOrderId: string,
-    input: MaintenanceWorkOrderUpdateDTO,
-    maintenanceUserId: string,
-  ) {
-    if (!mongoose.isValidObjectId(workOrderId)) {
-      throw new HttpException(404, "Maintenance work order not found");
-    }
-
-    const workOrder = await MaintenanceWorkOrderModel.findById(workOrderId);
-    if (!workOrder) throw new HttpException(404, "Maintenance work order not found");
-    if (workOrder.assignedTo?.toString() !== maintenanceUserId) {
-      throw new HttpException(403, "This work order is not assigned to you");
-    }
-    if (!ACTIVE_WORK_ORDER_STATUSES.includes(workOrder.status)) {
-      throw new HttpException(400, "Closed work orders cannot be changed");
-    }
-
-    if (input.diagnosis !== undefined) workOrder.diagnosis = clean(input.diagnosis);
-    if (input.repairNotes !== undefined) workOrder.repairNotes = clean(input.repairNotes);
-    if (input.partsUsed !== undefined) workOrder.partsUsed = clean(input.partsUsed);
-    if (input.partsCost !== undefined) workOrder.partsCost = input.partsCost;
-    if (input.laborCost !== undefined) workOrder.laborCost = input.laborCost;
-    if (input.invoiceUrl !== undefined) workOrder.invoiceUrl = clean(input.invoiceUrl);
-
-    const now = new Date();
-    if (input.status === "in_repair") {
-      if (!["assigned", "in_repair"].includes(workOrder.status)) {
-        throw new HttpException(400, "Only assigned work can be started");
-      }
-      const previousStatus = workOrder.status;
-      workOrder.status = "in_repair";
-      workOrder.repairStartedAt = workOrder.repairStartedAt ?? now;
-      this.recordStatusChange(
-        workOrder,
-        previousStatus,
-        "in_repair",
-        maintenanceUserId,
-        "maintenance",
-        input.activityNote || "Repair started",
-      );
-      const incident = await VehicleIncidentModel.findById(workOrder.incidentId);
-      if (incident) {
-        incident.status = "in_repair";
-        await incident.save();
-      }
-    } else if (input.status === "awaiting_verification") {
-      if (workOrder.status !== "in_repair") {
-        throw new HttpException(400, "Start the repair before submitting it for verification");
-      }
-      if (!workOrder.diagnosis || !workOrder.repairNotes) {
-        throw new HttpException(400, "Diagnosis and repair notes are required before verification");
-      }
-
-      workOrder.status = "awaiting_verification";
-      workOrder.repairCompletedAt = now;
-      this.recordStatusChange(
-        workOrder,
-        "in_repair",
-        "awaiting_verification",
-        maintenanceUserId,
-        "maintenance",
-        input.activityNote || "Repair completed and ready for verification",
-      );
-      const incident = await VehicleIncidentModel.findById(workOrder.incidentId);
-      if (incident) {
-        incident.status = "awaiting_verification";
-        await incident.save();
-      }
-    } else if (input.activityNote) {
-      this.recordStatusChange(
-        workOrder,
-        workOrder.status,
-        workOrder.status,
-        maintenanceUserId,
-        "maintenance",
-        input.activityNote,
-      );
-    }
-
-    await workOrder.save();
-    return this.sanitizeOne(workOrder);
-  }
 }

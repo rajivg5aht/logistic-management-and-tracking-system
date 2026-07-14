@@ -198,7 +198,7 @@ export class UserService {
   private sanitizeFleetIncident(
     incident: IVehicleIncident,
     workOrder?: IMaintenanceWorkOrder,
-    maintenanceNames: Map<string, string> = new Map(),
+    repairAssigneeNames: Map<string, string> = new Map(),
   ): DriverFleetIncident {
     return {
       id: incident._id.toString(),
@@ -215,7 +215,7 @@ export class UserService {
         ? {
             status: workOrder.status,
             assignedToName: workOrder.assignedTo
-              ? maintenanceNames.get(workOrder.assignedTo.toString()) ?? null
+              ? repairAssigneeNames.get(workOrder.assignedTo.toString()) ?? null
               : null,
             vendorName: workOrder.vendorName ?? "",
             expectedCompletionAt: workOrder.expectedCompletionAt ?? null,
@@ -341,13 +341,16 @@ export class UserService {
       throw new HttpException(404, "User not found");
     }
 
-    if (updateData.email && updateData.email !== user.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== user.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
 
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+        if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
@@ -485,10 +488,10 @@ export class UserService {
   }
 
   async adminCreateUser(userData: AdminCreateUserDTO): Promise<SafeUser> {
-    if (userData.role && !["customer", "maintenance"].includes(userData.role)) {
+    if (userData.role && userData.role !== "customer") {
       throw new HttpException(
         400,
-        "Drivers must be created in Driver Management",
+        "Only customer accounts can be created here. Drivers must be created in Driver Management",
       );
     }
 
@@ -527,12 +530,15 @@ export class UserService {
       );
     }
 
-    if (updateData.email && updateData.email !== user.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== user.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
+        if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
@@ -690,12 +696,15 @@ export class UserService {
       throw new HttpException(404, "Driver not found");
     }
 
-    if (updateData.email && updateData.email !== driver.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== driver.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
+        if (existingEmail && existingEmail._id.toString() !== driver._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
@@ -904,16 +913,16 @@ export class UserService {
           incidentId: { $in: incidents.map((incident) => incident._id) },
         })
       : [];
-    const maintenanceUserIds = workOrders
+    const repairAssigneeIds = workOrders
       .map((workOrder) => workOrder.assignedTo)
       .filter((id): id is mongoose.Types.ObjectId => !!id);
-    const maintenanceUsers = maintenanceUserIds.length
-      ? await UserModel.find({ _id: { $in: maintenanceUserIds } }).select(
+    const repairAssignees = repairAssigneeIds.length
+      ? await UserModel.find({ _id: { $in: repairAssigneeIds } }).select(
           "_id fullName",
         )
       : [];
-    const maintenanceNames = new Map(
-      maintenanceUsers.map((user) => [user._id.toString(), user.fullName]),
+    const repairAssigneeNames = new Map(
+      repairAssignees.map((user) => [user._id.toString(), user.fullName]),
     );
     const workOrdersByIncident = new Map(
       workOrders.map((workOrder) => [workOrder.incidentId.toString(), workOrder]),
@@ -928,7 +937,7 @@ export class UserService {
         this.sanitizeFleetIncident(
           incident,
           workOrdersByIncident.get(incident._id.toString()),
-          maintenanceNames,
+          repairAssigneeNames,
         ),
       ),
       fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),

@@ -24,7 +24,7 @@ export type MaintenanceWorkOrderEvent = {
   fromStatus: MaintenanceWorkOrderStatus | null;
   toStatus: MaintenanceWorkOrderStatus;
   actorId: mongoose.Types.ObjectId;
-  actorRole: "admin" | "maintenance";
+  actorRole: "admin";
   note: string;
   createdAt: Date;
 };
@@ -72,7 +72,7 @@ const WorkOrderEventSchema = new Schema<MaintenanceWorkOrderEvent>(
       required: true,
     },
     actorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    actorRole: { type: String, enum: ["admin", "maintenance"], required: true },
+    actorRole: { type: String, enum: ["admin"], required: true },
     note: { type: String, trim: true, default: "" },
     createdAt: { type: Date, default: Date.now },
   },

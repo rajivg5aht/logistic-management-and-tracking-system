@@ -13,7 +13,7 @@ import {
 } from "../types/shipment.type";
 import { AdminUpdateShipmentDTO } from "../dtos/shipment.dto";
 
-test("generic user creation accepts customer and maintenance accounts", () => {
+test("generic user creation accepts only customer accounts", () => {
   const base = {
     fullName: "Test User",
     email: "test@example.com",
@@ -22,10 +22,6 @@ test("generic user creation accepts customer and maintenance accounts", () => {
 
   assert.equal(
     AdminCreateUserDTO.safeParse({ ...base, role: "customer" }).success,
-    true,
-  );
-  assert.equal(
-    AdminCreateUserDTO.safeParse({ ...base, role: "maintenance" }).success,
     true,
   );
   assert.equal(

@@ -49,7 +49,7 @@ const UserMongoSchema: Schema<IUser> = new Schema(
 
     role: {
       type: String,
-      enum: ["admin", "customer", "driver", "maintenance"],
+      enum: ["admin", "customer", "driver"],
       default: "customer",
     },
 

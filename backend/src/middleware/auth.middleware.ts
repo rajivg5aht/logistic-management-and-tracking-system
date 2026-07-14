@@ -116,26 +116,3 @@ export const driverMiddleware = async (
   }
 };
 
-export const maintenanceMiddleware = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    if (!req.user) {
-      throw new HttpException(401, "Unauthorized - Please login first");
-    }
-
-    if (req.user.role !== "maintenance") {
-      throw new HttpException(403, "Forbidden - Maintenance access required");
-    }
-
-    next();
-  } catch (error: any) {
-    return res.status(error.status || 403).json({
-      success: false,
-      message: error.message || "Forbidden",
-      status: error.status || 403,
-    });
-  }
-};
