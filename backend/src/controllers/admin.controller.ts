@@ -31,7 +31,7 @@ export class AdminController {
       const search = (req.query.search as string) || "";
       const requestedRole = req.query.role as string | undefined;
       const role =
-        requestedRole && ["admin", "customer", "driver"].includes(requestedRole)
+        requestedRole && ["admin", "customer", "driver", "maintenance"].includes(requestedRole)
           ? requestedRole
           : undefined;
 

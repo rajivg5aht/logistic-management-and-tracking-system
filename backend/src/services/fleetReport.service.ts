@@ -75,8 +75,11 @@ type ListParams = {
 const ACTIVE_INCIDENT_STATUSES: VehicleIncidentStatus[] = [
   "open",
   "reviewing",
+  "monitoring",
   "maintenance_required",
+  "assigned_to_maintenance",
   "in_repair",
+  "awaiting_verification",
 ];
 
 function trimmed(value?: string): string | undefined {
@@ -251,7 +254,7 @@ export class FleetReportService {
     const resolutionNote = trimmed(input.resolutionNote) ?? incident.resolutionNote;
     const rejectionReason = trimmed(input.rejectionReason) ?? incident.rejectionReason;
 
-    if (nextStatus === "resolved" && !resolutionNote?.trim()) {
+    if ((nextStatus === "closed" || nextStatus === "resolved") && !resolutionNote?.trim()) {
       throw new HttpException(400, "Resolution note is required");
     }
     if (nextStatus === "rejected" && !rejectionReason?.trim()) {
@@ -277,7 +280,7 @@ export class FleetReportService {
         incident.reviewedAt = now;
         incident.reviewedBy = objectId(adminId);
       }
-      if (nextStatus === "resolved") {
+      if (nextStatus === "closed" || nextStatus === "resolved") {
         incident.resolvedAt = now;
         incident.rejectedAt = null;
       } else if (nextStatus === "rejected") {
@@ -289,11 +292,14 @@ export class FleetReportService {
       }
     }
 
-    if (
+    const requiresMaintenance =
       incident.status === "maintenance_required" ||
+      incident.status === "assigned_to_maintenance" ||
       incident.status === "in_repair" ||
-      (incident.status !== "resolved" && incident.severity === "critical")
-    ) {
+      incident.status === "awaiting_verification" ||
+      (ACTIVE_INCIDENT_STATUSES.includes(incident.status) &&
+        incident.severity === "critical");
+    if (requiresMaintenance) {
       await this.markVehicleForMaintenance(incident.vehicleId);
     }
 

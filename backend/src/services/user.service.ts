@@ -25,6 +25,7 @@ import {
   VehicleFuelExpenseModel,
   type IVehicleFuelExpense,
 } from "../models/vehicleFuelExpense.model";
+import { MaintenanceWorkOrderModel, type IMaintenanceWorkOrder } from "../models/maintenanceWorkOrder.model";
 
 const userRepository = new UserMongoRepository();
 
@@ -95,6 +96,14 @@ export type DriverFleetIncident = {
   resolutionNote: string;
   rejectionReason: string;
   maintenanceAction: string;
+  workOrder: {
+    status: string;
+    assignedToName: string | null;
+    vendorName: string;
+    expectedCompletionAt: Date | null;
+    repairNotes: string;
+    updatedAt: Date;
+  } | null;
   reviewedAt: Date | null;
   resolvedAt: Date | null;
   rejectedAt: Date | null;
@@ -188,6 +197,8 @@ export class UserService {
 
   private sanitizeFleetIncident(
     incident: IVehicleIncident,
+    workOrder?: IMaintenanceWorkOrder,
+    maintenanceNames: Map<string, string> = new Map(),
   ): DriverFleetIncident {
     return {
       id: incident._id.toString(),
@@ -200,6 +211,18 @@ export class UserService {
       resolutionNote: incident.resolutionNote ?? "",
       rejectionReason: incident.rejectionReason ?? "",
       maintenanceAction: incident.maintenanceAction ?? "",
+      workOrder: workOrder
+        ? {
+            status: workOrder.status,
+            assignedToName: workOrder.assignedTo
+              ? maintenanceNames.get(workOrder.assignedTo.toString()) ?? null
+              : null,
+            vendorName: workOrder.vendorName ?? "",
+            expectedCompletionAt: workOrder.expectedCompletionAt ?? null,
+            repairNotes: workOrder.repairNotes ?? "",
+            updatedAt: workOrder.updatedAt,
+          }
+        : null,
       reviewedAt: incident.reviewedAt ?? null,
       resolvedAt: incident.resolvedAt ?? null,
       rejectedAt: incident.rejectedAt ?? null,
@@ -462,7 +485,7 @@ export class UserService {
   }
 
   async adminCreateUser(userData: AdminCreateUserDTO): Promise<SafeUser> {
-    if (userData.role && userData.role !== "customer") {
+    if (userData.role && !["customer", "maintenance"].includes(userData.role)) {
       throw new HttpException(
         400,
         "Drivers must be created in Driver Management",
@@ -481,7 +504,7 @@ export class UserService {
       email: userData.email,
       password: hashedPassword,
       phoneNumber: userData.phoneNumber || "",
-      role: "customer",
+      role: userData.role,
       status: userData.status ?? "active",
     });
 
@@ -857,9 +880,7 @@ export class UserService {
             odometerKm: historyVehicle.odometerKm,
           })),
       )
-      .sort(
-        (a, b) => b.assignedAt.getTime() - a.assignedAt.getTime(),
-      );
+      .sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
 
     const [incidents, fuelExpenses] = vehicle
       ? await Promise.all([
@@ -878,16 +899,41 @@ export class UserService {
         ])
       : [[], []];
 
+    const workOrders = incidents.length
+      ? await MaintenanceWorkOrderModel.find({
+          incidentId: { $in: incidents.map((incident) => incident._id) },
+        })
+      : [];
+    const maintenanceUserIds = workOrders
+      .map((workOrder) => workOrder.assignedTo)
+      .filter((id): id is mongoose.Types.ObjectId => !!id);
+    const maintenanceUsers = maintenanceUserIds.length
+      ? await UserModel.find({ _id: { $in: maintenanceUserIds } }).select(
+          "_id fullName",
+        )
+      : [];
+    const maintenanceNames = new Map(
+      maintenanceUsers.map((user) => [user._id.toString(), user.fullName]),
+    );
+    const workOrdersByIncident = new Map(
+      workOrders.map((workOrder) => [workOrder.incidentId.toString(), workOrder]),
+    );
+
     return {
       vehicle: vehicle
         ? this.sanitizeDriverFleetVehicle(vehicle, driver._id.toString())
         : null,
       assignmentHistory,
-      incidents: incidents.map((incident) => this.sanitizeFleetIncident(incident)),
+      incidents: incidents.map((incident) =>
+        this.sanitizeFleetIncident(
+          incident,
+          workOrdersByIncident.get(incident._id.toString()),
+          maintenanceNames,
+        ),
+      ),
       fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),
     };
   }
-
   private async getOwnedFleetIncident(
     driverId: string,
     incidentId: string,
