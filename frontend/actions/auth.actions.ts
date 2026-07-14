@@ -381,3 +381,111 @@ export async function updateAdminPasswordAction(
     };
   }
 }
+
+export async function updateDriverProfileAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_driver")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    const profileImage = formData.get("profileImage");
+    const payload: UpdateProfilePayload = {
+      fullName: formData.get("fullName") as string,
+      email: formData.get("email") as string,
+      phoneNumber: formData.get("phoneNumber") as string,
+    };
+
+    if (profileImage instanceof File && profileImage.size > 0) {
+      payload.profileImage = profileImage;
+    }
+
+    const updatedUser = await updateProfile(token, payload);
+    if (updatedUser.role !== "driver") {
+      return {
+        success: false,
+        message: "Unauthorized driver profile response",
+      };
+    }
+
+    cookieStore.set("user_driver", JSON.stringify(updatedUser), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: AUTH_COOKIE_MAX_AGE,
+      path: "/",
+    });
+
+    return {
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update profile",
+    };
+  }
+}
+
+export async function updateDriverPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const passwordSchema = z
+    .object({
+      newPassword: z
+        .string()
+        .min(6, "Password must be at least 6 characters long"),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    });
+
+  const parsed = passwordSchema.safeParse({
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_driver")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    await updatePassword(token, { password: parsed.data.newPassword });
+
+    return {
+      success: true,
+      message: "Password updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update password",
+    };
+  }
+}
