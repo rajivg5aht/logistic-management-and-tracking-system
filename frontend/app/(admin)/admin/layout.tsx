@@ -26,7 +26,7 @@ export default async function AdminLayout({
 
   return (
     <AuthProvider initialUser={user} role="admin">
-      <AdminLayoutClient user={user}>
+      <AdminLayoutClient user={user} token={token}>
         {children}
       </AdminLayoutClient>
     </AuthProvider>

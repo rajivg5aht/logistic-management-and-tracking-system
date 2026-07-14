@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminProfile from "@/components/admin/AdminProfile";
 import { getWhoami, type AuthUser } from "@/lib/api/auth.api";
+import { ApiError } from "@/lib/api/api-client";
 
 export const metadata = {
   title: "Admin Profile - CargoNep",
@@ -28,7 +29,15 @@ export default async function AdminProfilePage() {
     redirect("/dashboard");
   }
 
-  const user = await getWhoami(token);
+  let user: AuthUser;
+  try {
+    user = await getWhoami(token);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      redirect("/login");
+    }
+    throw error;
+  }
 
   if (user.role !== "admin") {
     redirect("/dashboard");

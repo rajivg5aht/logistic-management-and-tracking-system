@@ -47,17 +47,12 @@ function formatDate(value: string | null): string {
 export default function AdminWorkOrderRow({
   token,
   workOrder,
-  maintenanceUsers,
   onChanged,
 }: {
   token: string;
   workOrder: MaintenanceWorkOrder;
-  maintenanceUsers: Array<{ id: string; fullName: string }>;
   onChanged: () => void;
 }) {
-  const [maintenanceUserId, setMaintenanceUserId] = useState(
-    workOrder.assignedToId ?? "",
-  );
   const [vendorName, setVendorName] = useState(workOrder.vendorName);
   const [priority, setPriority] = useState(workOrder.priority);
   const [expectedCompletionAt, setExpectedCompletionAt] = useState(
@@ -80,7 +75,6 @@ export default function AdminWorkOrderRow({
     setError(null);
     try {
       await adminUpdateWorkOrder(token, workOrder.id, {
-        maintenanceUserId: maintenanceUserId || null,
         vendorName,
         priority:
           priority === "low" ||
@@ -198,30 +192,12 @@ export default function AdminWorkOrderRow({
         <div className="mt-4 grid gap-3 border-t border-[var(--border)] pt-4 md:grid-cols-2">
           <label>
             <span className="mb-1 block text-[10px] font-bold uppercase text-[var(--text-muted)]">
-              Maintenance user
-            </span>
-            <select
-              value={maintenanceUserId}
-              onChange={(event) => setMaintenanceUserId(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
-            >
-              <option value="">External workshop</option>
-              {maintenanceUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.fullName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="mb-1 block text-[10px] font-bold uppercase text-[var(--text-muted)]">
               External workshop
             </span>
             <input
               value={vendorName}
-              disabled={Boolean(maintenanceUserId)}
               onChange={(event) => setVendorName(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)] disabled:opacity-50"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
             />
           </label>
           <label>

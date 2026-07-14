@@ -95,7 +95,7 @@ export type MaintenanceWorkOrder = {
     toStatus: string;
     actorId: string;
     actorName: string | null;
-    actorRole: "admin" | "maintenance";
+    actorRole: "admin";
     note: string;
     createdAt: string;
   }>;
@@ -157,7 +157,6 @@ export type AdminFuelExpenseUpdatePayload = {
 };
 
 export type CreateMaintenanceWorkOrderPayload = {
-  maintenanceUserId?: string | null;
   vendorName?: string;
   priority?: "low" | "medium" | "high" | "critical";
   expectedCompletionAt?: string;
@@ -166,7 +165,6 @@ export type CreateMaintenanceWorkOrderPayload = {
 };
 
 export type AdminMaintenanceWorkOrderUpdatePayload = {
-  maintenanceUserId?: string | null;
   vendorName?: string;
   priority?: "low" | "medium" | "high" | "critical";
   expectedCompletionAt?: string;

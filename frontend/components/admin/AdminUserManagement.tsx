@@ -17,7 +17,6 @@ import {
   Shield,
   Truck,
   User,
-  Wrench,
   Filter,
   MoreVertical,
   TrendingUp,
@@ -45,13 +44,12 @@ interface AdminUserManagementProps {
   onMutationFinished?: () => void;
 }
 
-type RoleTab = "all" | "customer" | "driver" | "maintenance";
+type RoleTab = "all" | "customer" | "driver";
 
 const TABS: { id: RoleTab; label: string }[] = [
   { id: "all", label: "All Users" },
   { id: "customer", label: "Customers" },
   { id: "driver", label: "Drivers" },
-  { id: "maintenance", label: "Maintenance" },
 ];
 
 const AVATAR_STYLES = [
@@ -65,7 +63,6 @@ const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string
   admin: { label: "Admin", Icon: Shield, cls: "bg-[var(--teal-tint)] text-[var(--teal)]" },
   driver: { label: "Driver", Icon: Truck, cls: "bg-[var(--accent-soft)] text-[var(--accent-strong)]" },
   customer: { label: "Customer", Icon: User, cls: "bg-[rgba(95,127,53,0.12)] text-[var(--success)]" },
-  maintenance: { label: "Maintenance", Icon: Wrench, cls: "bg-[#FCE8D8] text-[#C06A2D]" },
 };
 
 function formatRegDate(value?: string): string {
@@ -104,7 +101,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     phoneNumber: "",
     email: "",
     password: "",
-    role: "customer" as "admin" | "customer" | "driver" | "maintenance",
+    role: "customer" as "admin" | "customer" | "driver",
     status: "active" as "active" | "inactive",
   });
 
@@ -217,7 +214,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         phoneNumber: formData.phoneNumber.trim(),
         email: formData.email,
         password: formData.password,
-        role: formData.role === "maintenance" ? "maintenance" : "customer",
+        role: "customer",
       });
       setIsCreateOpen(false);
       fetchUsers();
@@ -703,7 +700,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </div>
       </div>
 
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={formData.role === "maintenance" ? "Create Maintenance Account" : "Create Customer Account"}>
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Customer Account">
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
 

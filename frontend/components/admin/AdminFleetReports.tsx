@@ -14,8 +14,6 @@ import {
   type AdminIncident,
   type MaintenanceWorkOrder,
 } from "@/lib/api/fleetReports.api";
-import { adminGetUsers } from "@/lib/api/admin.api";
-import type { AuthUser } from "@/lib/api/auth.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import {
   FuelExpenseRow,
@@ -39,7 +37,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
   const [incidents, setIncidents] = useState<AdminIncident[]>([]);
   const [workOrders, setWorkOrders] = useState<MaintenanceWorkOrder[]>([]);
   const [fuel, setFuel] = useState<AdminFuelExpense[]>([]);
-  const [maintenanceUsers, setMaintenanceUsers] = useState<AuthUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<AdminIncident | null>(
@@ -47,7 +44,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
   );
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [maintenanceUserId, setMaintenanceUserId] = useState("");
   const [vendorName, setVendorName] = useState("");
   const [priority, setPriority] = useState("medium");
   const [expectedCompletionAt, setExpectedCompletionAt] = useState("");
@@ -84,29 +80,11 @@ export default function AdminFleetReports({ token }: { token: string }) {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    const loadMaintenanceUsers = async () => {
-      try {
-        const response = await adminGetUsers(
-          token,
-          1,
-          200,
-          "",
-          "maintenance",
-        );
-        setMaintenanceUsers(response.data);
-      } catch {
-        setMaintenanceUsers([]);
-      }
-    };
-    void loadMaintenanceUsers();
-  }, [token]);
 
   useAutoRefresh(() => load(true), { intervalMs: 15_000 });
 
   const openWorkOrder = (incident: AdminIncident) => {
     setSelectedIncident(incident);
-    setMaintenanceUserId("");
     setVendorName("");
     setPriority(
       incident.severity === "critical" || incident.severity === "high"
@@ -127,8 +105,8 @@ export default function AdminFleetReports({ token }: { token: string }) {
   const createWorkOrder = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!selectedIncident) return;
-    if (!maintenanceUserId && !vendorName.trim()) {
-      setCreateError("Assign a maintenance user or enter an external workshop.");
+    if (!vendorName.trim()) {
+      setCreateError("Enter an external workshop.");
       return;
     }
 
@@ -136,7 +114,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
     setCreateError(null);
     try {
       await adminCreateWorkOrder(token, selectedIncident.id, {
-        maintenanceUserId: maintenanceUserId || null,
         vendorName: vendorName.trim(),
         priority:
           priority === "low" ||
@@ -175,7 +152,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
     tab === "incidents"
       ? "incident reports"
       : tab === "workOrders"
-        ? "maintenance work orders"
+        ? "repair work orders"
         : "fuel expenses";
 
   return (
@@ -188,14 +165,14 @@ export default function AdminFleetReports({ token }: { token: string }) {
           Fleet Reports
         </h1>
         <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
-          Review driver reports, assign maintenance, and verify completed repairs.
+          Review driver issue reports, assign repair work, and verify completed repairs.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {[
           { key: "incidents" as const, label: "Incidents", Icon: AlertTriangle },
-          { key: "workOrders" as const, label: "Maintenance", Icon: Wrench },
+          { key: "workOrders" as const, label: "Repair Work Orders", Icon: Wrench },
           { key: "fuel" as const, label: "Fuel Expenses", Icon: Fuel },
         ].map((item) => {
           const active = tab === item.key;
@@ -203,6 +180,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
             <button
               key={item.key}
               type="button"
+              suppressHydrationWarning
               onClick={() => switchTab(item.key)}
               className={[
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold",
@@ -221,6 +199,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
+          suppressHydrationWarning
           onClick={() => setStatus("")}
           className={[
             "rounded-full px-3.5 py-1.5 text-xs font-bold",
@@ -235,6 +214,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
           <button
             key={value}
             type="button"
+            suppressHydrationWarning
             onClick={() => setStatus(value)}
             className={[
               "rounded-full px-3.5 py-1.5 text-xs font-bold",
@@ -287,7 +267,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
                 key={workOrder.id}
                 token={token}
                 workOrder={workOrder}
-                maintenanceUsers={maintenanceUsers}
                 onChanged={() => load(true)}
               />
             ))}
@@ -306,7 +285,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
       <Modal
         isOpen={Boolean(selectedIncident)}
         onClose={closeWorkOrderModal}
-        title="Create Maintenance Work Order"
+        title="Create Repair Work Order"
       >
         <form onSubmit={createWorkOrder} className="space-y-4">
           {selectedIncident && (
@@ -322,32 +301,13 @@ export default function AdminFleetReports({ token }: { token: string }) {
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-bold text-[var(--text-muted)]">
-              Maintenance user
-            </span>
-            <select
-              value={maintenanceUserId}
-              onChange={(event) => setMaintenanceUserId(event.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
-            >
-              <option value="">External workshop</option>
-              {maintenanceUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.fullName}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-bold text-[var(--text-muted)]">
               External workshop
             </span>
             <input
               value={vendorName}
-              disabled={Boolean(maintenanceUserId)}
               onChange={(event) => setVendorName(event.target.value)}
               placeholder="Workshop or vendor name"
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--teal)] disabled:opacity-50"
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
             />
           </label>
 

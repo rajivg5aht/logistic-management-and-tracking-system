@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { LoginForm } from "@/components/auth/LoginForm";
 
-const roles = ["Admin", "Maintenance", "Driver", "Customer"] as const;
+const roles = ["Admin", "Driver", "Customer"] as const;
 
 export default function LoginPage() {
   const [activeRole, setActiveRole] = useState<string>("Admin");

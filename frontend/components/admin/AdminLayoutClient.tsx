@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   LayoutGrid,
@@ -21,7 +21,11 @@ import {
   MessageSquareText,
   UserRoundCog,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
+import { API_BASE_URL } from "@/lib/config";
+import { adminGetFleetReportStats } from "@/lib/api/fleetReports.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
@@ -36,18 +40,37 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/inquiries": "Inquiries",
 };
 
+function resolveProfileImage(value?: string | null): string | null {
+  if (!value) return null;
+  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+  if (value.startsWith("/")) return `${API_BASE_URL}${value}`;
+  return value;
+}
+
 interface AdminLayoutClientProps {
   children: React.ReactNode;
   user: AuthUser;
+  token: string;
 }
 
-export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
+export default function AdminLayoutClient({ children, user, token }: AdminLayoutClientProps) {
   const pathname = usePathname();
   const isFleetDetailsPage = pathname.startsWith("/admin/fleet/");
   const breadcrumbPage = ADMIN_BREADCRUMBS[pathname] ?? "Overview";
   const router = useRouter();
+  const { user: authenticatedUser } = useAuth();
+  const activeUser = authenticatedUser?.role === "admin" ? authenticatedUser : user;
+  const profileImageSrc = resolveProfileImage(activeUser?.profileImage);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [openIncidentCount, setOpenIncidentCount] = useState(0);
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImageSrc]);
 
   useEffect(() => {
     const savedState = localStorage.getItem("admin-sidebar-collapsed");
@@ -56,6 +79,20 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     }
     setHydrated(true);
   }, []);
+  const loadFleetNotifications = useCallback(async () => {
+    try {
+      const stats = await adminGetFleetReportStats(token);
+      setOpenIncidentCount(stats.openIncidents);
+    } catch {
+      setOpenIncidentCount(0);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadFleetNotifications();
+  }, [loadFleetNotifications]);
+
+  useAutoRefresh(loadFleetNotifications, { intervalMs: 15_000 });
 
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
@@ -73,7 +110,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     }
   };
 
-  const displayName = user?.fullName?.trim() || "Admin User";
+  const displayName = activeUser?.fullName?.trim() || "Admin User";
   const initials =
     displayName
       .split(/\s+/)
@@ -233,15 +270,18 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       >
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-end gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Link
+              href="/admin/fleet/reports"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
-              aria-label="Notifications"
-              suppressHydrationWarning
+              aria-label={openIncidentCount > 0 ? `${openIncidentCount} open driver issue reports` : "Notifications"}
             >
               <Bell size={19} />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#D0533F] ring-2 ring-[var(--surface)]" />
-            </button>
+              {openIncidentCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#D0533F] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                  {openIncidentCount > 9 ? "9+" : openIncidentCount}
+                </span>
+              )}
+            </Link>
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
@@ -263,10 +303,20 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                 <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
               </div>
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shrink-0"
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
                 style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
               >
-                {initials}
+                {profileImageSrc && !profileImageFailed ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profileImageSrc}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                    onError={() => setProfileImageFailed(true)}
+                  />
+                ) : (
+                  initials
+                )}
               </div>
             </Link>
           </div>
