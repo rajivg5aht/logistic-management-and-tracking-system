@@ -1,27 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Fuel, Loader2, MapPin, Truck, User } from "lucide-react";
 import {
-  adminUpdateIncidentStatus,
-  adminUpdateFuelExpenseStatus,
-  type AdminIncident,
+  AlertTriangle,
+  ExternalLink,
+  Fuel,
+  Loader2,
+  MapPin,
+  Truck,
+  User,
+} from "lucide-react";
+import {
+  adminUpdateFuelExpense,
+  adminUpdateIncident,
   type AdminFuelExpense,
-  type IncidentStatus,
-  type FuelExpenseStatus,
+  type AdminFuelExpenseUpdatePayload,
+  type AdminIncident,
+  type AdminIncidentUpdatePayload,
 } from "@/lib/api/fleetReports.api";
 import { formatNPR } from "@/lib/pricing";
 
 export const INCIDENT_STATUS_META: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-[#FBE4E1] text-[#D0453A]" },
   reviewing: { label: "Reviewing", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
+  maintenance_required: { label: "Maintenance", cls: "bg-[#FCE8D8] text-[#C06A2D]" },
+  in_repair: { label: "In repair", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
   resolved: { label: "Resolved", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
+  rejected: { label: "Rejected", cls: "bg-[#FBE4E1] text-[#D0453A]" },
 };
 
 export const FUEL_STATUS_META: Record<string, { label: string; cls: string }> = {
   submitted: { label: "Submitted", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
+  under_review: { label: "Under review", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
   approved: { label: "Approved", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
   rejected: { label: "Rejected", cls: "bg-[#FBE4E1] text-[#D0453A]" },
+  reimbursed: { label: "Reimbursed", cls: "bg-[#E7F5F2] text-[var(--teal)]" },
 };
 
 const SEVERITY_META: Record<string, string> = {
@@ -31,34 +44,23 @@ const SEVERITY_META: Record<string, string> = {
   critical: "bg-[#FBE4E1] text-[#D0453A]",
 };
 
-// Available next actions, keyed by current status. Keeps the workflow explicit
-// without hiding a correction path (e.g. reopen / re-approve).
-const INCIDENT_ACTIONS: Record<string, { label: string; to: IncidentStatus }[]> = {
-  open: [
-    { label: "Start review", to: "reviewing" },
-    { label: "Resolve", to: "resolved" },
-  ],
-  reviewing: [{ label: "Resolve", to: "resolved" }],
-  resolved: [{ label: "Reopen", to: "open" }],
-};
-
-const FUEL_ACTIONS: Record<string, { label: string; to: FuelExpenseStatus }[]> = {
-  submitted: [
-    { label: "Approve", to: "approved" },
-    { label: "Reject", to: "rejected" },
-  ],
-  approved: [{ label: "Reject", to: "rejected" }],
-  rejected: [{ label: "Approve", to: "approved" }],
-};
-
-function fmtDate(value: string): string {
+function fmtDate(value: string | null | undefined): string {
+  if (!value) return "-";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString(undefined, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
+}
+
+function askFor(label: string, current = "", required = true): string | null {
+  const value = window.prompt(label, current);
+  if (value === null) return null;
+  const next = value.trim();
+  if (required && !next) return null;
+  return next;
 }
 
 function StatusPill({ meta }: { meta: { label: string; cls: string } }) {
@@ -97,8 +99,6 @@ function ActButton({
   );
 }
 
-// Meta line shown in the fleet-wide inbox where a report isn't tied to the page's
-// vehicle. Hidden on the per-vehicle view via `showVehicle={false}`.
 function Meta({
   showVehicle,
   registration,
@@ -125,6 +125,111 @@ function Meta({
   );
 }
 
+function NoteBlock({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-xs font-medium text-[var(--text-soft)]">{value}</p>
+    </div>
+  );
+}
+
+type IncidentAction = {
+  label: string;
+  payload: () => AdminIncidentUpdatePayload | null;
+};
+
+function incidentActions(incident: AdminIncident): IncidentAction[] {
+  const resolve = (): AdminIncidentUpdatePayload | null => {
+    const resolutionNote = askFor(
+      "Resolution note",
+      incident.resolutionNote || "Vehicle inspected and cleared.",
+    );
+    return resolutionNote ? { status: "resolved", resolutionNote } : null;
+  };
+  const reject = (): AdminIncidentUpdatePayload | null => {
+    const rejectionReason = askFor("Rejection reason", incident.rejectionReason);
+    return rejectionReason ? { status: "rejected", rejectionReason } : null;
+  };
+  const maintenance = (): AdminIncidentUpdatePayload => ({
+    status: "maintenance_required",
+    maintenanceAction: askFor("Maintenance action", incident.maintenanceAction, false) ?? "",
+  });
+
+  switch (incident.status) {
+    case "open":
+      return [
+        { label: "Start review", payload: () => ({ status: "reviewing" }) },
+        { label: "Send maintenance", payload: maintenance },
+        { label: "Reject", payload: reject },
+      ];
+    case "reviewing":
+      return [
+        { label: "Send maintenance", payload: maintenance },
+        { label: "Start repair", payload: () => ({ status: "in_repair" }) },
+        { label: "Resolve", payload: resolve },
+        { label: "Reject", payload: reject },
+      ];
+    case "maintenance_required":
+      return [
+        { label: "Start repair", payload: () => ({ status: "in_repair" }) },
+        { label: "Resolve", payload: resolve },
+      ];
+    case "in_repair":
+      return [{ label: "Resolve", payload: resolve }];
+    case "resolved":
+    case "rejected":
+      return [{ label: "Reopen", payload: () => ({ status: "open" }) }];
+    default:
+      return [];
+  }
+}
+
+type FuelAction = {
+  label: string;
+  payload: () => AdminFuelExpenseUpdatePayload | null;
+};
+
+function fuelActions(expense: AdminFuelExpense): FuelAction[] {
+  const reject = (): AdminFuelExpenseUpdatePayload | null => {
+    const rejectionReason = askFor("Rejection reason", expense.rejectionReason);
+    return rejectionReason ? { status: "rejected", rejectionReason } : null;
+  };
+  const reimburse = (): AdminFuelExpenseUpdatePayload | null => {
+    const paymentReference = askFor("Payment reference", expense.paymentReference);
+    return paymentReference ? { status: "reimbursed", paymentReference } : null;
+  };
+
+  switch (expense.status) {
+    case "submitted":
+      return [
+        { label: "Start review", payload: () => ({ status: "under_review" }) },
+        { label: "Approve", payload: () => ({ status: "approved" }) },
+        { label: "Reject", payload: reject },
+      ];
+    case "under_review":
+      return [
+        { label: "Approve", payload: () => ({ status: "approved" }) },
+        { label: "Reject", payload: reject },
+      ];
+    case "approved":
+      return [
+        { label: "Mark reimbursed", payload: reimburse },
+        { label: "Reject", payload: reject },
+      ];
+    case "rejected":
+      return [
+        { label: "Review again", payload: () => ({ status: "under_review" }) },
+        { label: "Approve", payload: () => ({ status: "approved" }) },
+      ];
+    default:
+      return [];
+  }
+}
+
 export function IncidentRow({
   incident,
   token,
@@ -138,15 +243,18 @@ export function IncidentRow({
 }) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [adminNote, setAdminNote] = useState(incident.adminNote || "");
 
-  const act = async (to: IncidentStatus) => {
+  const act = async (payload: AdminIncidentUpdatePayload | null) => {
+    if (!payload) return;
     setPending(true);
     setErr(null);
     try {
-      await adminUpdateIncidentStatus(token, incident.id, to);
-      onChanged();
+      await adminUpdateIncident(token, incident.id, payload);
+      await onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to update");
+    } finally {
       setPending(false);
     }
   };
@@ -156,7 +264,7 @@ export function IncidentRow({
       label: incident.status,
       cls: "bg-[var(--surface-muted)] text-[var(--text-muted)]",
     };
-  const actions = INCIDENT_ACTIONS[incident.status] ?? [];
+  const actions = incidentActions(incident);
 
   return (
     <li className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
@@ -182,6 +290,13 @@ export function IncidentRow({
         </p>
       )}
 
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <NoteBlock label="Admin note" value={incident.adminNote} />
+        <NoteBlock label="Maintenance action" value={incident.maintenanceAction} />
+        <NoteBlock label="Resolution" value={incident.resolutionNote} />
+        <NoteBlock label="Rejection reason" value={incident.rejectionReason} />
+      </div>
+
       <div className="mt-3 border-t border-[var(--border)] pt-3">
         <Meta
           showVehicle={showVehicle}
@@ -189,15 +304,35 @@ export function IncidentRow({
           driverName={incident.driverName}
           date={fmtDate(incident.createdAt)}
         />
+        {incident.reviewedAt && (
+          <p className="mt-1 text-xs font-medium text-[var(--text-muted)]">
+            Reviewed {fmtDate(incident.reviewedAt)}
+          </p>
+        )}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <textarea
+            value={adminNote}
+            onChange={(event) => setAdminNote(event.target.value)}
+            rows={2}
+            placeholder="Admin note visible to driver"
+            className="min-h-16 flex-1 resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
+          />
+          <ActButton
+            label="Save note"
+            primary={false}
+            pending={pending}
+            onClick={() => act({ adminNote })}
+          />
+        </div>
         {actions.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {actions.map((a, i) => (
               <ActButton
-                key={a.to}
+                key={a.label}
                 label={a.label}
                 primary={i === 0}
                 pending={pending}
-                onClick={() => act(a.to)}
+                onClick={() => act(a.payload())}
               />
             ))}
           </div>
@@ -221,15 +356,18 @@ export function FuelExpenseRow({
 }) {
   const [pending, setPending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [adminNote, setAdminNote] = useState(expense.adminNote || "");
 
-  const act = async (to: FuelExpenseStatus) => {
+  const act = async (payload: AdminFuelExpenseUpdatePayload | null) => {
+    if (!payload) return;
     setPending(true);
     setErr(null);
     try {
-      await adminUpdateFuelExpenseStatus(token, expense.id, to);
-      onChanged();
+      await adminUpdateFuelExpense(token, expense.id, payload);
+      await onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to update");
+    } finally {
       setPending(false);
     }
   };
@@ -239,7 +377,7 @@ export function FuelExpenseRow({
       label: expense.status,
       cls: "bg-[var(--surface-muted)] text-[var(--text-muted)]",
     };
-  const actions = FUEL_ACTIONS[expense.status] ?? [];
+  const actions = fuelActions(expense);
 
   return (
     <li className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
@@ -250,9 +388,9 @@ export function FuelExpenseRow({
         </span>
         <span className="text-xs capitalize text-[var(--text-muted)]">
           {expense.fuelType}
-          {expense.liters != null ? ` · ${expense.liters} L` : ""} ·{" "}
+          {expense.liters != null ? ` - ${expense.liters} L` : ""} - {" "}
           {expense.odometerKm.toLocaleString()} km
-          {expense.stationName ? ` · ${expense.stationName}` : ""}
+          {expense.stationName ? ` - ${expense.stationName}` : ""}
         </span>
         <span className="ml-auto">
           <StatusPill meta={statusMeta} />
@@ -261,6 +399,23 @@ export function FuelExpenseRow({
       {expense.notes && (
         <p className="mt-2 text-sm text-[var(--text-soft)]">{expense.notes}</p>
       )}
+      {expense.receiptUrl && (
+        <a
+          href={expense.receiptUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--teal)] hover:underline"
+        >
+          <ExternalLink size={12} /> View receipt
+        </a>
+      )}
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <NoteBlock label="Admin note" value={expense.adminNote} />
+        <NoteBlock label="Rejection reason" value={expense.rejectionReason} />
+        <NoteBlock label="Payment reference" value={expense.paymentReference} />
+        <NoteBlock label="Reimbursed" value={expense.reimbursedAt ? fmtDate(expense.reimbursedAt) : ""} />
+      </div>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">
         <Meta
@@ -269,15 +424,30 @@ export function FuelExpenseRow({
           driverName={expense.driverName}
           date={fmtDate(expense.createdAt)}
         />
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <textarea
+            value={adminNote}
+            onChange={(event) => setAdminNote(event.target.value)}
+            rows={2}
+            placeholder="Admin note visible to driver"
+            className="min-h-16 flex-1 resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
+          />
+          <ActButton
+            label="Save note"
+            primary={false}
+            pending={pending}
+            onClick={() => act({ adminNote })}
+          />
+        </div>
         {actions.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {actions.map((a, i) => (
               <ActButton
-                key={a.to}
+                key={a.label}
                 label={a.label}
                 primary={i === 0}
                 pending={pending}
-                onClick={() => act(a.to)}
+                onClick={() => act(a.payload())}
               />
             ))}
           </div>

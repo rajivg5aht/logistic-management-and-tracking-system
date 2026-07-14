@@ -22,7 +22,10 @@ const INCIDENT_FILTERS = ["", ...INCIDENT_STATUSES] as const;
 const FUEL_FILTERS = ["", ...FUEL_EXPENSE_STATUSES] as const;
 
 function filterLabel(value: string): string {
-  return value === "" ? "All" : value.charAt(0).toUpperCase() + value.slice(1);
+  if (value === "") return "All";
+  return value
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export default function AdminFleetReports({ token }: { token: string }) {
@@ -72,7 +75,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--teal)]">
           Fleet
@@ -85,7 +87,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
         </p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2">
         {(
           [
@@ -112,7 +113,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
         })}
       </div>
 
-      {/* Status filter chips */}
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => {
           const active = status === f;
@@ -139,7 +139,6 @@ export default function AdminFleetReports({ token }: { token: string }) {
         </div>
       )}
 
-      {/* List */}
       {loading ? (
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
@@ -156,7 +155,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
           </div>
           <p className="mt-3 text-sm font-medium text-[var(--text-muted)]">
             No {tab === "incidents" ? "incident reports" : "fuel expenses"}
-            {status ? ` with status “${filterLabel(status)}”` : ""}.
+            {status ? ` with status "${filterLabel(status)}"` : ""}.
           </p>
         </div>
       ) : (

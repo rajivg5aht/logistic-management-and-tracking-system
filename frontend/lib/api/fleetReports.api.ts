@@ -4,13 +4,22 @@ import {
   buildQueryString,
 } from "@/lib/api/api-client";
 
-export const INCIDENT_STATUSES = ["open", "reviewing", "resolved"] as const;
+export const INCIDENT_STATUSES = [
+  "open",
+  "reviewing",
+  "maintenance_required",
+  "in_repair",
+  "resolved",
+  "rejected",
+] as const;
 export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
 
 export const FUEL_EXPENSE_STATUSES = [
   "submitted",
+  "under_review",
   "approved",
   "rejected",
+  "reimbursed",
 ] as const;
 export type FuelExpenseStatus = (typeof FUEL_EXPENSE_STATUSES)[number];
 
@@ -25,6 +34,14 @@ export type AdminIncident = {
   description: string;
   location: string;
   status: IncidentStatus | string;
+  adminNote: string;
+  resolutionNote: string;
+  rejectionReason: string;
+  maintenanceAction: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  resolvedAt: string | null;
+  rejectedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -41,7 +58,15 @@ export type AdminFuelExpense = {
   odometerKm: number;
   stationName: string;
   notes: string;
+  receiptUrl: string;
   status: FuelExpenseStatus | string;
+  adminNote: string;
+  rejectionReason: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  reimbursedBy: string | null;
+  reimbursedAt: string | null;
+  paymentReference: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,6 +81,22 @@ export type FleetReportsMeta = {
 export type FleetReportStats = {
   openIncidents: number;
   pendingFuelExpenses: number;
+  approvedFuelExpenses: number;
+};
+
+export type AdminIncidentUpdatePayload = {
+  status?: IncidentStatus;
+  adminNote?: string;
+  resolutionNote?: string;
+  rejectionReason?: string;
+  maintenanceAction?: string;
+};
+
+export type AdminFuelExpenseUpdatePayload = {
+  status?: FuelExpenseStatus;
+  adminNote?: string;
+  rejectionReason?: string;
+  paymentReference?: string;
 };
 
 type ListParams = {
@@ -81,16 +122,24 @@ export async function adminGetIncidents(
   );
 }
 
+export async function adminUpdateIncident(
+  token: string,
+  id: string,
+  payload: AdminIncidentUpdatePayload,
+): Promise<AdminIncident> {
+  return authenticatedRequest<AdminIncident>(
+    `/api/v1/admin/fleet-reports/incidents/${id}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
 export async function adminUpdateIncidentStatus(
   token: string,
   id: string,
   status: IncidentStatus,
 ): Promise<AdminIncident> {
-  return authenticatedRequest<AdminIncident>(
-    `/api/v1/admin/fleet-reports/incidents/${id}`,
-    token,
-    { method: "PATCH", body: JSON.stringify({ status }) },
-  );
+  return adminUpdateIncident(token, id, { status });
 }
 
 export async function adminGetFuelExpenses(
@@ -109,16 +158,24 @@ export async function adminGetFuelExpenses(
   );
 }
 
+export async function adminUpdateFuelExpense(
+  token: string,
+  id: string,
+  payload: AdminFuelExpenseUpdatePayload,
+): Promise<AdminFuelExpense> {
+  return authenticatedRequest<AdminFuelExpense>(
+    `/api/v1/admin/fleet-reports/fuel-expenses/${id}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
 export async function adminUpdateFuelExpenseStatus(
   token: string,
   id: string,
   status: FuelExpenseStatus,
 ): Promise<AdminFuelExpense> {
-  return authenticatedRequest<AdminFuelExpense>(
-    `/api/v1/admin/fleet-reports/fuel-expenses/${id}`,
-    token,
-    { method: "PATCH", body: JSON.stringify({ status }) },
-  );
+  return adminUpdateFuelExpense(token, id, { status });
 }
 
 export async function adminGetFleetReportStats(
