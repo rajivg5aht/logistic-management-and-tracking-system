@@ -16,8 +16,18 @@ export const VEHICLE_INCIDENT_SEVERITIES = [
   "critical",
 ] as const;
 
+export const VEHICLE_INCIDENT_STATUSES = [
+  "open",
+  "reviewing",
+  "maintenance_required",
+  "in_repair",
+  "resolved",
+  "rejected",
+] as const;
+
 export type VehicleIncidentCategory = (typeof VEHICLE_INCIDENT_CATEGORIES)[number];
 export type VehicleIncidentSeverity = (typeof VEHICLE_INCIDENT_SEVERITIES)[number];
+export type VehicleIncidentStatus = (typeof VEHICLE_INCIDENT_STATUSES)[number];
 
 export interface IVehicleIncident extends Document {
   _id: mongoose.Types.ObjectId;
@@ -27,7 +37,15 @@ export interface IVehicleIncident extends Document {
   severity: VehicleIncidentSeverity;
   description: string;
   location: string;
-  status: "open" | "reviewing" | "resolved";
+  status: VehicleIncidentStatus;
+  adminNote: string;
+  resolutionNote: string;
+  rejectionReason: string;
+  maintenanceAction: string;
+  reviewedBy: mongoose.Types.ObjectId | null;
+  reviewedAt: Date | null;
+  resolvedAt: Date | null;
+  rejectedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,9 +78,21 @@ const VehicleIncidentSchema = new Schema<IVehicleIncident>(
     location: { type: String, trim: true, default: "" },
     status: {
       type: String,
-      enum: ["open", "reviewing", "resolved"],
+      enum: VEHICLE_INCIDENT_STATUSES,
       default: "open",
     },
+    adminNote: { type: String, trim: true, default: "" },
+    resolutionNote: { type: String, trim: true, default: "" },
+    rejectionReason: { type: String, trim: true, default: "" },
+    maintenanceAction: { type: String, trim: true, default: "" },
+    reviewedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    reviewedAt: { type: Date, default: null },
+    resolvedAt: { type: Date, default: null },
+    rejectedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

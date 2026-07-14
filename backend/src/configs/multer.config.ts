@@ -2,7 +2,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Ensure uploads directories exist
 const uploadDir = path.join(__dirname, "../../uploads/profiles");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -18,7 +17,11 @@ if (!fs.existsSync(proofUploadDir)) {
   fs.mkdirSync(proofUploadDir, { recursive: true });
 }
 
-// Configure storage
+const fuelReceiptUploadDir = path.join(__dirname, "../../uploads/fuel-receipts");
+if (!fs.existsSync(fuelReceiptUploadDir)) {
+  fs.mkdirSync(fuelReceiptUploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -30,7 +33,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Separate storage for vehicle photos, kept under /uploads/vehicles.
 const vehicleStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, vehicleUploadDir);
@@ -53,7 +55,17 @@ const proofStorage = multer.diskStorage({
   },
 });
 
-// File filter to accept only images
+const fuelReceiptStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, fuelReceiptUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `fuel-receipt-${uniqueSuffix}${ext}`);
+  },
+});
+
 const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,
@@ -72,28 +84,34 @@ const fileFilter = (
   }
 };
 
-// Create multer upload instance
 export const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
-// Upload instance for vehicle photos.
 export const vehicleUpload = multer({
   storage: vehicleStorage,
-  fileFilter: fileFilter,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
 export const proofUpload = multer({
   storage: proofStorage,
-  fileFilter: fileFilter,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+export const fuelReceiptUpload = multer({
+  storage: fuelReceiptStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
   },
 });
