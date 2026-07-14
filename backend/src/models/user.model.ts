@@ -49,7 +49,7 @@ const UserMongoSchema: Schema<IUser> = new Schema(
 
     role: {
       type: String,
-      enum: ["admin", "customer", "driver"],
+      enum: ["admin", "customer", "driver", "maintenance"],
       default: "customer",
     },
 
@@ -59,7 +59,6 @@ const UserMongoSchema: Schema<IUser> = new Schema(
       default: "active",
     },
 
-    // ── Driver profile (only populated for role: "driver") ──
     licenseNumber: { type: String, trim: true, default: "" },
     vehicleType: { type: String, enum: VEHICLE_TYPES },
     vehicleNumber: { type: String, trim: true, default: "" },

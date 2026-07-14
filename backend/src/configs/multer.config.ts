@@ -22,6 +22,13 @@ if (!fs.existsSync(fuelReceiptUploadDir)) {
   fs.mkdirSync(fuelReceiptUploadDir, { recursive: true });
 }
 
+const maintenanceDocumentUploadDir = path.join(
+  __dirname,
+  "../../uploads/maintenance-documents",
+);
+if (!fs.existsSync(maintenanceDocumentUploadDir)) {
+  fs.mkdirSync(maintenanceDocumentUploadDir, { recursive: true });
+}
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -66,6 +73,16 @@ const fuelReceiptStorage = multer.diskStorage({
   },
 });
 
+const maintenanceDocumentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, maintenanceDocumentUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, "maintenance-document-" + uniqueSuffix + ext);
+  },
+});
 const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,
@@ -84,6 +101,21 @@ const fileFilter = (
   }
 };
 
+const maintenanceDocumentFileFilter = (
+  req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  const allowedTypes = /jpeg|jpg|png|gif|pdf/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = /image\/(jpeg|png|gif)|application\/pdf/.test(file.mimetype);
+
+  if (mimetype && extname) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image and PDF files are allowed"));
+  }
+};
 export const upload = multer({
   storage,
   fileFilter,
@@ -113,5 +145,13 @@ export const fuelReceiptUpload = multer({
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,
+  },
+});
+
+export const maintenanceDocumentUpload = multer({
+  storage: maintenanceDocumentStorage,
+  fileFilter: maintenanceDocumentFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
   },
 });

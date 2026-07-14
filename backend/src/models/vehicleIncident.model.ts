@@ -19,8 +19,13 @@ export const VEHICLE_INCIDENT_SEVERITIES = [
 export const VEHICLE_INCIDENT_STATUSES = [
   "open",
   "reviewing",
+  "monitoring",
   "maintenance_required",
+  "assigned_to_maintenance",
   "in_repair",
+  "awaiting_verification",
+  "closed",
+  // Retained for reports created before the maintenance work-order workflow.
   "resolved",
   "rejected",
 ] as const;

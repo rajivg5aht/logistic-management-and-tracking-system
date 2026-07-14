@@ -2,15 +2,22 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { FleetReportService } from "../services/fleetReport.service";
+import { MaintenanceWorkOrderService } from "../services/maintenanceWorkOrder.service";
 import {
   AdminIncidentUpdateDTO,
   AdminFuelExpenseUpdateDTO,
 } from "../dtos/fleetReport.dto";
+import {
+  AdminUpdateMaintenanceWorkOrderDTO,
+  CreateMaintenanceWorkOrderDTO,
+} from "../dtos/maintenanceWorkOrder.dto";
 import { VEHICLE_INCIDENT_STATUSES } from "../models/vehicleIncident.model";
 import { VEHICLE_FUEL_EXPENSE_STATUSES } from "../models/vehicleFuelExpense.model";
+import { MAINTENANCE_WORK_ORDER_STATUSES } from "../models/maintenanceWorkOrder.model";
 import type { AuthRequest } from "../middleware/auth.middleware";
 
 const fleetReportService = new FleetReportService();
+const maintenanceWorkOrderService = new MaintenanceWorkOrderService();
 
 function parsePaging(req: Request) {
   const page = Math.max(parseInt(req.query.page as string) || 1, 1);
@@ -74,6 +81,97 @@ export class AdminFleetReportController {
         res,
         incident,
         "Incident updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async getWorkOrders(req: Request, res: Response) {
+    try {
+      const { page, limit } = parsePaging(req);
+      const requested = req.query.status as string | undefined;
+      const status = MAINTENANCE_WORK_ORDER_STATUSES.includes(
+        requested as (typeof MAINTENANCE_WORK_ORDER_STATUSES)[number],
+      )
+        ? requested
+        : undefined;
+      const { items, total } = await maintenanceWorkOrderService.listForAdmin({
+        status,
+        page,
+        limit,
+      });
+      return ApiResponseHelper.success(
+        res,
+        items,
+        "Maintenance work orders retrieved successfully",
+        200,
+        { page, limit, total, totalPages: Math.ceil(total / limit) },
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async createWorkOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = CreateMaintenanceWorkOrderDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const workOrder = await maintenanceWorkOrderService.createForIncident(
+        req.params.id as string,
+        parsed.data,
+        req.user.id,
+      );
+      return ApiResponseHelper.success(
+        res,
+        workOrder,
+        "Maintenance work order created successfully",
+        201,
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async updateWorkOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = AdminUpdateMaintenanceWorkOrderDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const workOrder = await maintenanceWorkOrderService.updateAsAdmin(
+        req.params.id as string,
+        parsed.data,
+        req.user.id,
+      );
+      return ApiResponseHelper.success(
+        res,
+        workOrder,
+        "Maintenance work order updated successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(
