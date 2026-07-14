@@ -101,7 +101,6 @@ export function ReviewAndPayCard({
   const service = SERVICE_INFO[selectedService];
   const ServiceIcon = service.icon;
 
-  // Dynamic price calculation from shared utility
   const prices = calculatePrices(packageDetails, selectedService, insurance, specialHandling);
 
   const handleConfirm = () => {
@@ -143,11 +142,9 @@ export function ReviewAndPayCard({
     });
   };
 
-  // Stable reference used only while reviewing; the backend returns the final tracking ID.
   const referenceSeed = useId().replaceAll(":", "").toUpperCase();
   const refNumber = `CARGO-${referenceSeed.slice(-6).padStart(6, "0")}-X`;
 
-  // Estimated delivery date
   const today = new Date();
   const daysToAdd = selectedService === "overnight" ? 1 : selectedService === "express" ? 2 : 5;
   const estDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
@@ -157,7 +154,6 @@ export function ReviewAndPayCard({
     year: "numeric",
   });
 
-  // Format helpers
   const pickupCityLine = [pickupAddress.city, pickupAddress.district]
     .filter(Boolean)
     .join(", ");
@@ -183,7 +179,6 @@ export function ReviewAndPayCard({
       ? `${packageDetails.dimensions.length} × ${packageDetails.dimensions.width} × ${packageDetails.dimensions.height} cm`
       : "—";
 
-  // ── Success screen (after a shipment is created) ──
   if (placedShipment) {
     const paid = placedShipment.paymentStatus === "paid";
     return (
@@ -258,9 +253,7 @@ export function ReviewAndPayCard({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* ── LEFT COLUMN ── */}
       <div className="lg:col-span-3 space-y-5">
-        {/* ─── Shipping Route ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
@@ -280,7 +273,6 @@ export function ReviewAndPayCard({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Pickup */}
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-2">
                 Pickup From
@@ -298,7 +290,6 @@ export function ReviewAndPayCard({
               </p>
             </div>
 
-            {/* Delivery */}
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-2">
                 Deliver To
@@ -318,7 +309,6 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Shipment Contents ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
@@ -338,7 +328,6 @@ export function ReviewAndPayCard({
           </div>
 
           <div className="flex items-center gap-5 flex-wrap">
-            {/* Package icon */}
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F8F7F4] border border-[#E2E8F0]">
               <Package className="h-6 w-6 text-slate-400" />
             </div>
@@ -379,7 +368,6 @@ export function ReviewAndPayCard({
             </div>
           </div>
 
-          {/* Insurance callout */}
           {insurance && (
             <div className="mt-4 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-2">
@@ -392,7 +380,6 @@ export function ReviewAndPayCard({
           )}
         </div>
 
-        {/* ─── Payment Method ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F3EEFF]">
@@ -467,7 +454,6 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Terms & Agreement ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
           <label className="flex items-start gap-3 cursor-pointer select-none">
             <input
@@ -491,11 +477,8 @@ export function ReviewAndPayCard({
         </div>
       </div>
 
-      {/* ── RIGHT COLUMN (Sidebar) ── */}
       <div className="lg:col-span-2 space-y-5">
-        {/* ─── Order Summary ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
-          {/* Accent Header */}
           <div className="bg-gradient-to-r from-[#1D7A8C] to-[#15616D] px-6 py-4">
             <h3 className="text-[15px] font-bold text-white">Order Summary</h3>
             <p className="text-[11px] font-medium text-white/70 mt-0.5">
@@ -504,7 +487,6 @@ export function ReviewAndPayCard({
           </div>
 
           <div className="p-6">
-            {/* Line items */}
             <div className="space-y-3.5 text-[13px]">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">
@@ -538,10 +520,8 @@ export function ReviewAndPayCard({
               )}
             </div>
 
-            {/* Divider */}
             <div className="border-t border-slate-100 my-5" />
 
-            {/* Total */}
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -558,7 +538,6 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Service Info Card ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${service.iconBg}`}>
@@ -588,14 +567,12 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Error message ─── */}
         {errorMsg && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-medium text-red-700">
             {errorMsg}
           </div>
         )}
 
-        {/* ─── Confirm Button ─── */}
         <button
           type="button"
           onClick={handleConfirm}

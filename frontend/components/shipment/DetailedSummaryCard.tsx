@@ -20,7 +20,6 @@ export function DetailedSummaryCard() {
     specialHandling,
   } = useShipment();
 
-  // Format display strings with fallbacks
   const pickupStreet = pickupAddress.streetAddress || "—";
   const pickupCityLine = [pickupAddress.city, pickupAddress.district]
     .filter(Boolean)
@@ -42,12 +41,10 @@ export function DetailedSummaryCard() {
       ? `${packageDetails.dimensions.length} × ${packageDetails.dimensions.width} × ${packageDetails.dimensions.height} cm`
       : "—";
 
-  // Dynamic pricing
   const prices = calculatePrices(packageDetails, selectedService, insurance, specialHandling);
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <FileText className="h-5 w-5 text-[#1D7A8C]" />
         <h2 className="text-[17px] font-bold text-[#1E293B]">
@@ -55,9 +52,7 @@ export function DetailedSummaryCard() {
         </h2>
       </div>
 
-      {/* Address Timeline */}
       <div className="space-y-0.5">
-        {/* Pickup Address */}
         <div className="flex gap-4">
           <div className="flex flex-col items-center shrink-0">
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E5F1F3] border border-[#1D7A8C]/20">
@@ -78,7 +73,6 @@ export function DetailedSummaryCard() {
           </div>
         </div>
 
-        {/* Delivery Address */}
         <div className="flex gap-4">
           <div className="flex flex-col items-center shrink-0">
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-50 border border-red-200">
@@ -101,7 +95,6 @@ export function DetailedSummaryCard() {
 
       <div className="h-5" />
 
-      {/* Details breakdown */}
       <div className="space-y-3.5 my-5 text-[13px] border-t border-slate-100 pt-5">
         <div className="flex items-center justify-between">
           <span className="text-slate-500 font-medium">Parcel Type</span>
@@ -130,7 +123,6 @@ export function DetailedSummaryCard() {
           <span className="font-bold text-slate-700">{SERVICE_LABELS[selectedService]}</span>
         </div>
 
-        {/* Pricing breakdown */}
         <div className="border-t border-slate-100 pt-3.5 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Shipping Fee</span>
@@ -161,7 +153,6 @@ export function DetailedSummaryCard() {
         </div>
       </div>
 
-      {/* Estimated Total */}
       <div className="bg-[#EAF5F8]/70 border border-[#E2E8F0]/30 rounded-xl p-4.5 mb-5">
         <div className="flex items-center justify-between">
           <span className="text-[13.5px] font-bold text-[#1D7A8C]">
@@ -176,7 +167,6 @@ export function DetailedSummaryCard() {
         </span>
       </div>
 
-      {/* World Map SVG Visual */}
       <div className="overflow-hidden rounded-lg shadow-sm border border-[#E2E8F0] relative h-[105px]">
         <svg className="w-full h-full" viewBox="0 0 200 105" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="200" height="105" fill="#D5C4A9" />

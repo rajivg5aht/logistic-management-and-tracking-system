@@ -7,6 +7,7 @@ import {
   Fuel,
   Loader2,
   MapPin,
+  Wrench,
   Truck,
   User,
 } from "lucide-react";
@@ -23,8 +24,12 @@ import { formatNPR } from "@/lib/pricing";
 export const INCIDENT_STATUS_META: Record<string, { label: string; cls: string }> = {
   open: { label: "Open", cls: "bg-[#FBE4E1] text-[#D0453A]" },
   reviewing: { label: "Reviewing", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
-  maintenance_required: { label: "Maintenance", cls: "bg-[#FCE8D8] text-[#C06A2D]" },
+  monitoring: { label: "Monitoring", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
+  maintenance_required: { label: "Maintenance required", cls: "bg-[#FCE8D8] text-[#C06A2D]" },
+  assigned_to_maintenance: { label: "Assigned to maintenance", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
   in_repair: { label: "In repair", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
+  awaiting_verification: { label: "Awaiting verification", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
+  closed: { label: "Closed", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
   resolved: { label: "Resolved", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
   rejected: { label: "Rejected", cls: "bg-[#FBE4E1] text-[#D0453A]" },
 };
@@ -143,51 +148,54 @@ type IncidentAction = {
 };
 
 function incidentActions(incident: AdminIncident): IncidentAction[] {
-  const resolve = (): AdminIncidentUpdatePayload | null => {
+  const close = (): AdminIncidentUpdatePayload | null => {
     const resolutionNote = askFor(
-      "Resolution note",
-      incident.resolutionNote || "Vehicle inspected and cleared.",
+      "Inspection note",
+      incident.resolutionNote || "Issue inspected and no repair is required.",
     );
-    return resolutionNote ? { status: "resolved", resolutionNote } : null;
+    return resolutionNote ? { status: "closed", resolutionNote } : null;
   };
   const reject = (): AdminIncidentUpdatePayload | null => {
     const rejectionReason = askFor("Rejection reason", incident.rejectionReason);
     return rejectionReason ? { status: "rejected", rejectionReason } : null;
   };
-  const maintenance = (): AdminIncidentUpdatePayload => ({
-    status: "maintenance_required",
-    maintenanceAction: askFor("Maintenance action", incident.maintenanceAction, false) ?? "",
-  });
 
   switch (incident.status) {
     case "open":
       return [
         { label: "Start review", payload: () => ({ status: "reviewing" }) },
-        { label: "Send maintenance", payload: maintenance },
         { label: "Reject", payload: reject },
       ];
     case "reviewing":
       return [
-        { label: "Send maintenance", payload: maintenance },
-        { label: "Start repair", payload: () => ({ status: "in_repair" }) },
-        { label: "Resolve", payload: resolve },
+        { label: "Monitor", payload: () => ({ status: "monitoring" }) },
+        {
+          label: "Require maintenance",
+          payload: () => ({ status: "maintenance_required" }),
+        },
+        { label: "Close after inspection", payload: close },
+        { label: "Reject", payload: reject },
+      ];
+    case "monitoring":
+      return [
+        { label: "Resume review", payload: () => ({ status: "reviewing" }) },
+        {
+          label: "Require maintenance",
+          payload: () => ({ status: "maintenance_required" }),
+        },
+        { label: "Close after inspection", payload: close },
         { label: "Reject", payload: reject },
       ];
     case "maintenance_required":
-      return [
-        { label: "Start repair", payload: () => ({ status: "in_repair" }) },
-        { label: "Resolve", payload: resolve },
-      ];
-    case "in_repair":
-      return [{ label: "Resolve", payload: resolve }];
-    case "resolved":
+      return [];
     case "rejected":
-      return [{ label: "Reopen", payload: () => ({ status: "open" }) }];
+      return [
+        { label: "Review again", payload: () => ({ status: "reviewing" }) },
+      ];
     default:
       return [];
   }
 }
-
 type FuelAction = {
   label: string;
   payload: () => AdminFuelExpenseUpdatePayload | null;
@@ -234,11 +242,13 @@ export function IncidentRow({
   incident,
   token,
   onChanged,
+  onCreateWorkOrder,
   showVehicle = true,
 }: {
   incident: AdminIncident;
   token: string;
   onChanged: () => void;
+  onCreateWorkOrder?: (incident: AdminIncident) => void;
   showVehicle?: boolean;
 }) {
   const [pending, setPending] = useState(false);
@@ -324,6 +334,22 @@ export function IncidentRow({
             onClick={() => act({ adminNote })}
           />
         </div>
+        {(incident.status === "reviewing" ||
+          incident.status === "monitoring" ||
+          incident.status === "maintenance_required") &&
+          onCreateWorkOrder && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => onCreateWorkOrder(incident)}
+                disabled={pending}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+              >
+                <Wrench size={13} />
+                Create work order
+              </button>
+            </div>
+          )}
         {actions.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {actions.map((a, i) => (

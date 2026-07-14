@@ -96,7 +96,6 @@ export default function DriverDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           Driver Dashboard
@@ -115,7 +114,6 @@ export default function DriverDashboard({
         </div>
       )}
 
-      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tiles.map((t) => {
           const Icon = t.Icon;
@@ -140,7 +138,6 @@ export default function DriverDashboard({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Active assignment */}
         <div className="lg:col-span-2">
           {loading ? (
             <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
@@ -167,7 +164,6 @@ export default function DriverDashboard({
           )}
         </div>
 
-        {/* Vehicle + quick link */}
         <div className="space-y-6">
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"

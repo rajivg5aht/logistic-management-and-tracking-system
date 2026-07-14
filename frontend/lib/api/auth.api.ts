@@ -6,7 +6,7 @@ export type AuthUser = {
   email: string;
   phoneNumber: string;
   profileImage: string | null;
-  role: "admin" | "customer" | "driver";
+  role: "admin" | "customer" | "driver" | "maintenance";
   status?: string;
   createdAt?: string;
 };

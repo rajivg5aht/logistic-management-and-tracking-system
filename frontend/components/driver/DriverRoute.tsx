@@ -86,7 +86,6 @@ export default function DriverRoute({ token }: { token: string }) {
         </div>
       ) : active ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Main: active delivery card (map, GPS, actions) */}
           <div className="lg:col-span-2">
             <ActiveAssignmentCard
               key={active.id}
@@ -105,7 +104,6 @@ export default function DriverRoute({ token }: { token: string }) {
             />
           </div>
 
-          {/* Sidebar: milestones + details */}
           <div className="space-y-6">
             <DeliveryMilestones shipment={active} />
             <DeliveryDetails shipment={active} />
@@ -124,7 +122,6 @@ export default function DriverRoute({ token }: { token: string }) {
   );
 }
 
-/* ── Delivery milestones (vertical timeline) ────────────────────────────────── */
 type MilestoneStatus = "done" | "active" | "pending" | "failed" | "returned";
 type MilestoneRow = {
   key: string;
@@ -150,7 +147,6 @@ function DeliveryMilestones({ shipment }: { shipment: Shipment }) {
   const current = shipment.driverStage ?? "assigned";
   const isFail = current === "failed" || current === "returned";
 
-  // Latest timeline entry per stage.
   const byStage = new Map<DriverStage, { at: string; note?: string }>();
   for (const e of shipment.timeline ?? []) {
     byStage.set(e.stage, { at: e.at, note: e.note });
@@ -158,7 +154,6 @@ function DeliveryMilestones({ shipment }: { shipment: Shipment }) {
 
   let rows: MilestoneRow[];
   if (isFail) {
-    // Show the main stages actually reached, then the terminal failed/returned node.
     rows = MAIN_PATH.filter((s) => byStage.has(s)).map((s) => ({
       key: s,
       label: STAGE_LABEL[s],
@@ -304,7 +299,6 @@ function MilestoneSubtitle({ row }: { row: MilestoneRow }) {
   );
 }
 
-/* ── Delivery details ───────────────────────────────────────────────────────── */
 function serviceLabel(service: string): string {
   return service.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

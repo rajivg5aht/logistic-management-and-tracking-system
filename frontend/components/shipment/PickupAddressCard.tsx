@@ -7,7 +7,6 @@ export function PickupAddressCard() {
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF1FF]">
           <svg
@@ -28,9 +27,7 @@ export function PickupAddressCard() {
         </h2>
       </div>
 
-      {/* Form Fields */}
       <div className="space-y-4">
-        {/* Full Name / Company */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             FULL NAME / COMPANY <span className="text-red-500">*</span>
@@ -47,7 +44,6 @@ export function PickupAddressCard() {
           />
         </div>
 
-        {/* Phone Number */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             PHONE NUMBER <span className="text-red-500">*</span>
@@ -69,7 +65,6 @@ export function PickupAddressCard() {
           </div>
         </div>
 
-        {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             PICKUP ADDRESS <span className="text-red-500">*</span>
@@ -84,7 +79,6 @@ export function PickupAddressCard() {
           />
         </div>
 
-        {/* District and City / Municipality */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
@@ -121,7 +115,6 @@ export function PickupAddressCard() {
           </div>
         </div>
 
-        {/* Checkbox */}
         <label className="flex items-center gap-2.5 text-xs text-slate-500 font-medium cursor-pointer mt-4 select-none">
           <input
             type="checkbox"

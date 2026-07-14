@@ -14,7 +14,6 @@ export default async function ChangePasswordPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Back Navigation */}
       <div className="mb-6">
         <Link
           href="/profile"
@@ -25,7 +24,6 @@ export default async function ChangePasswordPage() {
         </Link>
       </div>
 
-      {/* Main Card */}
       <div className="card p-8">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">

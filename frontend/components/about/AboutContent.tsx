@@ -103,14 +103,12 @@ function OverviewVisual() {
             </defs>
             <rect width="560" height="420" fill="url(#hubWall)" />
             <rect x="0" y="330" width="560" height="90" fill="rgba(58,46,18,0.06)" />
-            {/* shelving */}
             {[70, 300].map((sx) => (
               <g key={sx}>
                 <rect x={sx} y="90" width="190" height="230" rx="10" fill="rgba(255,255,255,0.6)" stroke="rgba(200,162,74,0.3)" strokeWidth="2" />
                 {[150, 230].map((ry) => (
                   <line key={ry} x1={sx} y1={ry} x2={sx + 190} y2={ry} stroke="rgba(200,162,74,0.28)" strokeWidth="2" />
                 ))}
-                {/* boxes */}
                 {[
                   { x: sx + 16, y: 104, w: 46, h: 38 },
                   { x: sx + 74, y: 110, w: 40, h: 32 },
@@ -127,7 +125,6 @@ function OverviewVisual() {
                 ))}
               </g>
             ))}
-            {/* delivery van */}
             <g transform="translate(360,250)">
               <rect x="0" y="18" width="96" height="52" rx="8" fill="var(--teal)" />
               <rect x="96" y="34" width="46" height="36" rx="8" fill="#17636F" />
@@ -257,7 +254,6 @@ export default function AboutContent() {
         </div>
       </section>
 
-      {/* Mission & Vision */}
       <section className="pb-14 sm:pb-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
           <div className="grid gap-5 md:grid-cols-2">
@@ -294,8 +290,6 @@ export default function AboutContent() {
         </div>
       </section>
 
-
-      {/* Core Values */}
       <section className="pb-14 sm:pb-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
           <h2 className="text-center text-2xl font-extrabold text-[var(--teal)] sm:text-3xl">Our Core Values</h2>
@@ -317,7 +311,6 @@ export default function AboutContent() {
           </div>
         </div>
       </section>
-      {/* Advanced Logistics Technology */}
       <section className="relative border-y border-[var(--border)] bg-[rgba(255,255,255,0.32)] py-14 sm:py-16">
         <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(360px,0.8fr)] lg:px-8 xl:gap-16">
           <TechnologyPreview />
@@ -342,7 +335,6 @@ export default function AboutContent() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
       <section className="relative py-14 sm:py-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.82fr)] lg:gap-14">

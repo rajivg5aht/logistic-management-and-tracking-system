@@ -8,11 +8,9 @@ import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 type Props = {
   latitude: number;
   longitude: number;
-  // Marker colour — navy in the driver/admin consoles, teal for customers.
   accent?: string;
 };
 
-// Recenters the map whenever a new fix arrives, keeping the current zoom.
 function Recenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
@@ -21,8 +19,6 @@ function Recenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-// A themeable teardrop pin built as a divIcon. Using a divIcon avoids Leaflet's
-// broken default marker-image URLs under bundlers entirely (no asset imports).
 function makeDriverIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: "",

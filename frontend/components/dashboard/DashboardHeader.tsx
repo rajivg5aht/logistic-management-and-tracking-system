@@ -10,7 +10,6 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[rgba(251,246,236,0.80)] backdrop-blur-md">
       <div className="flex h-[72px] items-center justify-between px-6 lg:px-8">
-        {/* Left: Hamburger + Greeting */}
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -26,7 +25,6 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        {/* Right: Notification + New Shipment */}
         <div className="flex items-center gap-3">
           <button
             type="button"

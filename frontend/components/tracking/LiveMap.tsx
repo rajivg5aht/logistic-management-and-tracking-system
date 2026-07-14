@@ -3,9 +3,6 @@
 import dynamic from "next/dynamic";
 import { Loader2, MapPin } from "lucide-react";
 
-// Leaflet touches `window` at module load, so it must never render on the
-// server. Next 16 only allows `ssr: false` inside a Client Component, which
-// this wrapper is — every consumer imports this file, not the inner map.
 const LiveTrackingMapInner = dynamic(() => import("./LiveTrackingMapInner"), {
   ssr: false,
   loading: () => <MapMessage icon={<Loader2 size={18} className="animate-spin" />} text="Loading map…" />,
@@ -32,7 +29,6 @@ function MapMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-// Renders the live driver marker, or a "waiting" state until the first fix.
 export default function LiveMap({
   location,
   height = 240,

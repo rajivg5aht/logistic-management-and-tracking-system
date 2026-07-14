@@ -1,16 +1,8 @@
-// Geodata for the Book-a-Shipment route map. District centres (their HQ towns)
-// are used to place pickup/delivery markers because `district` is the only
-// constrained address field — `city`/`street` are free text and can't be
-// reliably geocoded without an external service.
-
 export type LatLng = [number, number];
 
-// Roughly the geographic centre of Nepal — used for the empty-state overview.
 export const NEPAL_CENTER: LatLng = [28.3949, 84.124];
 export const NEPAL_OVERVIEW_ZOOM = 7;
 
-// District → headquarters coordinates [lat, lng]. Keys must match the names in
-// NEPAL_DISTRICTS (see context/ShipmentContext.tsx) exactly.
 export const NEPAL_DISTRICT_COORDS: Record<string, LatLng> = {
   Achham: [29.13, 81.29],
   Arghakhanchi: [27.95, 83.1],
@@ -91,7 +83,6 @@ export const NEPAL_DISTRICT_COORDS: Record<string, LatLng> = {
   Udayapur: [26.79, 86.71],
 };
 
-/** Coordinates for a selected district, or null when nothing is chosen. */
 export function getDistrictCoords(name: string): LatLng | null {
   if (!name) return null;
   return NEPAL_DISTRICT_COORDS[name] ?? null;
@@ -101,7 +92,6 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
-/** Great-circle distance in km — the straight-line fallback when OSRM is down. */
 export function haversineKm(a: LatLng, b: LatLng): number {
   const R = 6371;
   const dLat = toRad(b[0] - a[0]);

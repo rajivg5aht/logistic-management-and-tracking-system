@@ -24,7 +24,6 @@ export default async function AdminDashboardPage() {
     redirect("/login");
   }
 
-  // Security check: Only admins should see this page
   if (user.role !== "admin") {
     redirect("/dashboard");
   }

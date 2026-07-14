@@ -52,7 +52,6 @@ import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import LiveMap from "@/components/tracking/LiveMap";
 
-/* Screenshot-matched navy palette (shared app theme is gold/teal) */
 const NAVY = "#0C3B67";
 const NAVY_BTN = "#123E6B";
 
@@ -120,11 +119,9 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-
 function locLine(city?: string, district?: string): string {
   return [city, district].filter(Boolean).join(", ") || "-";
 }
-
 
 export default function AdminShipments({ token }: AdminShipmentsProps) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
@@ -143,7 +140,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  // Shipment shown in the read-only detail drawer (open when non-null).
   const [detail, setDetail] = useState<Shipment | null>(null);
   const [selected, setSelected] = useState<Shipment | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -154,7 +150,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   const limit = 10;
 
-  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => {
       setSearchQuery(searchInput);
@@ -163,8 +158,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // `silent` refreshes update the data in place without the loading skeleton or
-  // clobbering the table with a transient error (used by auto-refresh polling).
   const fetchData = useCallback(
     async (silent = false) => {
       try {
@@ -195,23 +188,17 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     [token, page, searchQuery, activeTab],
   );
 
-  // Initial load + refetch whenever filters/page/search change.
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Auto-refresh so new customer orders / cancellations appear without a manual
-  // refresh (silent so the table doesn't flash its skeleton on every tick).
   useAutoRefresh(() => fetchData(true), { intervalMs: 10_000 });
 
-  // Load the company drivers once so the assignment dropdown can offer real
-  // driver accounts to assign a shipment to.
   const fetchDrivers = useCallback(async () => {
     try {
       const res = await adminGetDrivers(token, 1, 200);
       setDrivers(res.data);
     } catch {
-      // Non-fatal: the dropdown just stays empty if drivers can't be loaded.
     }
   }, [token]);
 
@@ -246,18 +233,13 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     try {
       setActionLoading(true);
       setFormError(null);
-      // A manual status override only makes sense once a driver is assigned; the
-      // backend enforces this too, but we pre-empt it for a friendlier message.
       if (form.driverStage && !form.assignedDriverId) {
         setFormError("Assign a driver before setting a delivery status.");
         return;
       }
       const payload: AdminUpdateShipmentPayload = {
-        // Server resolves the driver name from the id and starts the timeline.
         assignedDriverId: form.assignedDriverId || null,
       };
-      // Only send a stage when the admin is manually overriding it. Left empty,
-      // the shipment stays Pending/Assigned and progresses from driver updates.
       if (form.driverStage) payload.driverStage = form.driverStage;
       await adminUpdateShipment(token, selected.id, payload);
       setIsEditOpen(false);
@@ -338,7 +320,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ============ Page title + refresh ============ */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl" style={{ color: NAVY }}>
@@ -350,7 +331,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
         </div>
       </div>
 
-      {/* ============ KPI cards ============ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.Icon;
@@ -377,12 +357,10 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
         })}
       </div>
 
-      {/* ============ Table card ============ */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
         style={{ boxShadow: "var(--shadow-sm)" }}
       >
-        {/* Tabs + toolbar */}
         <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-1.5">
             {TABS.map((tab, idx) => (
@@ -427,7 +405,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           </div>
         </div>
 
-        {/* Table */}
         {error ? (
           <div className="border-t border-[var(--border)] p-10 text-center">
             <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#FBE4E1] text-[#D0453A]">
@@ -489,7 +466,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         onClick={() => setDetail(s)}
                         className="cursor-pointer border-t border-[var(--border-light)] transition-colors hover:bg-[var(--surface-soft)]"
                       >
-                        {/* Tracking ID */}
                         <td className="px-5 py-4">
                           <div className="font-bold" style={{ color: NAVY }}>
                             #{s.trackingId}
@@ -498,14 +474,12 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             Created {timeAgo(s.createdAt)}
                           </div>
                         </td>
-                        {/* Sender */}
                         <td className="px-5 py-4">
                           <div className="font-bold text-[var(--text)]">{s.pickup.fullName || "-"}</div>
                           <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                             {locLine(s.pickup.city, s.pickup.district)}
                           </div>
                         </td>
-                        {/* Recipient */}
                         <td className="px-5 py-4">
                           <div className="font-semibold text-[var(--text)]">
                             {s.delivery.recipientName || "-"}
@@ -514,7 +488,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             {locLine(s.delivery.city, s.delivery.district)}
                           </div>
                         </td>
-                        {/* Payment */}
                         <td className="px-5 py-4">
                           <span
                             className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
@@ -524,7 +497,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             {isCod ? "COD" : "PREPAID"}
                           </span>
                         </td>
-                        {/* Amount */}
                         <td className="px-5 py-4">
                           <span
                             className="font-bold"
@@ -533,7 +505,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             NPR {s.amount.toLocaleString()}
                           </span>
                         </td>
-                        {/* Status */}
                         <td className="px-5 py-4">
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_STYLES[s.status]}`}
@@ -541,7 +512,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             {getShipmentDisplayStatus(s)}
                           </span>
                         </td>
-                        {/* Driver */}
                         <td className="px-5 py-4">
                           {s.assignedDriver ? (
                             <span className="flex items-center gap-2">
@@ -557,7 +527,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                             </span>
                           )}
                         </td>
-                        {/* Actions */}
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
                             <button
@@ -607,7 +576,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           </div>
         )}
 
-        {/* Footer / pagination */}
         {meta && !error && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--border)] p-4 sm:flex-row sm:px-5">
             <p className="text-sm text-[var(--text-muted)]">
@@ -672,7 +640,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
         )}
       </div>
 
-      {/* ============ EDIT MODAL ============ */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Update Shipment">
         <form onSubmit={handleEditSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
@@ -768,7 +735,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
         </form>
       </Modal>
 
-      {/* ============ DELETE MODAL ============ */}
       <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete Shipment">
         <div className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
@@ -810,7 +776,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
         </div>
       </Modal>
 
-      {/* ============ DETAIL DRAWER ============ */}
       <ShipmentDetailDrawer
         token={token}
         shipment={detail}
@@ -823,8 +788,6 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     </div>
   );
 }
-
-/* -- Read-only shipment detail drawer (slides in from the right) ------------ */
 
 const SERVICE_LABELS: Record<string, string> = {
   standard: "Standard",
@@ -921,7 +884,6 @@ function ShipmentDetailDrawer({
   onClose: () => void;
   onEdit: (s: Shipment) => void;
 }) {
-  // Lock background scroll + close on Escape while the drawer is open.
   useEffect(() => {
     if (!shipment) return;
     document.body.style.overflow = "hidden";
@@ -935,8 +897,6 @@ function ShipmentDetailDrawer({
     };
   }, [shipment, onClose]);
 
-  // Live driver location for the open shipment. The room is joined while the
-  // drawer is open (assigned driver only) and left automatically on close.
   const { location: liveLocation } = useShipmentLiveLocation(
     token,
     shipment?.id,
@@ -947,7 +907,6 @@ function ShipmentDetailDrawer({
     <AnimatePresence>
       {shipment && (
         <div className="fixed inset-0 z-[60]">
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -956,7 +915,6 @@ function ShipmentDetailDrawer({
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
 
-          {/* Panel */}
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -964,7 +922,6 @@ function ShipmentDetailDrawer({
             transition={{ type: "spring", damping: 32, stiffness: 320 }}
             className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl"
           >
-            {/* Header */}
             <div
               className="relative shrink-0 px-6 pb-5 pt-6 text-white"
               style={{
@@ -993,13 +950,10 @@ function ShipmentDetailDrawer({
               </div>
             </div>
 
-            {/* Body */}
             <div className="flex-1 space-y-5 overflow-y-auto p-6">
-              {/* Route */}
               <DetailSection icon={<MapPin size={14} />} title="Route">
                 <div className="relative pl-6">
                   <span className="absolute bottom-3 left-[6px] top-3 w-px bg-[var(--border)]" />
-                  {/* Pickup */}
                   <div className="relative pb-5">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -1015,7 +969,6 @@ function ShipmentDetailDrawer({
                       <Phone size={12} /> {shipment.pickup.phoneNumber || "-"}
                     </p>
                   </div>
-                  {/* Delivery */}
                   <div className="relative">
                     <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -1034,7 +987,6 @@ function ShipmentDetailDrawer({
                 </div>
               </DetailSection>
 
-              {/* Parcel */}
               <DetailSection icon={<Package size={14} />} title="Parcel Information">
                 <div className="grid grid-cols-2 gap-3">
                   <DetailTile
@@ -1075,7 +1027,6 @@ function ShipmentDetailDrawer({
                 </div>
               </DetailSection>
 
-              {/* Payment */}
               <DetailSection icon={<CreditCard size={14} />} title="Payment">
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
                   <div>
@@ -1098,7 +1049,6 @@ function ShipmentDetailDrawer({
                 </div>
               </DetailSection>
 
-              {/* Assignment */}
               <DetailSection icon={<Truck size={14} />} title="Assignment">
                 {shipment.assignedDriver ? (
                   <div className="space-y-3">
@@ -1130,7 +1080,6 @@ function ShipmentDetailDrawer({
                 )}
               </DetailSection>
 
-              {/* Live Location */}
               {shipment.assignedDriverId && (
                 <DetailSection icon={<MapPin size={14} />} title="Live Location">
                   <div className="mb-2 flex items-center justify-between text-xs">
@@ -1161,8 +1110,6 @@ function ShipmentDetailDrawer({
                 </DetailSection>
               )}
 
-
-              {/* Proof of Delivery */}
               <DetailSection icon={<Camera size={14} />} title="Proof of Delivery">
                 {shipment.proofOfDelivery ? (
                   <div className="space-y-3">
@@ -1202,7 +1149,6 @@ function ShipmentDetailDrawer({
                 )}
               </DetailSection>
 
-              {/* Journey */}
               <DetailSection icon={<Clock size={14} />} title="Journey">
                 {shipment.timeline.length === 0 ? (
                   <p className="text-sm italic text-[var(--text-muted)]">
@@ -1238,7 +1184,6 @@ function ShipmentDetailDrawer({
               </DetailSection>
             </div>
 
-            {/* Footer */}
             <div className="flex shrink-0 items-center gap-3 border-t border-[var(--border)] p-4">
               <button
                 type="button"

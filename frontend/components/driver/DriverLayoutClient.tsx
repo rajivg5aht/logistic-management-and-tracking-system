@@ -68,7 +68,6 @@ export default function DriverLayoutClient({
       const me = await driverGetMe(token);
       setAvailability(me.availabilityStatus ?? "available");
     } catch {
-      // Non-fatal: header just omits the live availability pill.
     }
   }, [token]);
 
@@ -76,18 +75,13 @@ export default function DriverLayoutClient({
     loadMe();
   }, [loadMe]);
 
-  // Keep availability in step with system-driven changes (e.g. a new assignment
-  // flips the driver to "assigned"/"on-delivery").
   useAutoRefresh(loadMe, { intervalMs: 15_000 });
 
-  // Close the mobile drawer and profile menu on navigation.
   useEffect(() => {
     setIsOpen(false);
     setProfileOpen(false);
   }, [pathname]);
 
-  // Restore the persisted desktop collapse state. Mark hydrated only afterwards
-  // so the initial correction doesn't animate the sidebar width.
   useEffect(() => {
     const saved = localStorage.getItem("driver-sidebar-collapsed");
     if (saved !== null) {
@@ -111,8 +105,6 @@ export default function DriverLayoutClient({
     }
   };
 
-  // Drivers may only flip between available and off-duty; assigned/on-delivery
-  // are system-controlled while a shipment is in progress.
   const canToggle = availability === "available" || availability === "off-duty";
 
   const handleToggle = async () => {
@@ -132,7 +124,6 @@ export default function DriverLayoutClient({
 
   const meta = availability ? AVAILABILITY_META[availability] : null;
 
-  // Breadcrumb page label, matched to the active sidebar item.
   const currentNav = NAV_ITEMS.find((item) =>
     item.exact
       ? pathname === item.href
@@ -150,7 +141,6 @@ export default function DriverLayoutClient({
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)] font-sans antialiased">
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
@@ -158,7 +148,6 @@ export default function DriverLayoutClient({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-[var(--border)] bg-[var(--surface)] ease-in-out md:translate-x-0 ${
           hydrated ? "transition-all duration-300" : ""
@@ -166,7 +155,6 @@ export default function DriverLayoutClient({
           isCollapsed ? "w-[76px]" : "w-64"
         }`}
       >
-        {/* Brand */}
         <div
           className={`flex h-[72px] items-center border-b border-[var(--border)] ${
             isCollapsed ? "justify-center" : "justify-between px-5"
@@ -185,7 +173,6 @@ export default function DriverLayoutClient({
           </Link>
           {!isCollapsed && (
             <>
-              {/* Desktop collapse */}
               <button
                 type="button"
                 onClick={toggleCollapsed}
@@ -196,7 +183,6 @@ export default function DriverLayoutClient({
               >
                 <Menu size={18} />
               </button>
-              {/* Mobile close */}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -209,7 +195,6 @@ export default function DriverLayoutClient({
           )}
         </div>
 
-        {/* Expand button (shown when collapsed) */}
         {isCollapsed && (
           <div className="flex justify-center border-b border-[var(--border)] py-4">
             <button
@@ -233,7 +218,6 @@ export default function DriverLayoutClient({
           </div>
         )}
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1.5">
             {NAV_ITEMS.map((item) => {
@@ -257,7 +241,6 @@ export default function DriverLayoutClient({
                     <Icon size={20} className="shrink-0" />
                     {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
 
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <span
                         className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-lg bg-[var(--surface-dark)] px-3 py-1.5 text-sm font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
@@ -273,7 +256,6 @@ export default function DriverLayoutClient({
           </ul>
         </nav>
 
-        {/* User + logout */}
         <div className="border-t border-[var(--border)] p-3">
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-1.5">
@@ -312,13 +294,11 @@ export default function DriverLayoutClient({
         </div>
       </aside>
 
-      {/* Main column */}
       <div
         className={`ease-in-out ${hydrated ? "transition-all duration-300" : ""} ${
           isCollapsed ? "md:ml-[76px]" : "md:ml-64"
         }`}
       >
-        {/* Topbar */}
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)]/95 px-4 backdrop-blur sm:px-6">
           <button
             type="button"
@@ -341,7 +321,6 @@ export default function DriverLayoutClient({
               </span>
             )}
 
-            {/* Profile menu */}
             <div className="relative">
               <button
                 type="button"
@@ -365,7 +344,6 @@ export default function DriverLayoutClient({
 
               {profileOpen && (
                 <>
-                  {/* Click-away overlay */}
                   <button
                     type="button"
                     aria-hidden
@@ -378,7 +356,6 @@ export default function DriverLayoutClient({
                     style={{ boxShadow: "var(--shadow-md)" }}
                     role="menu"
                   >
-                    {/* Identity */}
                     <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
                         {initials}
@@ -391,7 +368,6 @@ export default function DriverLayoutClient({
                       </div>
                     </div>
 
-                    {/* Availability */}
                     {meta && (
                       <div className="border-b border-[var(--border)] p-2">
                         {canToggle ? (
@@ -427,7 +403,6 @@ export default function DriverLayoutClient({
                       </div>
                     )}
 
-                    {/* Sign out */}
                     <div className="p-2">
                       <button
                         type="button"

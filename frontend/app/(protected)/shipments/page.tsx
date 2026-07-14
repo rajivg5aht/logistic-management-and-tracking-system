@@ -27,7 +27,6 @@ function ShipmentPageContent() {
   const validateStep1 = (): boolean => {
     const errors: string[] = [];
 
-    // Pickup address validation
     if (!pickupAddress.fullName.trim()) errors.push("Pickup: Full Name is required");
     if (!pickupAddress.phoneNumber.trim()) errors.push("Pickup: Phone Number is required");
     else if (!/^9\d{9}$/.test(pickupAddress.phoneNumber)) errors.push("Pickup: Enter a valid 10-digit mobile number");
@@ -35,7 +34,6 @@ function ShipmentPageContent() {
     if (!pickupAddress.district.trim()) errors.push("Pickup: District is required");
     if (!pickupAddress.city.trim()) errors.push("Pickup: City / Municipality is required");
 
-    // Delivery address validation
     if (!deliveryAddress.recipientName.trim()) errors.push("Delivery: Recipient Name is required");
     if (!deliveryAddress.phoneNumber.trim()) errors.push("Delivery: Phone Number is required");
     else if (!/^9\d{9}$/.test(deliveryAddress.phoneNumber)) errors.push("Delivery: Enter a valid 10-digit mobile number");
@@ -80,7 +78,6 @@ function ShipmentPageContent() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div>
         <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#1E3A5F]">
           Book a Shipment
@@ -90,12 +87,10 @@ function ShipmentPageContent() {
         </p>
       </div>
 
-      {/* Step Progress Bar */}
       <div className="py-2">
         <StepProgressBar steps={steps} />
       </div>
 
-      {/* Validation Errors */}
       {validationErrors.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-start gap-3">
@@ -128,21 +123,16 @@ function ShipmentPageContent() {
         </div>
       )}
 
-      {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column Area (Spans 2 columns on lg screens) */}
         <div className="lg:col-span-2 space-y-6">
           {currentStep === 1 && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Pickup Address Card */}
                 <PickupAddressCard />
 
-                {/* Delivery Address Card */}
                 <DeliveryAddressCard />
               </div>
 
-              {/* Action Bar Container */}
               <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
@@ -166,10 +156,8 @@ function ShipmentPageContent() {
 
           {currentStep === 2 && (
             <>
-              {/* Parcel Details Component */}
               <ParcelDetailsCard />
 
-              {/* Action Bar Container */}
               <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
@@ -194,10 +182,8 @@ function ShipmentPageContent() {
 
           {currentStep === 3 && (
             <>
-              {/* Select Service Component */}
               <SelectServiceCard />
 
-              {/* Action Bar Container */}
               <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
@@ -221,17 +207,14 @@ function ShipmentPageContent() {
           )}
         </div>
 
-        {/* Right Column Area (Spans 1 column on lg screens) */}
         {currentStep !== 4 && (
           <div className="space-y-6">
             {currentStep === 3 ? (
               <DetailedSummaryCard />
             ) : (
               <>
-                {/* Map Card */}
                 <BookingRouteMap />
 
-                {/* Summary Card */}
                 <ShipmentSummaryCard currentStep={currentStep} />
               </>
             )}
@@ -239,12 +222,10 @@ function ShipmentPageContent() {
         )}
       </div>
 
-      {/* Step 4: Review & Pay — Full-width (has its own internal grid) */}
       {currentStep === 4 && (
         <div className="space-y-5">
           <ReviewAndPayCard onEditStep={(step) => setCurrentStep(step)} />
 
-          {/* Back button */}
           <button
             type="button"
             onClick={() => setCurrentStep(3)}

@@ -3,7 +3,6 @@
 import { useShipment } from "@/context/ShipmentContext";
 import { Package, GlassWater, ClipboardCheck, Check } from "lucide-react";
 
-// Allow only numeric input with an optional single decimal point (strips letters/symbols).
 function sanitizeNumeric(value: string): string {
   const cleaned = value.replace(/[^0-9.]/g, "");
   const firstDot = cleaned.indexOf(".");
@@ -19,14 +18,12 @@ export function ParcelDetailsCard() {
 
   return (
     <div className="space-y-6">
-      {/* Select Parcel Type Card */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">
           Select Parcel Type
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Option 1: Standard Box */}
           <div
             onClick={() => updatePackageField("parcelType", "standard")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
@@ -35,7 +32,6 @@ export function ParcelDetailsCard() {
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
-            {/* Top Row: Icon and Checkmark */}
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
@@ -56,14 +52,12 @@ export function ParcelDetailsCard() {
               )}
             </div>
 
-            {/* Label & Description */}
             <span className="text-[14px] font-bold text-slate-800 mt-4">Standard Box</span>
             <span className="text-[11px] text-slate-500 leading-relaxed mt-1.5">
               Rigid containers for everyday items and stackable goods.
             </span>
           </div>
 
-          {/* Option 2: Fragile / High Value */}
           <div
             onClick={() => updatePackageField("parcelType", "fragile")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
@@ -72,7 +66,6 @@ export function ParcelDetailsCard() {
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
-            {/* Top Row: Icon and Checkmark */}
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
@@ -93,14 +86,12 @@ export function ParcelDetailsCard() {
               )}
             </div>
 
-            {/* Label & Description */}
             <span className="text-[14px] font-bold text-slate-800 mt-4">Fragile / High Value</span>
             <span className="text-[11px] text-slate-500 leading-relaxed mt-1.5">
               Special handling for electronics, glass, or delicate equipment.
             </span>
           </div>
 
-          {/* Option 3: Pallet / Bulk */}
           <div
             onClick={() => updatePackageField("parcelType", "pallet")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
@@ -109,7 +100,6 @@ export function ParcelDetailsCard() {
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
-            {/* Top Row: Icon and Checkmark */}
             <div className="flex items-center justify-between w-full">
               <div
                 className={`p-2.5 rounded-lg ${
@@ -130,7 +120,6 @@ export function ParcelDetailsCard() {
               )}
             </div>
 
-            {/* Label & Description */}
             <span className="text-[14px] font-bold text-slate-800 mt-4">Pallet / Bulk</span>
             <span className="text-[11px] text-slate-500 leading-relaxed mt-1.5">
               Oversized shipments requiring forklift or heavy lifting.
@@ -139,15 +128,12 @@ export function ParcelDetailsCard() {
         </div>
       </div>
 
-      {/* Package Specifications Card */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
         <h2 className="text-sm font-bold text-slate-800 mb-5 uppercase tracking-wider">
           Package Specifications
         </h2>
 
-        {/* Row 1: Weight and Quantity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-          {/* Total Weight */}
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
               Total Weight <span className="text-red-500">*</span>
@@ -168,7 +154,6 @@ export function ParcelDetailsCard() {
             </div>
           </div>
 
-          {/* Quantity */}
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
               Quantity
@@ -197,13 +182,11 @@ export function ParcelDetailsCard() {
           </div>
         </div>
 
-        {/* Row 2: Dimensions */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-2.5 uppercase">
             Dimensions (Outer Box) <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
-            {/* Length */}
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"
@@ -217,7 +200,6 @@ export function ParcelDetailsCard() {
               <span className="text-slate-400 text-[10px] font-bold shrink-0 ml-2 select-none">CM</span>
             </div>
 
-            {/* Width */}
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"
@@ -231,7 +213,6 @@ export function ParcelDetailsCard() {
               <span className="text-slate-400 text-[10px] font-bold shrink-0 ml-2 select-none">CM</span>
             </div>
 
-            {/* Height */}
             <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
               <input
                 type="text"

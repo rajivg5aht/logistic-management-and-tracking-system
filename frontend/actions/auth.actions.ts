@@ -107,6 +107,7 @@ export async function loginAction(
     let friendlyName = "Customer";
     if (user.role === "admin") friendlyName = "Admin";
     else if (user.role === "driver") friendlyName = "Driver";
+    else if (user.role === "maintenance") friendlyName = "Maintenance";
 
     return {
       success: false,
@@ -244,7 +245,7 @@ export async function updatePasswordAction(
 }
 
 export async function getUserFromCookie(
-  role: "customer" | "admin" | "driver" = "customer",
+  role: "customer" | "admin" | "driver" | "maintenance" = "customer",
 ) {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get(`user_${role}`)?.value;

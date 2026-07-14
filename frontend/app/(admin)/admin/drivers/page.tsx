@@ -24,7 +24,6 @@ export default async function AdminDriversPage() {
     redirect("/login");
   }
 
-  // Security: Only admins can access this page
   if (user.role !== "admin") {
     redirect("/dashboard");
   }

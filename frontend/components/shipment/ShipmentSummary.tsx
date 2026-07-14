@@ -5,7 +5,6 @@ export function ShipmentSummary() {
     <div className="app-card p-6">
       <h2 className="text-lg font-semibold text-[#1A2B3C] mb-5">Summary</h2>
 
-      {/* Route Display */}
       <div className="flex items-center justify-between mb-6">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8A9BAD] mb-1">
@@ -41,7 +40,6 @@ export function ShipmentSummary() {
         </div>
       </div>
 
-      {/* Line Items */}
       <div className="space-y-3 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-[#8A9BAD]">Base Rate</span>
@@ -57,16 +55,13 @@ export function ShipmentSummary() {
         </div>
       </div>
 
-      {/* Divider */}
       <hr className="border-[#DDD8CE] mb-4" />
 
-      {/* Total */}
       <div className="flex items-center justify-between mb-6">
         <span className="text-sm font-semibold text-[#1A2B3C]">Total</span>
         <span className="text-3xl font-bold text-[#2B7A7A]">€64.75</span>
       </div>
 
-      {/* CTA Button */}
       <button
         type="button"
         className="w-full h-14 rounded-xl bg-[#E8B84B] text-[#1A2B3C] font-bold text-base hover:bg-[#E8B84B]/90 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"

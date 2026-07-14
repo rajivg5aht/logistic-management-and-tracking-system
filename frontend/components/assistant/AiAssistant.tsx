@@ -3,25 +3,17 @@
 import { useState } from "react";
 import { Bot, Sparkles, X, Send } from "lucide-react";
 
-/**
- * Floating AI Assistant widget.
- *
- * UI only for now — the button opens a placeholder panel. Wire the input up to a
- * real assistant endpoint later; the markup is ready for a chat thread.
- */
 export function AiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      {/* Chat panel */}
       {isOpen && (
         <div
           className="fixed bottom-24 right-6 z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-md)]"
           role="dialog"
           aria-label="AI Assistant"
         >
-          {/* Header */}
           <div className="flex items-center justify-between gap-3 bg-[#1D7A8C] px-4 py-3.5 text-white">
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
@@ -42,7 +34,6 @@ export function AiAssistant() {
             </button>
           </div>
 
-          {/* Body */}
           <div className="flex flex-col gap-3 bg-[var(--surface-soft)] px-4 py-5">
             <div className="flex items-start gap-2.5">
               <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -58,7 +49,6 @@ export function AiAssistant() {
             </div>
           </div>
 
-          {/* Input (disabled placeholder) */}
           <div className="flex items-center gap-2 border-t border-[var(--border)] bg-white p-3">
             <input
               type="text"
@@ -81,7 +71,6 @@ export function AiAssistant() {
         </div>
       )}
 
-      {/* Floating toggle button */}
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}

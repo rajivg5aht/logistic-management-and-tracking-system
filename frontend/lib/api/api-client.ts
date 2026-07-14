@@ -1,7 +1,5 @@
 import { API_BASE_URL as SERVER_API_BASE_URL } from "@/lib/config";
 
-// Use relative URLs in the browser so requests flow through Next.js rewrites.
-// Server-side calls need the backend origin because there is no browser proxy.
 export const API_BASE_URL =
   typeof window !== "undefined"
     ? ""

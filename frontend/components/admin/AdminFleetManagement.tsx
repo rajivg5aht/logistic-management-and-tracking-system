@@ -62,8 +62,6 @@ const EMPTY_FORM = {
   odometerKm: "0",
 };
 
-// Card presentation per operational status: the badge on the hero, the hero
-// gradient, and the tint of the vehicle glyph.
 const CARD_STATUS: Record<
   VehicleStatus,
   { label: string; badge: string; hero: string; iconColor: string }
@@ -94,7 +92,6 @@ const CARD_STATUS: Record<
   },
 };
 
-// Friendlier labels than the raw enum for the card "Type" field.
 const TYPE_LABELS: Record<VehicleType, string> = {
   bike: "Bike",
   scooter: "Scooter",
@@ -117,8 +114,6 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString();
 }
 
-// The second detail column on a card adapts to what matters for that status:
-// who's driving it, when it's next serviced, or that it's ready to dispatch.
 function secondaryDetail(vehicle: Vehicle): {
   label: string;
   value: string;
@@ -174,13 +169,11 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  // Pending destructive action (remove / deactivate) confirmed via a styled modal.
   const [confirmAction, setConfirmAction] = useState<{
     type: "remove" | "deactivate";
     vehicle: Vehicle;
   } | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  // Vehicle photo staged in the create/edit form; uploaded after the record saves.
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -273,7 +266,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     setIsEditOpen(true);
   };
 
-  // Stage a chosen photo and show a local preview until it's uploaded on save.
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
     if (file) {
@@ -337,7 +329,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         const created = await adminCreateVehicle(token, payload);
         vehicleId = created.id;
       }
-      // Upload the staged photo once the vehicle exists (needs its id).
       if (imageFile) {
         await adminUploadVehicleImage(token, vehicleId, imageFile);
       }
@@ -376,8 +367,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     setConfirmAction({ type, vehicle });
   };
 
-  // Runs the pending remove/deactivate. Backend guards (assigned driver / active
-  // shipments) surface as an inline error and keep the modal open.
   const runConfirm = async () => {
     if (!confirmAction) return;
     const { type, vehicle } = confirmAction;
@@ -437,7 +426,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total vehicles - with an operational-utilisation bar */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Total Vehicles
@@ -461,7 +449,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Active units - vehicles currently assigned/in service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Active Units
@@ -474,7 +461,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* In maintenance */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             In Maintenance
@@ -487,7 +473,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* Inactive - retired / out of service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Inactive
@@ -528,7 +513,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         </div>
       )}
 
-      {/* ============ Asset Details (vehicle cards) ============ */}
       <div>
         <h2 className="mb-4 text-lg font-black tracking-tight text-[var(--text)]">
           Asset Details
@@ -571,7 +555,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                   key={vehicle.id}
                   className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
                 >
-                  {/* Hero */}
                   <div
                     className={`relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br ${cfg.hero}`}
                   >
@@ -601,7 +584,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                     </span>
                   </div>
 
-                  {/* Body */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -615,7 +597,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                         </p>
                       </div>
 
-                      {/* Kebab menu */}
                       <div className="relative shrink-0">
                         <button
                           type="button"
@@ -689,7 +670,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Detail columns */}
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -713,8 +693,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Actions - assignment is a card-level action; editing lives
-                        in the kebab menu, and "Details" opens the full read-only page. */}
                     <div className="mt-4 flex items-center gap-2">
                       {isAssignPrimary && (
                         <button
@@ -740,7 +718,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Pagination */}
         {meta && meta.totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <span className="text-xs text-[var(--text-muted)]">
@@ -844,7 +821,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         </form>
       </Modal>
 
-      {/* Confirm remove / deactivate */}
       <Modal
         isOpen={!!confirmAction}
         onClose={() => setConfirmAction(null)}

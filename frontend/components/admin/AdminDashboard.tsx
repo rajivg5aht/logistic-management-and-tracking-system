@@ -22,13 +22,10 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
   const [loadingStats, setLoadingStats] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
 
-  // `silent` refreshes recompute the metrics in place without the loading
-  // skeleton (used by auto-refresh and after user mutations).
   const fetchStats = useCallback(
     async (silent = false) => {
       try {
         if (!silent) setLoadingStats(true);
-        // Fetch a large number of users to compute high-level system metrics
         const res = await adminGetUsers(token, 1, 10000);
         const allUsers = res.data;
 
@@ -53,18 +50,14 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
     fetchStats();
   }, [fetchStats]);
 
-  // Keep platform metrics live as users register / change status.
   useAutoRefresh(() => fetchStats(true));
 
-  // Stable callback so the embedded user table can refresh these stats after a
-  // mutation without re-creating its own fetch loop.
   const handleUsersChanged = useCallback(() => {
     void fetchStats(true);
   }, [fetchStats]);
 
   return (
     <div className="space-y-8 font-sans">
-      {/* Welcome Kicker */}
       <div className="border-b border-[var(--border)] pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent)]">
           Control Center
@@ -77,14 +70,12 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
         </p>
       </div>
 
-      {/* Metrics Row */}
       {statsError ? (
         <div className="rounded-xl border border-[var(--border)] bg-[rgba(181,71,59,0.05)] p-4 text-center text-sm font-semibold text-[var(--danger)]">
           {statsError}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Total Users */}
           <div className="card group relative overflow-hidden p-5 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -106,7 +97,6 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
             <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[var(--accent)] to-[rgba(233,196,106,0.5)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
-          {/* Card 2: Active Users */}
           <div className="card group relative overflow-hidden p-5 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -128,7 +118,6 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
             <div className="absolute inset-x-0 bottom-0 h-1 bg-[var(--success)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
-          {/* Card 3: Inactive Users */}
           <div className="card group relative overflow-hidden p-5 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -150,7 +139,6 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
             <div className="absolute inset-x-0 bottom-0 h-1 bg-[var(--danger)] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
-          {/* Card 4: System Admins */}
           <div className="card group relative overflow-hidden p-5 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-md">
             <div className="flex items-center justify-between">
               <div>
@@ -174,7 +162,6 @@ export default function AdminDashboard({ token, currentUser }: AdminDashboardPro
         </div>
       )}
 
-      {/* Embedded User Management */}
       <div className="pt-2">
         <AdminUserManagement
           token={token}

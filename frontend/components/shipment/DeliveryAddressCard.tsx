@@ -7,7 +7,6 @@ export function DeliveryAddressCard() {
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FEF6E4]">
           <svg
@@ -30,9 +29,7 @@ export function DeliveryAddressCard() {
         </h2>
       </div>
 
-      {/* Form Fields */}
       <div className="space-y-4">
-        {/* Recipient Name */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             RECIPIENT NAME <span className="text-red-500">*</span>
@@ -47,7 +44,6 @@ export function DeliveryAddressCard() {
           />
         </div>
 
-        {/* Phone Number */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             PHONE NUMBER <span className="text-red-500">*</span>
@@ -69,7 +65,6 @@ export function DeliveryAddressCard() {
           </div>
         </div>
 
-        {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             DELIVERY ADDRESS <span className="text-red-500">*</span>
@@ -84,7 +79,6 @@ export function DeliveryAddressCard() {
           />
         </div>
 
-        {/* District and City / Municipality */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
@@ -121,7 +115,6 @@ export function DeliveryAddressCard() {
           </div>
         </div>
 
-        {/* Checkbox */}
         <label className="flex items-center gap-2.5 text-xs text-slate-500 font-medium cursor-pointer mt-4 select-none">
           <input
             type="checkbox"

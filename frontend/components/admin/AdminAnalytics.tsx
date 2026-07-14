@@ -11,7 +11,6 @@ import { formatNPR } from "@/lib/pricing";
 
 type DeltaTone = "up" | "down" | "neutral";
 
-/** Turns a signed delta into badge text + tone, honouring whether lower is better. */
 function deltaBadge(
   delta: number | null,
   { lowerIsBetter = false, unit = "%" }: { lowerIsBetter?: boolean; unit?: string } = {},
@@ -25,7 +24,6 @@ function deltaBadge(
   return { text: `${sign}${delta}${unit}`, tone };
 }
 
-/** Adaptive order-to-door formatting: minutes → hours → days. */
 function formatDuration(ms: number | null): string {
   if (ms === null || ms <= 0) return "—";
   const minutes = ms / 60000;
@@ -114,12 +112,10 @@ export default function AdminAnalytics({ token }: { token: string }) {
       color: "var(--surface-muted)",
     },
   ];
-  // Donut geometry
   const r = 70;
   const circumference = 2 * Math.PI * r;
   let cumulative = 0;
 
-  // ── Revenue trend line: build the SVG path from real monthly revenue ──────
   const months = analytics?.monthlyRevenue ?? [];
   const maxRevenue = Math.max(1, ...months.map((m) => m.revenue));
   const CHART = { left: 25, right: 475, top: 30, bottom: 190 };
@@ -141,7 +137,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
         `L ${points[0].x.toFixed(1)} ${CHART.bottom} Z`
       : "";
 
-  // ── Deliveries by region: single-hue ranked bars (magnitude by length) ────
   const regions = analytics?.regionVolume ?? [];
   const maxRegion = Math.max(1, ...regions.map((rg) => rg.count));
   const regionTotal = analytics?.totalShipments ?? 0;
@@ -153,14 +148,12 @@ export default function AdminAnalytics({ token }: { token: string }) {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Page header */}
       <div>
         <span className="page-kicker">Insights</span>
         <h1 className="page-title mt-1">Analytics</h1>
         <p className="page-subtitle">Track revenue, fleet efficiency, and delivery performance at a glance.</p>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon;
@@ -188,9 +181,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
         })}
       </div>
 
-      {/* Middle row: revenue trend + fleet performance */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Revenue Trend */}
         <div
           className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2"
           style={{ boxShadow: "var(--shadow-sm)" }}
@@ -207,10 +198,8 @@ export default function AdminAnalytics({ token }: { token: string }) {
             </span>
           </div>
 
-          {/* Line chart */}
           <div className="mt-6">
             <svg viewBox="0 0 500 220" className="h-56 w-full" preserveAspectRatio="none">
-              {/* Horizontal grid lines */}
               {[40, 90, 140, 190].map((y) => (
                 <line
                   key={y}
@@ -225,9 +214,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
               ))}
               {points.length > 0 && (
                 <>
-                  {/* Area fill under the curve */}
                   <path d={areaPath} fill="var(--teal)" fillOpacity="0.08" />
-                  {/* Revenue line */}
                   <path
                     d={linePath}
                     fill="none"
@@ -236,7 +223,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  {/* Data points */}
                   {points.map((p, i) => (
                     <circle
                       key={i}
@@ -251,7 +237,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
                 </>
               )}
             </svg>
-            {/* Month labels */}
             <div className="mt-3 flex items-center justify-between px-2 text-xs font-bold text-[var(--teal)]">
               {(months.length > 0
                 ? months.map((m) => m.label)
@@ -263,7 +248,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Fleet Performance */}
         <div
           className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
           style={{ boxShadow: "var(--shadow-sm)" }}
@@ -273,7 +257,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
             Vehicle availability breakdown
           </p>
 
-          {/* Donut chart */}
           <div className="relative mx-auto mt-5 h-44 w-44">
             <svg viewBox="0 0 180 180" className="h-full w-full -rotate-90">
               <circle
@@ -316,7 +299,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
             </div>
           </div>
 
-          {/* Legend */}
           <div className="mt-6 space-y-3">
             {fleetSegments.map((seg) => (
               <div key={seg.label} className="flex items-center justify-between">
@@ -336,7 +318,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* Deliveries by Region */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
         style={{ boxShadow: "var(--shadow-sm)" }}
@@ -361,7 +342,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
           )}
         </div>
 
-        {/* Ranked region bars — single hue, length encodes volume */}
         <div className="mt-6 space-y-2.5">
           {regions.length === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] py-10 text-center">
@@ -372,7 +352,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
             </div>
           ) : (
             <>
-              {/* Leader — hero emphasis for the busiest region */}
               <div
                 className="relative overflow-hidden rounded-[var(--radius-md)] border p-4"
                 style={{
@@ -423,7 +402,6 @@ export default function AdminAnalytics({ token }: { token: string }) {
                 </div>
               </div>
 
-              {/* Remaining regions */}
               {rest.map((rg, i) => (
                 <div
                   key={rg.region}

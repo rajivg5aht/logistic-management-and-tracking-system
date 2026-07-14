@@ -68,8 +68,6 @@ function fmtDate(s: string): string {
   });
 }
 
-// Display-only delivery-time budget per service, used to derive an honest
-// "Est. Arrival" for in-transit shipments (the data model has no ETA field).
 const SERVICE_SLA_DAYS: Record<ServiceType, number> = {
   standard: 5,
   express: 2,
@@ -89,12 +87,11 @@ function dateLabelFor(status: ShipmentStatus): string {
   return "Order Date";
 }
 
-// Keeps the displayed value consistent with dateLabelFor's label.
 function displayDate(s: Shipment): string {
   if (s.status === "delivered") return fmtDate(s.deliveredAt ?? s.updatedAt);
   if (s.status === "cancelled") return fmtDate(s.updatedAt);
   if (s.status === "in-transit") return estimatedArrival(s.createdAt, s.service);
-  return fmtDate(s.createdAt); // pending -> Order Date
+  return fmtDate(s.createdAt);
 }
 
 function getIcon(s: Shipment) {
@@ -102,7 +99,6 @@ function getIcon(s: Shipment) {
   if (s.package.parcelType === "pallet") return <Container size={20} className="text-[var(--accent)]" />;
   return <Package size={20} className="text-[var(--accent)]" />;
 }
-
 
 const PAGE_SIZE = 5;
 
@@ -112,7 +108,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Customer lifecycle actions (edit / cancel / delete).
   const [editing, setEditing] = useState<Shipment | null>(null);
   const [cancelling, setCancelling] = useState<Shipment | null>(null);
   const [deleting, setDeleting] = useState<Shipment | null>(null);
@@ -120,8 +115,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // `silent` refreshes update the list in place without the loading skeleton or
-  // clobbering it with a transient error (used by the auto-refresh polling).
   const fetchHistory = useCallback(
     async (silent = false) => {
       try {
@@ -151,8 +144,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
     fetchHistory();
   }, [fetchHistory]);
 
-  // Reflect admin changes (e.g. a shipment marked "delivered" or cancelled)
-  // without a manual page refresh.
   useAutoRefresh(() => fetchHistory(true));
 
   const handleCancelConfirm = async () => {
@@ -206,7 +197,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
     }
   };
 
-  // Delivered/cancelled shipments are the only ones the customer may clear.
   const historyCount = shipments.filter(
     (s) => s.status === "delivered" || s.status === "cancelled",
   ).length;
@@ -219,7 +209,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
@@ -255,7 +244,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       </div>
 
-      {/* States */}
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -289,7 +277,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </button>
         </div>
       ) : shipments.length === 0 ? (
-        /* Empty state */
         <div className="rounded-2xl border border-[#F5E6D8] bg-[#FDF6F0] p-12 text-center">
           <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F3EBF9]">
             <PackageOpen size={30} className="text-[var(--accent)]" />
@@ -308,7 +295,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       ) : (
         <>
-          {/* Shipment List */}
           <div className="space-y-4">
             {pageItems.map((shipment) => {
               const meta = STATUS_META[shipment.status];
@@ -321,14 +307,11 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                   className="bg-[#FDF6F0] border border-[#F5E6D8] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-4">
-                    {/* Icon */}
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F3EBF9]">
                       {getIcon(shipment)}
                     </div>
 
-                    {/* Shipment Details */}
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                      {/* ID & Destination */}
                       <div>
                         <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Shipment ID
@@ -341,7 +324,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                         </p>
                       </div>
 
-                      {/* Route */}
                       <div>
                         <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Route
@@ -351,7 +333,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                         </p>
                       </div>
 
-                      {/* Date */}
                       <div>
                         <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           {dateLabelFor(shipment.status)}
@@ -361,7 +342,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                         </p>
                       </div>
 
-                      {/* Status */}
                       <div>
                         <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Status
@@ -375,7 +355,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0">
                       {shipment.status === "pending" && (
                         <>
@@ -428,7 +407,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
             })}
           </div>
 
-          {/* Footer with Pagination */}
           <div className="flex flex-col items-center gap-4 pt-4 pb-20">
             <p className="text-sm text-[var(--text-muted)] font-medium">
               Showing {rangeStart} to {rangeEnd} of {shipments.length}{" "}
@@ -481,7 +459,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </>
       )}
 
-      {/* Edit modal (pending shipments only) */}
       <EditShipmentModal
         isOpen={editing !== null}
         shipment={editing}
@@ -490,7 +467,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         onUpdated={fetchHistory}
       />
 
-      {/* Cancel confirmation */}
       <Modal
         isOpen={cancelling !== null}
         onClose={() => {
@@ -541,7 +517,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       </Modal>
 
-      {/* Delete confirmation (cancelled shipments only) */}
       <Modal
         isOpen={deleting !== null}
         onClose={() => {
@@ -595,7 +570,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       </Modal>
 
-      {/* Clear-all-history confirmation */}
       <Modal
         isOpen={clearingHistory}
         onClose={() => {
@@ -652,7 +626,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       </Modal>
 
-      {/* Floating Help Button */}
       <button
         type="button"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1D7A8C] hover:bg-[#15656e] text-white text-sm font-semibold shadow-lg transition-all hover:scale-105"

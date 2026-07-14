@@ -1,7 +1,3 @@
-// Rough delivery-time estimate for the Book-a-Shipment map's second stat.
-// Derived from the route distance and the selected service level — a friendly
-// SLA hint, not a precise promise.
-
 import type { ServiceType } from "@/context/ShipmentContext";
 
 type Band = [maxKm: number, label: string];

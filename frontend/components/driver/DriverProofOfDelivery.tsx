@@ -37,7 +37,6 @@ import type { Shipment } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
 import { fmtAddress, shortLoc } from "@/components/driver/shared";
 
-/* ── Signature pad (canvas) ─────────────────────────────────────────────────── */
 type SignaturePadHandle = {
   clear: () => void;
   isEmpty: () => boolean;
@@ -53,8 +52,6 @@ const SignaturePad = forwardRef<
   const dirty = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  // Size the canvas to its container (DPR-aware) and paint a white ground so the
-  // exported PNG is a clean, printable signature rather than a transparent one.
   const setup = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -146,7 +143,6 @@ const SignaturePad = forwardRef<
   );
 });
 
-/* ── Helpers ────────────────────────────────────────────────────────────────── */
 function serviceLabel(service: string): string {
   return service
     .replace(/[-_]/g, " ")
@@ -160,7 +156,6 @@ function dimensionLine(s: Shipment): string {
   return [weight, dims && `${dims} cm`].filter(Boolean).join(" · ") || "—";
 }
 
-/* ── Page component ─────────────────────────────────────────────────────────── */
 export default function DriverProofOfDelivery({
   token,
   shipmentId,
@@ -283,7 +278,6 @@ export default function DriverProofOfDelivery({
     }
   };
 
-  /* ── Loading / error / delivered states ─────────────────────────────────── */
   if (loading) {
     return (
       <div className="h-[32rem] animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
@@ -330,10 +324,8 @@ export default function DriverProofOfDelivery({
     );
   }
 
-  /* ── Main POD form ──────────────────────────────────────────────────────── */
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <BackLink />
@@ -361,9 +353,7 @@ export default function DriverProofOfDelivery({
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── Left column ─────────────────────────────────────────────── */}
         <div className="space-y-5 lg:col-span-2">
-          {/* Package verification */}
           <section
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -413,7 +403,6 @@ export default function DriverProofOfDelivery({
             )}
           </section>
 
-          {/* Recipient signature */}
           <section
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -481,7 +470,6 @@ export default function DriverProofOfDelivery({
             </div>
           )}
 
-          {/* Confirm */}
           <button
             type="button"
             onClick={confirmDelivery}
@@ -504,9 +492,7 @@ export default function DriverProofOfDelivery({
           )}
         </div>
 
-        {/* ── Right column ────────────────────────────────────────────── */}
         <div className="space-y-4">
-          {/* Proximity / route */}
           <div
             className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -543,7 +529,6 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* Shipment details */}
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -577,7 +562,6 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* Handling instructions */}
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -612,7 +596,6 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* COD panel */}
           {isCod && (
             <div
               className={`rounded-[var(--radius-lg)] border p-5 ${
@@ -668,7 +651,6 @@ export default function DriverProofOfDelivery({
             </div>
           )}
 
-          {/* Contact */}
           <div
             className="rounded-[var(--radius-lg)] p-5 text-white"
             style={{
@@ -704,7 +686,6 @@ export default function DriverProofOfDelivery({
   );
 }
 
-/* ── Small building blocks ──────────────────────────────────────────────────── */
 function BackLink() {
   return (
     <Link

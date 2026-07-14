@@ -35,18 +35,12 @@ import {
 } from "@/lib/api/fleet.api";
 import { getInitials } from "@/lib/ui-helpers";
 
-/* Screenshot-matched navy palette (kept local - the shared theme is gold/teal) */
-const NAVY = "#0C3B67"; // headings + KPI values
-const NAVY_BAR = "#123E6B"; // highlighted chart column
-const BAR_IDLE = "#DCE5EE"; // inactive chart columns
+const NAVY = "#0C3B67";
+const NAVY_BAR = "#123E6B";
+const BAR_IDLE = "#DCE5EE";
 
 type ChartBar = { day: string; count: number; h: number; active: boolean };
 
-/**
- * Turns the raw 7-day volume series into chart bars: heights are scaled so the
- * busiest day fills the column, and that peak day is highlighted. Zero-volume
- * days keep a thin sliver so the axis stays readable.
- */
 function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
   const maxCount = Math.max(1, ...dailyVolume.map((d) => d.count));
   let peakIndex = 0;
@@ -57,7 +51,6 @@ function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
   return dailyVolume.map((d, i) => ({
     day: d.label,
     count: d.count,
-    // Cap the peak at 85% so the count label above each bar has headroom.
     h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 85)),
     active: d.count > 0 && i === peakIndex,
   }));
@@ -76,7 +69,6 @@ const AVATAR_STYLES = [
   "bg-[#FBF1DC] text-[#C99A3D]",
   "bg-[#F0ECFB] text-[#6C63FF]",
 ];
-
 
 function getDestination(shipment: Shipment): string {
   return [shipment.delivery.city, shipment.delivery.district]
@@ -115,7 +107,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
     loadRecentShipments();
   }, [loadRecentShipments]);
 
-  // Keep the KPIs and recent-shipments table in sync as customers place orders.
   useAutoRefresh(loadRecentShipments, { intervalMs: 15_000 });
 
   const kpis = [
@@ -150,7 +141,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
     ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
     : 0;
 
-  // Fleet operational health: vehicles ready or on assignment vs. the whole fleet.
   const fleetTotal = fleetStats?.total ?? 0;
   const fleetOperational =
     (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0);
@@ -187,7 +177,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ============ Page title + actions ============ */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl" style={{ color: NAVY }}>
@@ -209,7 +198,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ============ KPI cards ============ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.Icon;
@@ -233,9 +221,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
         })}
       </div>
 
-      {/* ============ Chart + Fleet Health ============ */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Bar chart */}
         <div
           className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2"
           style={{ boxShadow: "var(--shadow-sm)" }}
@@ -261,7 +247,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
             </button>
           </div>
 
-          {/* Bars */}
           <div className="mt-8 flex h-52 items-end gap-2.5 sm:gap-4">
             {bars === null
               ? Array.from({ length: 7 }).map((_, index) => (
@@ -292,7 +277,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
                   </div>
                 ))}
           </div>
-          {/* Day labels */}
           <div className="mt-3 flex gap-2.5 sm:gap-4">
             {(bars ?? Array.from({ length: 7 }, () => null)).map((bar, index) => (
               <span
@@ -309,7 +293,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Fleet Health + System Status */}
         <div
           className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
           style={{ boxShadow: "var(--shadow-sm)" }}
@@ -341,7 +324,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
             })}
           </div>
 
-          {/* System status dark card */}
           <div
             className="mt-4 rounded-[var(--radius-md)] p-4"
             style={{ background: "linear-gradient(150deg, #0C2E4E, #123A5E)" }}
@@ -370,7 +352,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ============ Recent Shipments ============ */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
         style={{ boxShadow: "var(--shadow-sm)" }}

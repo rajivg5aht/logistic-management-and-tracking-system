@@ -31,7 +31,6 @@ export const STAGE_LABEL: Record<DriverStage, string> = {
   failed: "Failed",
 };
 
-// The happy-path milestones shown in the stepper (side states handled apart).
 export const MAIN_PATH: DriverStage[] = [
   "assigned",
   "picked-up",
@@ -40,7 +39,6 @@ export const MAIN_PATH: DriverStage[] = [
   "delivered",
 ];
 
-// Mirrors the backend STAGE_TRANSITIONS so the UI only offers valid moves.
 export const STAGE_TRANSITIONS: Record<DriverStage, DriverStage[]> = {
   assigned: ["picked-up", "failed"],
   "picked-up": ["in-transit", "failed"],
@@ -82,7 +80,6 @@ export function shortLoc(addr?: ShipmentAddress): string {
   return [addr.city, addr.district].filter(Boolean).join(", ") || "—";
 }
 
-/* ── Milestone stepper ─────────────────────────────────────────────────────── */
 export function StageStepper({ stage }: { stage: DriverStage | null }) {
   const current = stage ?? "assigned";
 
@@ -145,7 +142,6 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
   );
 }
 
-/* ── Reusable active-assignment card with inline stage actions ─────────────── */
 export function ActiveAssignmentCard({
   shipment,
   token,
@@ -168,7 +164,6 @@ export function ActiveAssignmentCard({
   const codPending = isCodShipment && shipment.paymentStatus === "pending";
   const codPaid = isCodShipment && shipment.paymentStatus === "paid";
 
-  // Live GPS broadcast for this delivery (driver → customer/admin).
   const tracking = useDriverTracking(token, shipment);
   const driverLocation = tracking.isTracking ? tracking.lastFix : null;
   const liveGpsLabel = tracking.isTracking
@@ -209,7 +204,6 @@ export function ActiveAssignmentCard({
         </span>
       </div>
 
-      {/* Route: pickup → delivery */}
       <div className="mt-5 space-y-1">
         <div className="flex gap-3">
           <div className="flex flex-col items-center">
@@ -238,7 +232,6 @@ export function ActiveAssignmentCard({
         </div>
       </div>
 
-      {/* Meta grid */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MetaTile icon={<Phone size={14} />} label="Recipient" value={shipment.delivery.phoneNumber || "—"} />
         <MetaTile icon={<Package size={14} />} label="Parcel" value={`${shipment.package.parcelType} · ${shipment.package.weight || "—"}`} />
@@ -256,8 +249,6 @@ export function ActiveAssignmentCard({
         />
       </div>
 
-
-      {/* Live GPS sharing */}
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
           <div className="flex items-center gap-2.5">
@@ -326,19 +317,15 @@ export function ActiveAssignmentCard({
           </p>
         )}
       </div>
-      {/* Stepper */}
       {showStepper && (
         <div className="mt-6">
           <StageStepper stage={current} />
         </div>
       )}
 
-      {/* Actions */}
       {nextStages.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
           {nextStages.map((stage) =>
-            // The final delivery step (proof photo, signature, COD, confirm) now
-            // lives on its own focused page instead of crowding this card.
             stage === "delivered" ? (
               <Link
                 key={stage}
@@ -401,4 +388,3 @@ function MetaTile({
     </div>
   );
 }
-

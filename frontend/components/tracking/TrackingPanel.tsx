@@ -162,8 +162,6 @@ export default function TrackingPanel({
       ? 100
       : 10;
 
-  // Live driver location for this shipment (read-only; server authorizes that
-  // it belongs to the signed-in customer before broadcasting to them).
   const { location: liveLocation } = useShipmentLiveLocation(
     token,
     shipment?.id,

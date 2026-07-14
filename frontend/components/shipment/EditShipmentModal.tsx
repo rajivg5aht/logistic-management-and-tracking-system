@@ -117,8 +117,6 @@ export default function EditShipmentModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Shipment">
       {shipment ? (
-        // Remounting on shipment.id resets the form to the new record without
-        // an effect — each shipment gets a fresh, correctly-initialised form.
         <EditShipmentForm
           key={shipment.id}
           shipment={shipment}
@@ -237,7 +235,6 @@ function EditShipmentForm({
 
       {submitError && <div className="form-error">{submitError}</div>}
 
-      {/* Pickup */}
       <fieldset className="space-y-3">
         <legend className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
           Pickup
@@ -284,7 +281,6 @@ function EditShipmentForm({
         </div>
       </fieldset>
 
-      {/* Delivery */}
       <fieldset className="space-y-3">
         <legend className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
           Delivery
@@ -331,7 +327,6 @@ function EditShipmentForm({
         </div>
       </fieldset>
 
-      {/* Package */}
       <fieldset className="space-y-3">
         <legend className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
           Package
@@ -408,7 +403,6 @@ function EditShipmentForm({
         </div>
       </fieldset>
 
-      {/* Service + add-ons */}
       <fieldset className="space-y-3">
         <legend className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
           Service
@@ -448,7 +442,6 @@ function EditShipmentForm({
         </div>
       </fieldset>
 
-      {/* Amount + actions */}
       <div className="flex items-center justify-between rounded-lg bg-[var(--surface-soft)] px-4 py-3">
         <span className="text-sm font-semibold text-[var(--text-muted)]">
           Updated total

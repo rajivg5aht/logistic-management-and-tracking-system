@@ -7,9 +7,7 @@ export function ActiveShipmentCard() {
   return (
     <div className="app-card overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2">
-        {/* Left: Teal Map */}
         <div className="relative flex min-h-[200px] items-center justify-center bg-[var(--surface-dark)] p-6">
-          {/* World map placeholder - simplified geometric representation */}
           <svg
             className="absolute inset-0 h-full w-full opacity-20"
             viewBox="0 0 400 200"
@@ -17,19 +15,16 @@ export function ActiveShipmentCard() {
             stroke="white"
             strokeWidth="1.5"
           >
-            {/* Simplified continent shapes */}
             <path d="M50 80 Q80 60 120 75 T180 70 T240 85 T300 75" />
             <path d="M280 100 Q320 90 350 110 T380 130" />
             <path d="M100 120 Q140 110 180 125 T240 115" />
             <circle cx="200" cy="100" r="3" fill="white" />
           </svg>
 
-          {/* Truck marker */}
           <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
             <Truck size={32} className="text-white" strokeWidth={2} />
           </div>
 
-          {/* In Transit badge */}
           <div className="absolute top-4 left-4">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
@@ -38,13 +33,11 @@ export function ActiveShipmentCard() {
           </div>
         </div>
 
-        {/* Right: Shipment Details */}
         <div className="flex flex-col justify-between p-6 lg:p-8">
           <div>
             <p className="text-sm font-medium text-[var(--text-muted)]">Shipment ID #LP-92841-B</p>
             <h3 className="mt-2 text-xl font-bold text-[var(--text)] lg:text-2xl">Luxury Silk Textiles</h3>
 
-            {/* Progress bar */}
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs font-medium text-[var(--text-muted)]">
                 <span>In Transit</span>
@@ -57,7 +50,6 @@ export function ActiveShipmentCard() {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
-            {/* Est. Delivery */}
             <div className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-soft)] px-4 py-2">
               <svg
                 className="h-4 w-4 text-[var(--accent)]"
@@ -74,7 +66,6 @@ export function ActiveShipmentCard() {
               <span className="text-sm font-semibold text-[var(--accent)]">Est. Delivery: Tomorrow</span>
             </div>
 
-            {/* Current Location */}
             <Link
               href="/tracking/LP-92841-B"
               className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors no-underline"

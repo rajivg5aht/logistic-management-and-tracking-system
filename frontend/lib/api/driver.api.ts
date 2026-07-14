@@ -136,6 +136,14 @@ export type DriverFleetIncident = {
   resolutionNote: string;
   rejectionReason: string;
   maintenanceAction: string;
+  workOrder: {
+    status: string;
+    assignedToName: string | null;
+    vendorName: string;
+    expectedCompletionAt: string | null;
+    repairNotes: string;
+    updatedAt: string;
+  } | null;
   reviewedAt: string | null;
   resolvedAt: string | null;
   rejectedAt: string | null;

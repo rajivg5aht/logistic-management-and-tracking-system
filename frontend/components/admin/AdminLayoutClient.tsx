@@ -49,18 +49,14 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Initialize collapsed state from localStorage
   useEffect(() => {
     const savedState = localStorage.getItem("admin-sidebar-collapsed");
     if (savedState !== null) {
       setIsCollapsed(JSON.parse(savedState));
     }
-    // Mark hydrated only after the persisted state is applied so the initial
-    // correction doesn't animate (otherwise the sidebar visibly snaps shut).
     setHydrated(true);
   }, []);
 
-  // Save collapsed state to localStorage
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
@@ -73,7 +69,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       router.push("/login");
     } catch (err) {
       console.error("Sign out failed:", err);
-      // Fallback
       router.push("/login");
     }
   };
@@ -102,13 +97,11 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
   return (
     <div className="flex min-h-screen bg-[var(--app-bg)] font-sans antialiased">
-      {/* Sidebar Panel */}
       <aside className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 ease-in-out ${
         hydrated ? "transition-all duration-280" : ""
       } ${
         isCollapsed ? "w-[76px]" : "w-[260px]"
       }`} style={hydrated ? { transitionDuration: '280ms' } : undefined}>
-        {/* Brand/Logo Header */}
         <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[72px]' : 'justify-between h-[72px] px-5'}`}>
           <div className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shrink-0">
@@ -122,7 +115,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             )}
           </div>
           
-          {/* Toggle Button */}
           {!isCollapsed && (
             <button 
               type="button"
@@ -137,7 +129,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           )}
         </div>
 
-        {/* Expand Button (shown when collapsed) */}
         {isCollapsed && (
           <div className="flex justify-center py-4 border-b border-[var(--border)]">
             <button 
@@ -153,7 +144,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </div>
         )}
 
-        {/* Navigation Menu */}
         <nav className="flex-1 py-6 px-3" id="sidebar-navigation">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
@@ -171,7 +161,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     }`}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    {/* Active Left Vertical Stripe */}
                     {item.active && !isCollapsed && (
                       <div className="absolute left-0 top-1/4 h-1/2 w-1.5 rounded-r bg-[var(--accent)]" />
                     )}
@@ -180,7 +169,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                       <span className="whitespace-nowrap">{item.label}</span>
                     )}
                     
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <span className="absolute left-full ml-2 px-3 py-1.5 bg-[var(--surface-dark)] text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200" style={{ boxShadow: 'var(--shadow-md)' }}>
                         {item.label}
@@ -193,7 +181,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </ul>
         </nav>
 
-        {/* Sidebar Bottom Footer */}
         <div className="border-t border-[var(--border)] p-3 space-y-1.5">
           {!isCollapsed ? (
             <>
@@ -237,7 +224,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
         </div>
       </aside>
 
-      {/* Main Body Column */}
       <div
         className={`flex-1 flex flex-col min-w-0 ease-in-out ${hydrated ? "transition-all duration-280" : ""}`}
         style={{
@@ -245,7 +231,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        {/* Top App Bar - height matches the sidebar brand header (72px) so their bottom borders align */}
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
           <div className="relative w-full max-w-md">
             <Search
@@ -296,7 +281,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </div>
         </header>
 
-        {/* Scrollable Layout Content */}
         <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
           {!isFleetDetailsPage && (
             <nav

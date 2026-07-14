@@ -58,7 +58,6 @@ export default function DashboardOverview({
     loadRecentShipments(true);
   }, [loadRecentShipments]);
 
-  // Reflect admin status changes (dispatch, delivery, cancellation) live.
   useAutoRefresh(() => loadRecentShipments(), { intervalMs: 15_000 });
 
   const handleTrackParcel = (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,7 +80,6 @@ export default function DashboardOverview({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-[var(--success)] mb-1">
@@ -110,7 +108,6 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* Compact dashboard shortcuts */}
       <nav
         aria-label="Dashboard quick actions"
         className="flex w-fit max-w-full flex-wrap items-center gap-2.5 sm:gap-3"
@@ -148,7 +145,6 @@ export default function DashboardOverview({
         </Link>
       </nav>
 
-      {/* Quick parcel tracking */}
       <form
         onSubmit={handleTrackParcel}
         className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
@@ -201,7 +197,6 @@ export default function DashboardOverview({
         </div>
       </form>
 
-      {/* Live Active Shipments Section */}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-extrabold text-[var(--text)]">
@@ -328,20 +323,15 @@ export default function DashboardOverview({
         )}
       </section>
 
-      {/* Bottom Section - Two Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Live Fleet Tracking (65%) */}
         <div className="lg:col-span-2">
           <div className="bg-[#1a1f2e] rounded-2xl p-6 shadow-lg border border-[#2d3548] relative overflow-hidden">
             <h2 className="text-lg font-extrabold text-white mb-4">
               Live Fleet Tracking
             </h2>
             
-            {/* World Map Visualization */}
             <div className="relative h-64 bg-[#0f1419] rounded-xl overflow-hidden">
-              {/* Animated Route Lines */}
               <svg className="absolute inset-0 w-full h-full">
-                {/* Route 1: Munich to London */}
                 <path
                   d="M 150 120 Q 200 80 280 100"
                   stroke="#3B82F6"
@@ -349,7 +339,6 @@ export default function DashboardOverview({
                   fill="none"
                   className="animate-pulse"
                 />
-                {/* Route 2: Shenzhen to San Jose */}
                 <path
                   d="M 450 180 Q 550 150 650 200"
                   stroke="#10B981"
@@ -357,7 +346,6 @@ export default function DashboardOverview({
                   fill="none"
                   className="animate-pulse"
                 />
-                {/* Route 3: Lyon to Austin */}
                 <path
                   d="M 200 140 Q 350 180 450 220"
                   stroke="#F59E0B"
@@ -366,7 +354,6 @@ export default function DashboardOverview({
                   className="animate-pulse"
                 />
                 
-                {/* Location Pins */}
                 <circle cx="150" cy="120" r="4" fill="#3B82F6" />
                 <circle cx="280" cy="100" r="4" fill="#3B82F6" />
                 <circle cx="450" cy="180" r="4" fill="#10B981" />
@@ -375,7 +362,6 @@ export default function DashboardOverview({
                 <circle cx="450" cy="220" r="4" fill="#F59E0B" />
               </svg>
 
-              {/* Legend */}
               <div className="absolute top-4 right-4 flex items-center gap-4 bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full bg-[#10B981]" />
@@ -390,7 +376,6 @@ export default function DashboardOverview({
           </div>
         </div>
 
-        {/* Right Column - Recent Shipments (35%) */}
         <div className="lg:col-span-1">
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
             <div className="border-b border-[var(--border)] p-5">
@@ -478,7 +463,6 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* Floating AI Assistant */}
       <AiAssistant />
     </div>
   );

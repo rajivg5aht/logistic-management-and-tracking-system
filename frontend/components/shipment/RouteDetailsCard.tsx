@@ -27,7 +27,6 @@ export function RouteDetailsCard() {
 
   return (
     <div className="app-card p-7">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1A4A4A] text-white text-lg">
           📍
@@ -35,9 +34,7 @@ export function RouteDetailsCard() {
         <h2 className="text-lg font-semibold text-[#1A2B3C]">Route Details</h2>
       </div>
 
-      {/* Two Column Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Sender Information */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-[#8A9BAD] mb-4">
             Sender Information
@@ -96,7 +93,6 @@ export function RouteDetailsCard() {
           </div>
         </div>
 
-        {/* Recipient Information */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-[#8A9BAD] mb-4">
             Recipient Information

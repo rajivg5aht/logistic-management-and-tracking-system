@@ -76,7 +76,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text)] sm:text-3xl">
@@ -112,7 +111,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-[var(--border)]">
         {tabs.map((tab) => (
           <button
@@ -134,9 +132,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
         ))}
       </div>
 
-      {/* Body: two-column layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Main column */}
         <div className="space-y-6 lg:col-span-2">
           {activeTab === "profile" ? (
             <form
@@ -160,7 +156,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 </div>
               )}
 
-              {/* Avatar */}
               <div className="mt-6 flex items-center gap-5">
                 <div className="relative shrink-0">
                   <div className="h-24 w-24 overflow-hidden rounded-2xl border border-[rgba(200,162,74,0.25)] shadow-sm">
@@ -207,7 +202,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 suppressHydrationWarning
               />
 
-              {/* Fields */}
               <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="fullName" className="settings-label">
@@ -338,9 +332,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
           )}
         </div>
 
-        {/* Right column */}
         <div className="space-y-6">
-          {/* Security card */}
           <div className="card p-6">
             <div className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
@@ -359,7 +351,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             </button>
           </div>
 
-          {/* Account Summary */}
           <div className="card p-6">
             <h3 className="text-sm font-bold text-[var(--text)]">
               Account Summary
@@ -389,7 +380,6 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
             </dl>
           </div>
 
-          {/* Need help banner */}
           <div className="card flex items-center gap-3 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
               <Headphones size={18} />

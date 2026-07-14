@@ -53,7 +53,6 @@ const AVAILABILITY_CONFIG: Record<AvailabilityStatus, { label: string; cls: stri
   inactive: { label: "Inactive", cls: "bg-[#FBE4E1] text-[#D0453A]" },
 };
 
-// Availability options for the "Status" filter dropdown.
 const STATUS_OPTIONS: { value: AvailabilityStatus | "all"; label: string }[] = [
   { value: "all", label: "All Statuses" },
   { value: "available", label: "Available" },
@@ -63,7 +62,6 @@ const STATUS_OPTIONS: { value: AvailabilityStatus | "all"; label: string }[] = [
   { value: "inactive", label: "Inactive" },
 ];
 
-// Denormalized vehicle detail keyed by driver id, for the assignment column.
 type VehicleAssignmentInfo = {
   registrationNumber: string;
   type: string;
@@ -71,7 +69,6 @@ type VehicleAssignmentInfo = {
   model: string;
 };
 
-// A short, human-friendly driver code derived from the real record id.
 function driverCode(id: string): string {
   return `LN-DR-${id.slice(-4).toUpperCase()}`;
 }
@@ -87,8 +84,6 @@ const EMPTY_FORM = {
   availabilityStatus: "available" as AvailabilityStatus,
   status: "active" as "active" | "inactive",
 };
-
-
 
 export default function AdminDriverManagement({ token }: { token: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -172,7 +167,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     fetchDrivers();
   }, [fetchDrivers]);
 
-  // Reflect assignment / availability changes made elsewhere without a refresh.
   useAutoRefresh(() => fetchDrivers(true));
 
   const handleCreateOpen = () => {
@@ -290,7 +284,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       setError(null);
       await adminUpdateDriver(token, driver.id, {
         status: nextStatus,
-        // Reflect deactivation in availability too.
         availabilityStatus: nextStatus === "inactive" ? "inactive" : "available",
       });
       fetchDrivers();
@@ -329,7 +322,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     }
   };
 
-  // Client-side "has a vehicle?" filter, applied to the current page.
   const visibleDrivers = drivers.filter((driver) => {
     if (vehicleFilter === "assigned") return !!vehicleByDriver[driver.id];
     if (vehicleFilter === "unassigned") return !vehicleByDriver[driver.id];
@@ -346,7 +338,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Header */}
       <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
@@ -367,9 +358,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         </button>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total drivers */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -387,7 +376,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* On delivery */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -411,7 +399,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* Off duty / inactive */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -429,7 +416,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* Available */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -455,9 +441,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         </div>
       )}
 
-      {/* Table */}
       <div className="card overflow-hidden">
-        {/* Toolbar: search + filters */}
         <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-md">
             <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
@@ -549,7 +533,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                       key={driver.id}
                       className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
                     >
-                      {/* Driver profile */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <span
@@ -565,13 +548,11 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           </div>
                         </div>
                       </td>
-                      {/* Status (availability) */}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${availability.cls}`}>
                           {availability.label}
                         </span>
                       </td>
-                      {/* Vehicle assignment */}
                       <td className="px-5 py-4">
                         {vehicle ? (
                           <div className="min-w-0">
@@ -586,14 +567,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           <span className="italic text-[var(--text-muted)]">Unassigned</span>
                         )}
                       </td>
-                      {/* Deliveries */}
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--text)]">
                           <Package size={14} className="text-[var(--text-muted)]" />
                           {(driver.deliveriesCount ?? 0).toLocaleString()}
                         </span>
                       </td>
-                      {/* Contact */}
                       <td className="px-5 py-4">
                         <div className="space-y-1">
                           <a
@@ -612,7 +591,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           </a>
                         </div>
                       </td>
-                      {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -654,7 +632,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </table>
         </div>
 
-        {/* Pagination */}
         {meta && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-4 sm:flex-row">
             <p className="text-xs font-medium text-[var(--text-muted)]">
@@ -702,7 +679,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         )}
       </div>
 
-      {/* Create / Edit modal */}
       <Modal
         isOpen={isCreateOpen || isEditOpen}
         onClose={() => {
@@ -725,7 +701,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         />
       </Modal>
 
-      {/* Delete confirmation modal */}
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => !actionLoading && setDeleteTarget(null)}
@@ -770,7 +745,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
   );
 }
 
-/* -- Shared create/edit form ----------------------------------------------- */
 function DriverForm({
   form,
   setForm,

@@ -24,9 +24,6 @@ type Props = {
   approximate: boolean;
 };
 
-// Teardrop pin with a centred letter. divIcon (inline SVG) sidesteps Leaflet's
-// broken default marker-image URLs under bundlers — same approach as the
-// tracking maps.
 function makePinIcon(label: string, color: string, textColor: string): L.DivIcon {
   return L.divIcon({
     className: "",
@@ -46,8 +43,6 @@ function makePinIcon(label: string, color: string, textColor: string): L.DivIcon
 const PICKUP_ICON = makePinIcon("A", "#6C63FF", "#ffffff");
 const DELIVERY_ICON = makePinIcon("B", "#E9C46A", "#3A2E12");
 
-// Keeps the viewport framed on whatever is selected: both points (fitBounds),
-// a single point (setView), or the whole country (overview).
 function FitBounds({
   pickup,
   delivery,

@@ -58,7 +58,6 @@ const AVATAR_STYLES = [
   "bg-red-100 text-red-700",
 ];
 
-
 function formatDate(date: string): string {
   return new Date(date).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -116,7 +115,6 @@ export default function AdminInquiries({ token }: { token: string }) {
     loadData();
   }, [loadData]);
 
-  // Surface newly submitted customer inquiries without a manual refresh.
   useAutoRefresh(loadData, { intervalMs: 15_000 });
 
   const openInquiry = (inquiry: Inquiry) => {
@@ -160,7 +158,6 @@ export default function AdminInquiries({ token }: { token: string }) {
       setSaving(false);
     }
   };
-
 
   const totalPages = Math.max(1, meta?.totalPages ?? 1);
   const efficiency = stats?.resolvedRate ?? 0;

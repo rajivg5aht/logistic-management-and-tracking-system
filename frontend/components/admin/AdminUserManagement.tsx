@@ -17,6 +17,7 @@ import {
   Shield,
   Truck,
   User,
+  Wrench,
   Filter,
   MoreVertical,
   TrendingUp,
@@ -44,12 +45,13 @@ interface AdminUserManagementProps {
   onMutationFinished?: () => void;
 }
 
-type RoleTab = "all" | "customer" | "driver";
+type RoleTab = "all" | "customer" | "driver" | "maintenance";
 
 const TABS: { id: RoleTab; label: string }[] = [
   { id: "all", label: "All Users" },
   { id: "customer", label: "Customers" },
   { id: "driver", label: "Drivers" },
+  { id: "maintenance", label: "Maintenance" },
 ];
 
 const AVATAR_STYLES = [
@@ -63,10 +65,9 @@ const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string
   admin: { label: "Admin", Icon: Shield, cls: "bg-[var(--teal-tint)] text-[var(--teal)]" },
   driver: { label: "Driver", Icon: Truck, cls: "bg-[var(--accent-soft)] text-[var(--accent-strong)]" },
   customer: { label: "Customer", Icon: User, cls: "bg-[rgba(95,127,53,0.12)] text-[var(--success)]" },
+  maintenance: { label: "Maintenance", Icon: Wrench, cls: "bg-[#FCE8D8] text-[#C06A2D]" },
 };
 
-
-// Registration date shown in the personnel table, e.g. "Jul 10, 2026".
 function formatRegDate(value?: string): string {
   if (!value) return "-";
   const date = new Date(value);
@@ -79,7 +80,6 @@ function formatRegDate(value?: string): string {
 }
 
 export default function AdminUserManagement({ token, currentUser, onMutationFinished }: AdminUserManagementProps) {
-  // Lists & pagination
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [meta, setMeta] = useState<AdminUserMeta | null>(null);
   const [stats, setStats] = useState<AdminUserStats | null>(null);
@@ -88,18 +88,15 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<RoleTab>("all");
 
-  // Loading & error states
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // Form payload states
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -107,13 +104,12 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     phoneNumber: "",
     email: "",
     password: "",
-    role: "customer" as "admin" | "customer" | "driver",
+    role: "customer" as "admin" | "customer" | "driver" | "maintenance",
     status: "active" as "active" | "inactive",
   });
 
   const limit = 10;
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(searchInput);
@@ -122,8 +118,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Fetch users on query change. `silent` refreshes update the table in place
-  // without the loading skeleton or a transient error (used by auto-refresh).
   const fetchUsers = useCallback(
     async (silent = false) => {
       try {
@@ -141,8 +135,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         );
         setUsers(res.data);
         setMeta(res.meta);
-        // Refresh the signup/growth KPIs alongside, but never let a stats error
-        // block the user table.
         adminGetUserStats(token).then(setStats).catch(() => {});
         onMutationFinished?.();
       } catch (err: unknown) {
@@ -164,11 +156,8 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     fetchUsers();
   }, [fetchUsers]);
 
-  // Reflect new customer/driver registrations and status changes made elsewhere
-  // without a manual page refresh.
   useAutoRefresh(() => fetchUsers(true));
 
-  // Form handlers
   const handleCreateOpen = () => {
     setFormData({
       fullName: "",
@@ -188,7 +177,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       fullName: user.fullName,
       phoneNumber: user.phoneNumber || "",
       email: user.email,
-      password: "", // Leave blank unless changing
+      password: "",
       role: user.role,
       status: (user.status as "active" | "inactive") || "active",
     });
@@ -228,7 +217,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         phoneNumber: formData.phoneNumber.trim(),
         email: formData.email,
         password: formData.password,
-        role: "customer",
+        role: formData.role === "maintenance" ? "maintenance" : "customer",
       });
       setIsCreateOpen(false);
       fetchUsers();
@@ -286,7 +275,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     }
   };
 
-  // Block / unblock a user by flipping their status (uses existing update API)
   const handleToggleStatus = async (user: AuthUser) => {
     const nextStatus = user.status === "inactive" ? "active" : "inactive";
     try {
@@ -325,7 +313,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     }
   };
 
-  // Pagination helper
   const handlePageChange = (newPage: number) => {
     if (meta && newPage >= 1 && newPage <= meta.totalPages) {
       setPage(newPage);
@@ -336,15 +323,11 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
   const rangeEnd = meta ? (meta.page - 1) * meta.limit + users.length : 0;
 
-  // Real daily customer-signup counts for the Quick Insights chart. Bars are
-  // scaled against the busiest day so the tallest fills the plot; a day with
-  // any signups keeps a visible minimum height.
   const regTrend = stats?.registrationTrend ?? [];
   const regTrendMax = Math.max(1, ...regTrend.map((b) => b.count));
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Header bar */}
       <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">User Management</h1>
         <div className="relative sm:w-72 lg:w-80">
@@ -362,7 +345,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </div>
       </div>
 
-      {/* Tabs + Add User */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex items-center gap-1 self-start rounded-xl bg-[var(--surface-muted)] p-1">
           {TABS.map((tab) => (
@@ -392,13 +374,11 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           suppressHydrationWarning
         >
           <Plus size={18} />
-          Add Customer
+          Add Account
         </button>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Total users (real data) */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">Total Users</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--text)]">
@@ -419,7 +399,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           )}
         </div>
 
-        {/* New signups (real data - customer registrations in the last 24h) */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">New Signups</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-hover)]">
@@ -428,7 +407,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Last 24 hours</p>
         </div>
 
-        {/* System uptime */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">System Uptime</p>
           <p className="mt-2 text-4xl font-black tracking-tight text-[var(--teal)]">99.9%</p>
@@ -436,7 +414,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </div>
       </div>
 
-      {/* Registered personnel table */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <h3 className="text-sm font-extrabold text-[var(--text)]">Registered Personnel</h3>
@@ -606,7 +583,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
           </div>
         )}
 
-        {/* Pagination footer */}
         {meta && !error && (
           <div className="flex flex-col gap-3 border-t border-[var(--border)] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p className="text-sm text-[var(--text-muted)]">
@@ -666,7 +642,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         )}
       </div>
 
-      {/* Quick Insights */}
       <div>
         <h2 className="mb-4 text-lg font-extrabold text-[var(--teal)]">Quick Insights</h2>
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
@@ -697,11 +672,8 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
             </div>
           ) : (
             <div className="mt-8">
-              {/* Bars are direct children of a fixed-height row so their percentage
-                  heights resolve against it — nested flex-1 columns collapse to 0. */}
               <div className="flex h-40 items-end justify-between gap-3 sm:gap-5">
                 {regTrend.map((bar, i) => {
-                  // Days with signups keep a 6% floor so a single registration stays visible.
                   const pct = bar.count === 0 ? 0 : Math.max(6, (bar.count / regTrendMax) * 100);
                   return (
                     <div
@@ -731,8 +703,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </div>
       </div>
 
-      {/* CREATE MODAL */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Customer Account">
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={formData.role === "maintenance" ? "Create Maintenance Account" : "Create Customer Account"}>
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
 
@@ -815,7 +786,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </form>
       </Modal>
 
-      {/* EDIT MODAL */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit User">
         <form onSubmit={handleEditSubmit} className="space-y-4">
           {formError && <div className="form-error">{formError}</div>}
@@ -913,7 +883,6 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
         </form>
       </Modal>
 
-      {/* DELETE MODAL */}
       <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Delete User Permanently">
         <div className="space-y-4">
           {deleteError && <div className="form-error">{deleteError}</div>}

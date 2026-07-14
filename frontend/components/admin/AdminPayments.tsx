@@ -135,7 +135,6 @@ export default function AdminPayments({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--teal)]">
           Finance
@@ -148,7 +147,6 @@ export default function AdminPayments({ token }: { token: string }) {
         </p>
       </div>
 
-      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statTiles.map((t) => (
           <div
@@ -169,7 +167,6 @@ export default function AdminPayments({ token }: { token: string }) {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
           {METHOD_FILTERS.map((m) => (
@@ -213,7 +210,6 @@ export default function AdminPayments({ token }: { token: string }) {
         </div>
       )}
 
-      {/* Ledger */}
       <div
         className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
         style={{ boxShadow: "var(--shadow-sm)" }}

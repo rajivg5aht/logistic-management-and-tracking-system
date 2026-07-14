@@ -14,7 +14,6 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user } = useAuth();
 
-  // Initialize collapsed state from localStorage
   useEffect(() => {
     const restoreId = window.setTimeout(() => {
       const savedState = localStorage.getItem("sidebar-collapsed");
@@ -23,12 +22,10 @@ export function Sidebar() {
     return () => window.clearTimeout(restoreId);
   }, []);
 
-  // Save collapsed state to localStorage
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem("sidebar-collapsed", JSON.stringify(newState));
-    // Emit event for layout to listen
     window.dispatchEvent(new Event("sidebar-toggle"));
   };
 
@@ -39,7 +36,6 @@ export function Sidebar() {
     window.addEventListener("toggle-sidebar", handleToggle);
     window.addEventListener("close-sidebar", handleClose);
     
-    // Close sidebar after a route change without synchronously cascading the effect.
     const closeId = window.setTimeout(handleClose, 0);
 
     return () => {
@@ -66,7 +62,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-35 bg-black/40 backdrop-blur-sm lg:hidden"
@@ -74,14 +69,12 @@ export function Sidebar() {
         />
       )}
 
-      {/* Sidebar Panel */}
       <aside 
         className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 transition-all duration-280 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } ${isCollapsed ? "w-[76px]" : "w-[260px]"} lg:fixed lg:z-0`}
         style={{ transitionDuration: '280ms' }}
       >
-        {/* Logo Section */}
         <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[72px]' : 'justify-between h-[72px] px-5'}`}>
           <Link href="/" className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shrink-0">
@@ -95,7 +88,6 @@ export function Sidebar() {
             )}
           </Link>
           
-          {/* Toggle Button */}
           {!isCollapsed && (
             <button 
               type="button"
@@ -109,7 +101,6 @@ export function Sidebar() {
             </button>
           )}
 
-          {/* Close button for mobile */}
           {!isCollapsed && (
             <button 
               type="button"
@@ -122,7 +113,6 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Expand Button (shown when collapsed) */}
         {isCollapsed && (
           <div className="flex justify-center py-4 border-b border-[var(--border)]">
             <button 
@@ -138,7 +128,6 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-6 px-3" id="sidebar-navigation">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
@@ -162,7 +151,6 @@ export function Sidebar() {
                       <span className="whitespace-nowrap">{item.label}</span>
                     )}
                     
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <span className="absolute left-full ml-2 px-3 py-1.5 bg-[var(--surface-dark)] text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200 shadow-lg" style={{ boxShadow: 'var(--shadow-md)' }}>
                         {item.label}
@@ -175,7 +163,6 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        {/* User Profile Strip */}
         <div className="border-t border-[var(--border)] p-3">
           <div className={`flex items-center rounded-xl p-2 hover:bg-[var(--surface-soft)] transition-colors font-sans ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--text)]">

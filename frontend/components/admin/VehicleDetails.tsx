@@ -117,7 +117,6 @@ function daysUntil(value: string | null): number | null {
   return Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-// Compliance pill shown next to insurance / registration expiry dates.
 function expiryMeta(value: string | null): {
   label: string;
   cls: string;
@@ -186,7 +185,6 @@ export default function VehicleDetails({
     void load();
   }, [load]);
 
-  // Keep the page live if the vehicle is reassigned/edited elsewhere.
   useAutoRefresh(() => load(true));
 
   const driverNameById = useMemo(() => {
@@ -252,10 +250,8 @@ export default function VehicleDetails({
     <div className="space-y-6">
       <BackLink />
 
-      {/* ============ Hero ============ */}
       <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]">
         <div className="grid lg:grid-cols-[minmax(0,420px)_1fr]">
-          {/* Image / glyph */}
           <div
             className={`relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br ${cfg.hero} lg:h-full`}
           >
@@ -280,7 +276,6 @@ export default function VehicleDetails({
             </span>
           </div>
 
-          {/* Identity */}
           <div className="p-6 sm:p-8">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
               {TYPE_LABELS[vehicle.type]}
@@ -318,9 +313,7 @@ export default function VehicleDetails({
         </div>
       </div>
 
-      {/* ============ Detail grid ============ */}
       <div className="grid gap-5 lg:grid-cols-2">
-        {/* Assignment */}
         <SectionCard title="Assignment" Icon={User}>
           <div className="flex items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
             <div
@@ -342,7 +335,6 @@ export default function VehicleDetails({
           </div>
         </SectionCard>
 
-        {/* Documents & compliance */}
         <SectionCard title="Documents & Compliance" Icon={ShieldCheck}>
           <div className="space-y-3">
             <ComplianceRow
@@ -360,7 +352,6 @@ export default function VehicleDetails({
           </div>
         </SectionCard>
 
-        {/* Maintenance */}
         <SectionCard title="Maintenance" Icon={Wrench}>
           <div className="space-y-3">
             <InfoRow
@@ -385,7 +376,6 @@ export default function VehicleDetails({
           </div>
         </SectionCard>
 
-        {/* Record */}
         <SectionCard title="Record" Icon={Calendar}>
           <div className="space-y-3">
             <InfoRow
@@ -402,7 +392,6 @@ export default function VehicleDetails({
         </SectionCard>
       </div>
 
-      {/* ============ Assignment history ============ */}
       <SectionCard title="Assignment History" Icon={History}>
         {history.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 py-8 text-center text-sm font-medium text-[var(--text-muted)]">
@@ -439,7 +428,6 @@ export default function VehicleDetails({
         )}
       </SectionCard>
 
-      {/* ============ Incident reports ============ */}
       <SectionCard title="Incident Reports" Icon={AlertTriangle}>
         {incidents.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 py-8 text-center text-sm font-medium text-[var(--text-muted)]">
@@ -460,7 +448,6 @@ export default function VehicleDetails({
         )}
       </SectionCard>
 
-      {/* ============ Fuel expenses ============ */}
       <SectionCard title="Fuel Expenses" Icon={Gauge}>
         {fuelExpenses.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 py-8 text-center text-sm font-medium text-[var(--text-muted)]">

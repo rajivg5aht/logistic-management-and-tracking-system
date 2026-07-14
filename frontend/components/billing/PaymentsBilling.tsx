@@ -26,8 +26,6 @@ import type { AuthUser } from "@/lib/api/auth.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { getPageNumbers } from "@/lib/ui-helpers";
 
-// An invoice is derived directly from a confirmed shipment - the data model has
-// no separate invoice entity, so each shipment the customer books *is* an invoice.
 type InvoiceStatus = "paid" | "due" | "cancelled";
 
 interface Invoice {
@@ -107,7 +105,6 @@ function toInvoice(s: Shipment): Invoice {
   };
 }
 
-
 export default function PaymentsBilling({
   token,
 }: {
@@ -120,8 +117,6 @@ export default function PaymentsBilling({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // `silent` refreshes update invoices in place without the loading skeleton or
-  // a transient error (used by the auto-refresh polling).
   const fetchBilling = useCallback(
     async (silent = false) => {
       try {
@@ -151,11 +146,8 @@ export default function PaymentsBilling({
     fetchBilling();
   }, [fetchBilling]);
 
-  // Reflect admin changes (e.g. a COD invoice marked "paid" or a cancellation)
-  // without a manual page refresh.
   useAutoRefresh(() => fetchBilling(true));
 
-  // Derive invoices (newest first) and financial aggregates from real shipments.
   const { invoices, totalPaid, codDue, thisMonth, methodBreakdown } = useMemo(() => {
     const list = shipments
       .map(toInvoice)
@@ -202,7 +194,6 @@ export default function PaymentsBilling({
     };
   }, [shipments]);
 
-  // Client-side search over the derived invoices.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return invoices;
@@ -225,7 +216,6 @@ export default function PaymentsBilling({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[var(--text)] tracking-tight">
@@ -244,11 +234,8 @@ export default function PaymentsBilling({
         </Link>
       </div>
 
-      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Summary */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Total Paid Card */}
           <div className="bg-gradient-to-br from-[#E8F4F8] to-[#D4E9F0] rounded-2xl p-6 shadow-sm border border-[#B8D4E3]">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -269,7 +256,6 @@ export default function PaymentsBilling({
             </p>
           </div>
 
-          {/* Stat Boxes */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-4 border border-[var(--border)] shadow-sm">
               <div className="flex items-center gap-1.5">
@@ -295,7 +281,6 @@ export default function PaymentsBilling({
             </div>
           </div>
 
-          {/* Payment Methods (derived from real shipments) */}
           {!loading && methodBreakdown.length > 0 && (
             <div>
               <h2 className="text-lg font-extrabold text-[var(--text)] mb-3">
@@ -325,10 +310,8 @@ export default function PaymentsBilling({
           )}
         </div>
 
-        {/* Right Column - Invoices */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden">
-            {/* Header */}
             <div className="p-6 border-b border-[var(--border)]">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-lg font-extrabold text-[var(--text)]">
@@ -354,7 +337,6 @@ export default function PaymentsBilling({
               </div>
             </div>
 
-            {/* Content states */}
             {loading ? (
               <div className="divide-y divide-[var(--border)]">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -410,7 +392,6 @@ export default function PaymentsBilling({
               </div>
             ) : (
               <>
-                {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -495,7 +476,6 @@ export default function PaymentsBilling({
                   </table>
                 </div>
 
-                {/* Footer */}
                 <div className="px-6 py-4 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
                   <p className="text-sm text-[var(--text-muted)] font-medium">
                     Showing {rangeStart}-{rangeEnd} of {filtered.length}{" "}
@@ -550,7 +530,6 @@ export default function PaymentsBilling({
             )}
           </div>
 
-          {/* Support Banner */}
           <div className="bg-gradient-to-r from-[#F5E6D8] to-[#EED9C4] rounded-2xl p-6 shadow-sm border border-[#E5D4B8]">
             <div className="flex items-start gap-4">
               <div className="w-20 h-20 bg-[#2C3E50] rounded-lg shrink-0 flex items-center justify-center">
@@ -588,7 +567,6 @@ export default function PaymentsBilling({
         </div>
       </div>
 
-      {/* Floating Help Button */}
       <button
         type="button"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1D7A8C] hover:bg-[#15656e] text-white text-sm font-semibold shadow-lg transition-all hover:scale-105"

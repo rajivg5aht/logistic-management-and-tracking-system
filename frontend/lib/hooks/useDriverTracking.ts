@@ -11,8 +11,6 @@ export interface DriverFix {
   updatedAt: string;
 }
 
-// A delivery is trackable until it reaches a terminal status/stage. Mirrors the
-// backend guard in TrackingService.saveDriverLocation.
 const TERMINAL_STATUSES = ["delivered", "cancelled"];
 const TERMINAL_STAGES = ["delivered", "failed", "returned"];
 
@@ -33,15 +31,6 @@ interface Result {
   stop: () => void;
 }
 
-/**
- * Drives the assigned driver's location broadcast for one shipment.
- *
- * `start()` opens `navigator.geolocation.watchPosition` and emits a
- * `driver-location-update` on every fix; `stop()` clears the watch, tells the
- * backend live GPS is off, and leaves the room. Permission/GPS failures surface
- * via `error`. Tracking auto-stops when the delivery reaches a terminal state
- * and when the component unmounts.
- */
 export function useDriverTracking(
   token: string,
   shipment: Shipment,
@@ -123,7 +112,6 @@ export function useDriverTracking(
     setIsTracking(true);
   }, [token, shipmentId, stop]);
 
-  // Surface server-side rejections (e.g. shipment no longer active).
   useEffect(() => {
     if (!token) return;
     const socket = getSocket(token);
@@ -136,15 +124,12 @@ export function useDriverTracking(
     };
   }, [token]);
 
-  // Auto-stop once the delivery is completed/cancelled/failed.
   useEffect(() => {
     if (isTracking && !isTrackable(shipment)) {
       stop();
     }
   }, [shipment, isTracking, stop]);
 
-  // Ensure the watch is released and the backend is told GPS is off if the
-  // component unmounts mid-tracking.
   useEffect(() => {
     return () => {
       const wasSharing = watchIdRef.current !== null || isTrackingRef.current;

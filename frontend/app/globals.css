@@ -1,19 +1,5 @@
 @import "tailwindcss";
 
-/* ==========================================================================
-   CargoNep Design System
-
-   Future page guidance:
-   - Use `.page-shell` as the main page wrapper.
-   - Use `.page-header` for title/action rows.
-   - Use `.content-section`, `.content-grid`, and `.card-grid` for spacing.
-   - Use `.app-card` or the shared Card component for cards.
-   - Use `.form-grid`, `.form-label`, `.form-input`, `.form-error` for forms.
-   - Use `.table-shell` and `.data-table` for tables.
-   - Use `.empty-state`, `.status-badge`, `.loading-state` for states.
-   - Use theme variables below instead of hardcoded colors, radii, shadows, or spacing.
-   ========================================================================== */
-
 @theme inline {
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-bg: #F8F5EF;
@@ -74,7 +60,6 @@
   --danger: #b5473b;
   --warning: #E9C46A;
 
-  /* Shipment page tokens */
   --teal: #1D7A8C;
   --teal-tint: #E5F1F3;
   --gold: #E9C46A;
@@ -98,7 +83,6 @@
   --transition: 180ms ease;
   --auth-overlay: linear-gradient(135deg, rgba(35, 33, 29, 0.92), rgba(35, 33, 29, 0.76) 48%, rgba(233, 196, 106, 0.18));
 
-  /* Legacy aliases so older components inherit the new theme safely. */
   --bg: var(--app-bg);
   --bg-soft: var(--app-bg-soft);
   --primary: var(--accent);
@@ -169,10 +153,6 @@ select {
   min-width: 0;
 }
 
-/* Unify every <select>: the native OS arrow is inconsistent and sits cramped
-   against the rounded field. Replace it with one balanced custom chevron,
-   positioned identically across all browsers and CRUD forms. Kept unlayered so
-   it reliably overrides utility/component padding without per-field edits. */
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -215,7 +195,6 @@ select {
 
 @layer components {
 
-/* Layout utilities */
 .page-shell {
   min-height: 100vh;
   background: var(--app-bg);
@@ -312,7 +291,6 @@ select {
   box-shadow: 0 0 0 4px rgba(200, 162, 74, 0.16);
 }
 
-/* Typography utilities */
 .heading-xl {
   color: var(--text);
   font-size: clamp(2.4rem, 5vw, 4.55rem);
@@ -364,7 +342,6 @@ select {
   color: transparent;
 }
 
-/* Reusable UI utilities */
 .app-card,
 .card {
   border: 1px solid var(--border);
@@ -732,7 +709,7 @@ select {
   }
 }
 
-} /* end @layer components */
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

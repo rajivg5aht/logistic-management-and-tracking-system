@@ -24,7 +24,7 @@ export type AdminUserPayload = {
   fullName: string;
   email: string;
   password?: string;
-  role?: "customer";
+  role?: "customer" | "maintenance";
   phoneNumber?: string;
   status?: "active" | "inactive";
 };
@@ -34,7 +34,7 @@ export async function adminGetUsers(
   page: number,
   limit: number,
   search?: string,
-  role?: "admin" | "customer" | "driver",
+  role?: "admin" | "customer" | "driver" | "maintenance",
 ): Promise<{ data: AuthUser[]; meta: AdminUserMeta }> {
   return authenticatedRequestWithMeta<AuthUser[], AdminUserMeta>(
     `/api/v1/admin/users${buildQueryString({ page, limit, search, role })}`,

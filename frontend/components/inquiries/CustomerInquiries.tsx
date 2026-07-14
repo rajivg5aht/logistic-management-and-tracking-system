@@ -76,7 +76,6 @@ export default function CustomerInquiries({
     loadInquiries();
   }, [loadInquiries]);
 
-  // Surface admin replies / status changes without a manual refresh.
   useAutoRefresh(loadInquiries, { intervalMs: 15_000 });
 
   const openModal = () => {
