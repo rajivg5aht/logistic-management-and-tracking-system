@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ChangePasswordDTO } from "../dtos/user.dto";
 import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
 import { AdminCreateDriverDTO } from "../dtos/driver.dto";
 import {
@@ -27,6 +28,30 @@ test("generic user creation accepts only customer accounts", () => {
   assert.equal(
     AdminCreateUserDTO.safeParse({ ...base, role: "driver" }).success,
     false,
+  );
+});
+
+test("password changes require the current password and a strong replacement", () => {
+  assert.equal(
+    ChangePasswordDTO.safeParse({
+      currentPassword: "",
+      newPassword: "new-secret",
+    }).success,
+    false,
+  );
+  assert.equal(
+    ChangePasswordDTO.safeParse({
+      currentPassword: "current-secret",
+      newPassword: "short",
+    }).success,
+    false,
+  );
+  assert.equal(
+    ChangePasswordDTO.safeParse({
+      currentPassword: "current-secret",
+      newPassword: "new-secret",
+    }).success,
+    true,
   );
 });
 

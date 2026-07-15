@@ -1,6 +1,11 @@
 import { UserService } from "../services/user.service";
 import { z } from "zod";
-import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
+import {
+  ChangePasswordDTO,
+  CreateUserDTO,
+  LoginUserDTO,
+  UpdateUserDTO,
+} from "../dtos/user.dto";
 import { Request, Response } from "express";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
@@ -73,6 +78,34 @@ export class UserController {
       const user = await userService.getUserById(req.user.id);
 
       return ApiResponseHelper.success(res, user, "User retrieved successfully");
+    } catch (error: Error | any | unknown) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async changePassword(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsedData = ChangePasswordDTO.safeParse(req.body);
+
+      if (!parsedData.success) {
+        return ApiResponseHelper.error(
+          res,
+          z.prettifyError(parsedData.error),
+          400,
+        );
+      }
+
+      await userService.changePassword(req.user.id, parsedData.data);
+
+      return ApiResponseHelper.success(res, null, "Password updated successfully");
     } catch (error: Error | any | unknown) {
       return ApiResponseHelper.error(
         res,

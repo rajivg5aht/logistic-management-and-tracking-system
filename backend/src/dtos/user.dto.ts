@@ -32,3 +32,12 @@ export const UpdateUserDTO = z.object({
 });
 
 export type UpdateUserDTO = z.infer<typeof UpdateUserDTO>;
+
+export const ChangePasswordDTO = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z
+    .string()
+    .min(6, "Password must be at least 6 characters long"),
+});
+
+export type ChangePasswordDTO = z.infer<typeof ChangePasswordDTO>;

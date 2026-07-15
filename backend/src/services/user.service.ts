@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
-import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
+import {
+  ChangePasswordDTO,
+  CreateUserDTO,
+  LoginUserDTO,
+  UpdateUserDTO,
+} from "../dtos/user.dto";
 import type { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
 import type {
   AdminCreateDriverDTO,
@@ -365,6 +370,34 @@ export class UserService {
     }
 
     return this.sanitizeUser(updatedUser);
+  }
+
+  async changePassword(
+    userId: string,
+    passwordData: ChangePasswordDTO,
+  ): Promise<void> {
+    const user = await userRepository.getUserById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    const isPasswordValid = await bcryptjs.compare(
+      passwordData.currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new HttpException(400, "Current password is incorrect");
+    }
+
+    const updatedUser = await userRepository.update(userId, {
+      password: await this.hashPassword(passwordData.newPassword),
+    });
+
+    if (!updatedUser) {
+      throw new HttpException(500, "Failed to update password");
+    }
   }
 
   async adminGetUsers(
