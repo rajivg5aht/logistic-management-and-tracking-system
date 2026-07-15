@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  changePassword,
   loginUser,
   registerUser,
   updateProfile,
@@ -335,6 +336,7 @@ export async function updateAdminPasswordAction(
 ): Promise<AuthFormState> {
   const passwordSchema = z
     .object({
+      currentPassword: z.string().min(1, "Current password is required"),
       newPassword: z
         .string()
         .min(6, "Password must be at least 6 characters long"),
@@ -346,6 +348,7 @@ export async function updateAdminPasswordAction(
     });
 
   const parsed = passwordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -368,7 +371,10 @@ export async function updateAdminPasswordAction(
       };
     }
 
-    await updatePassword(token, { password: parsed.data.newPassword });
+    await changePassword(token, {
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
 
     return {
       success: true,
@@ -381,7 +387,6 @@ export async function updateAdminPasswordAction(
     };
   }
 }
-
 export async function updateDriverProfileAction(
   _prevState: AuthFormState,
   formData: FormData,

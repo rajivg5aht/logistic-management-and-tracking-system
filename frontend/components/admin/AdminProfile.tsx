@@ -357,7 +357,7 @@ export default function AdminProfile({ user }: AdminProfileProps) {
                 <div>
                   <h2 className="text-base font-bold text-[var(--text)]">Change Password</h2>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
-                    Set a new password for this administrator account.
+                    Confirm your current password before setting a new one.
                   </p>
                 </div>
               </div>
@@ -369,6 +369,25 @@ export default function AdminProfile({ user }: AdminProfileProps) {
               )}
 
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="adminCurrentPassword" className="settings-label">
+                    Current Password
+                  </label>
+                  <input
+                    id="adminCurrentPassword"
+                    name="currentPassword"
+                    type="password"
+                    className="form-input"
+                    autoComplete="current-password"
+                    required
+                  />
+                  {passwordState.fieldErrors?.currentPassword && (
+                    <p className="mt-1 text-sm text-[var(--danger)]">
+                      {passwordState.fieldErrors.currentPassword[0]}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="adminNewPassword" className="settings-label">
                     New Password
@@ -456,8 +475,8 @@ export default function AdminProfile({ user }: AdminProfileProps) {
                 <dd className="font-semibold text-[var(--text)]">Administrator</dd>
               </div>
               <div className="flex items-start justify-between gap-4 border-t border-[var(--border)] pt-3">
-                <dt className="shrink-0 text-[var(--text-muted)]">Admin ID</dt>
-                <dd className="break-all text-right font-semibold text-[var(--text)]">{currentUser.id}</dd>
+                <dt className="shrink-0 text-[var(--text-muted)]">Email</dt>
+                <dd className="break-all text-right font-semibold text-[var(--text)]">{currentUser.email}</dd>
               </div>
               <div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-3">
                 <dt className="text-[var(--text-muted)]">Member Since</dt>

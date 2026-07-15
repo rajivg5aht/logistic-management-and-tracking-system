@@ -15,6 +15,7 @@ import {
   Truck,
   ChevronRight,
   ChevronDown,
+  UserRoundCog,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
@@ -256,20 +257,7 @@ export default function DriverLayoutClient({
               const active = item.exact
                 ? pathname === item.href
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const avatarContent =
-    profileImageSrc && !profileImageFailed ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={profileImageSrc}
-        alt={activeUser.fullName || "Driver"}
-        className="h-full w-full object-cover"
-        onError={() => setProfileImageFailed(true)}
-      />
-    ) : (
-      initials
-    );
-
-  return (
+              return (
                 <li key={item.href}>
                   <Link
                     href={item.href}

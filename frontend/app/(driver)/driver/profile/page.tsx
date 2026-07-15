@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/api/api-client";
 
 export const metadata = {
   title: "Driver Profile - CargoNep",
-  description: "Manage driveristrator profile, contact details, and account security.",
+  description: "Manage driver profile, contact details, and account security.",
 };
 
 export default async function DriverProfilePage() {

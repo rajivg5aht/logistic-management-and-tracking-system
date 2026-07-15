@@ -457,7 +457,7 @@ export default function DriverProfile({ user }: DriverProfileProps) {
               </div>
               <div className="flex items-start justify-between gap-4 border-t border-[var(--border)] pt-3">
                 <dt className="shrink-0 text-[var(--text-muted)]">Driver ID</dt>
-                <dd className="break-all text-right font-semibold text-[var(--text)]">{currentUser.id}</dd>
+                <dd className="text-right font-semibold text-[var(--text)]">ID: LN-DR-508D</dd>
               </div>
               <div className="flex items-center justify-between gap-4 border-t border-[var(--border)] pt-3">
                 <dt className="text-[var(--text-muted)]">Member Since</dt>
