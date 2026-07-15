@@ -27,6 +27,7 @@ import {
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import LiveMap from "@/components/tracking/LiveMap";
+import { getDistrictCoords } from "@/lib/nepalGeo";
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   pending: "bg-[#FFF3DD] text-[#A96512]",
@@ -290,6 +291,8 @@ export default function TrackingPanel({
                 <div className="relative isolate">
                   <LiveMap
                     location={displayedLocation}
+                    pickup={getDistrictCoords(shipment.pickup.district ?? "")}
+                    delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                     height={240}
                     accent="#1D7A8C"
                     waitingLabel={mapWaitingLabel}

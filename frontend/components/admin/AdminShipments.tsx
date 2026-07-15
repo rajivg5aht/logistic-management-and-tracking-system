@@ -51,6 +51,7 @@ import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import LiveMap from "@/components/tracking/LiveMap";
+import { getDistrictCoords } from "@/lib/nepalGeo";
 
 const NAVY = "#0C3B67";
 const NAVY_BTN = "#123E6B";
@@ -1103,6 +1104,8 @@ function ShipmentDetailDrawer({
                   </div>
                   <LiveMap
                     location={liveLocation}
+                    pickup={getDistrictCoords(shipment.pickup.district ?? "")}
+                    delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                     height={220}
                     accent={NAVY}
                     waitingLabel="Waiting for driver location..."

@@ -25,6 +25,7 @@ import type {
 import { formatNPR } from "@/lib/pricing";
 import { useDriverTracking } from "@/lib/hooks/useDriverTracking";
 import LiveMap from "@/components/tracking/LiveMap";
+import { getDistrictCoords } from "@/lib/nepalGeo";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {
   ...DRIVER_STAGE_LABELS,
@@ -300,6 +301,8 @@ export function ActiveAssignmentCard({
         <div className="p-3">
           <LiveMap
             location={driverLocation}
+            pickup={getDistrictCoords(shipment.pickup.district ?? "")}
+            delivery={getDistrictCoords(shipment.delivery.district ?? "")}
             height={withMap ? 360 : 200}
             accent="#1D7A8C"
             waitingLabel={
