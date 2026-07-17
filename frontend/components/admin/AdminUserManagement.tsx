@@ -55,7 +55,7 @@ const TABS: { id: RoleTab; label: string }[] = [
 const AVATAR_STYLES = [
   "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
   "bg-[var(--teal-tint)] text-[var(--teal)]",
-  "bg-[rgba(108,99,255,0.12)] text-[#6C63FF]",
+  "bg-[rgba(108,99,255,0.12)] text-[var(--step-active)]",
   "bg-[rgba(95,127,53,0.12)] text-[var(--success)]",
 ];
 

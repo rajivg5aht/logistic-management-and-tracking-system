@@ -100,6 +100,69 @@ function makeDriverIcon(color: string): L.DivIcon {
   });
 }
 
+function AnimatedDriverMarker({
+  position,
+  icon,
+}: {
+  position: LatLng;
+  icon: L.DivIcon;
+}) {
+  const markerRef = useRef<L.Marker | null>(null);
+  const frameRef = useRef<number | null>(null);
+
+  const targetLat = position[0];
+  const targetLng = position[1];
+
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (!marker) return;
+
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+    }
+
+    const start = marker.getLatLng();
+    const startedAt = performance.now();
+    const durationMs = 1_200;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      marker.setLatLng([targetLat, targetLng]);
+      return;
+    }
+
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / durationMs);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      marker.setLatLng([
+        start.lat + (targetLat - start.lat) * eased,
+        start.lng + (targetLng - start.lng) * eased,
+      ]);
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      } else {
+        frameRef.current = null;
+      }
+    };
+
+    frameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
+  }, [targetLat, targetLng]);
+
+  return (
+    <Marker ref={markerRef} position={position} icon={icon} zIndexOffset={1200}>
+      <Tooltip direction="top" offset={[0, -34]} opacity={0.95}>
+        Driver — live location
+      </Tooltip>
+    </Marker>
+  );
+}
+
 export default function LiveTrackingMapInner({
   location,
   pickup,
@@ -108,9 +171,10 @@ export default function LiveTrackingMapInner({
   approximate,
   accent = "#0C3B67",
 }: Props) {
-  const driverPosition: LatLng | null = location
-    ? [location.latitude, location.longitude]
-    : null;
+  const driverPosition = useMemo<LatLng | null>(
+    () => location ? [location.latitude, location.longitude] : null,
+    [location],
+  );
   const driverIcon = useMemo(() => makeDriverIcon(accent), [accent]);
   const routeOptions = useMemo(
     () => ({
@@ -137,25 +201,21 @@ export default function LiveTrackingMapInner({
         <Polyline positions={geometry} pathOptions={routeOptions} />
       )}
       {pickup && (
-        <Marker position={pickup} icon={PICKUP_ICON}>
+        <Marker position={pickup} icon={PICKUP_ICON} zIndexOffset={500}>
           <Tooltip direction="top" offset={[0, -38]} opacity={0.95}>
             Pickup
           </Tooltip>
         </Marker>
       )}
       {delivery && (
-        <Marker position={delivery} icon={DELIVERY_ICON}>
+        <Marker position={delivery} icon={DELIVERY_ICON} zIndexOffset={500}>
           <Tooltip direction="top" offset={[0, -38]} opacity={0.95}>
             Delivery
           </Tooltip>
         </Marker>
       )}
       {driverPosition && (
-        <Marker position={driverPosition} icon={driverIcon}>
-          <Tooltip direction="top" offset={[0, -34]} opacity={0.95}>
-            Driver — live location
-          </Tooltip>
-        </Marker>
+        <AnimatedDriverMarker position={driverPosition} icon={driverIcon} />
       )}
       <BoundsController
         location={location}

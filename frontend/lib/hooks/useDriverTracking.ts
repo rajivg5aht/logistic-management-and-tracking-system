@@ -8,6 +8,7 @@ import type { TrackingError } from "@/lib/api/tracking.api";
 export interface DriverFix {
   latitude: number;
   longitude: number;
+  speed: number | null;
   updatedAt: string;
 }
 
@@ -90,6 +91,7 @@ export function useDriverTracking(
         setLastFix({
           latitude,
           longitude,
+          speed: speed ?? null,
           updatedAt: new Date(pos.timestamp).toISOString(),
         });
       },

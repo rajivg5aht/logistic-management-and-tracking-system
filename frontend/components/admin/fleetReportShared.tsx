@@ -7,7 +7,6 @@ import {
   Fuel,
   Loader2,
   MapPin,
-  Wrench,
   Truck,
   User,
 } from "lucide-react";
@@ -22,31 +21,24 @@ import {
 import { formatNPR } from "@/lib/pricing";
 
 export const INCIDENT_STATUS_META: Record<string, { label: string; cls: string }> = {
-  open: { label: "Open", cls: "bg-[#FBE4E1] text-[#D0453A]" },
-  reviewing: { label: "Reviewing", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
-  monitoring: { label: "Monitoring", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
+  pending_review: { label: "Pending review", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  resolved: { label: "Resolved", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
   maintenance_required: { label: "Maintenance required", cls: "bg-[#FCE8D8] text-[#C06A2D]" },
-  assigned_to_maintenance: { label: "Assigned to maintenance", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
-  in_repair: { label: "In repair", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
-  awaiting_verification: { label: "Awaiting verification", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
-  closed: { label: "Closed", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
-  resolved: { label: "Resolved", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
-  rejected: { label: "Rejected", cls: "bg-[#FBE4E1] text-[#D0453A]" },
 };
 
 export const FUEL_STATUS_META: Record<string, { label: string; cls: string }> = {
-  submitted: { label: "Submitted", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
-  under_review: { label: "Under review", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
-  approved: { label: "Approved", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
-  rejected: { label: "Rejected", cls: "bg-[#FBE4E1] text-[#D0453A]" },
+  submitted: { label: "Submitted", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
+  under_review: { label: "Under review", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  approved: { label: "Approved", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
+  rejected: { label: "Rejected", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
   reimbursed: { label: "Reimbursed", cls: "bg-[#E7F5F2] text-[var(--teal)]" },
 };
 
 const SEVERITY_META: Record<string, string> = {
-  low: "bg-[#DEF3E6] text-[#1E9E4C]",
-  medium: "bg-[#E8F0FB] text-[#2E6FD6]",
-  high: "bg-[#FBF1DC] text-[#C99A3D]",
-  critical: "bg-[#FBE4E1] text-[#D0453A]",
+  low: "bg-[var(--success-soft)] text-[var(--success)]",
+  medium: "bg-[var(--info-soft)] text-[var(--info)]",
+  high: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  critical: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 function fmtDate(value: string | null | undefined): string {
@@ -142,60 +134,6 @@ function NoteBlock({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-type IncidentAction = {
-  label: string;
-  payload: () => AdminIncidentUpdatePayload | null;
-};
-
-function incidentActions(incident: AdminIncident): IncidentAction[] {
-  const close = (): AdminIncidentUpdatePayload | null => {
-    const resolutionNote = askFor(
-      "Inspection note",
-      incident.resolutionNote || "Issue inspected and no repair is required.",
-    );
-    return resolutionNote ? { status: "closed", resolutionNote } : null;
-  };
-  const reject = (): AdminIncidentUpdatePayload | null => {
-    const rejectionReason = askFor("Rejection reason", incident.rejectionReason);
-    return rejectionReason ? { status: "rejected", rejectionReason } : null;
-  };
-
-  switch (incident.status) {
-    case "open":
-      return [
-        { label: "Start review", payload: () => ({ status: "reviewing" }) },
-        { label: "Reject", payload: reject },
-      ];
-    case "reviewing":
-      return [
-        { label: "Monitor", payload: () => ({ status: "monitoring" }) },
-        {
-          label: "Require maintenance",
-          payload: () => ({ status: "maintenance_required" }),
-        },
-        { label: "Close after inspection", payload: close },
-        { label: "Reject", payload: reject },
-      ];
-    case "monitoring":
-      return [
-        { label: "Resume review", payload: () => ({ status: "reviewing" }) },
-        {
-          label: "Require maintenance",
-          payload: () => ({ status: "maintenance_required" }),
-        },
-        { label: "Close after inspection", payload: close },
-        { label: "Reject", payload: reject },
-      ];
-    case "maintenance_required":
-      return [];
-    case "rejected":
-      return [
-        { label: "Review again", payload: () => ({ status: "reviewing" }) },
-      ];
-    default:
-      return [];
-  }
-}
 type FuelAction = {
   label: string;
   payload: () => AdminFuelExpenseUpdatePayload | null;
@@ -242,13 +180,11 @@ export function IncidentRow({
   incident,
   token,
   onChanged,
-  onCreateWorkOrder,
   showVehicle = true,
 }: {
   incident: AdminIncident;
   token: string;
   onChanged: () => void;
-  onCreateWorkOrder?: (incident: AdminIncident) => void;
   showVehicle?: boolean;
 }) {
   const [pending, setPending] = useState(false);
@@ -274,12 +210,11 @@ export function IncidentRow({
       label: incident.status,
       cls: "bg-[var(--surface-muted)] text-[var(--text-muted)]",
     };
-  const actions = incidentActions(incident);
 
   return (
     <li className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <AlertTriangle size={15} className="text-[#D0453A]" />
+        <AlertTriangle size={15} className="text-[var(--danger)]" />
         <span className="text-sm font-bold capitalize text-[var(--text)]">
           {incident.category}
         </span>
@@ -300,11 +235,8 @@ export function IncidentRow({
         </p>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3">
         <NoteBlock label="Admin note" value={incident.adminNote} />
-        <NoteBlock label="Maintenance action" value={incident.maintenanceAction} />
-        <NoteBlock label="Resolution" value={incident.resolutionNote} />
-        <NoteBlock label="Rejection reason" value={incident.rejectionReason} />
       </div>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">
@@ -319,51 +251,40 @@ export function IncidentRow({
             Reviewed {fmtDate(incident.reviewedAt)}
           </p>
         )}
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <textarea
-            value={adminNote}
-            onChange={(event) => setAdminNote(event.target.value)}
-            rows={2}
-            placeholder="Admin note visible to driver"
-            className="min-h-16 flex-1 resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
-          />
-          <ActButton
-            label="Save note"
-            primary={false}
-            pending={pending}
-            onClick={() => act({ adminNote })}
-          />
-        </div>
-        {(incident.status === "reviewing" ||
-          incident.status === "monitoring" ||
-          incident.status === "maintenance_required") &&
-          onCreateWorkOrder && (
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => onCreateWorkOrder(incident)}
-                disabled={pending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
-              >
-                <Wrench size={13} />
-                Create work order
-              </button>
-            </div>
-          )}
-        {actions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {actions.map((a, i) => (
+        {incident.status === "pending_review" && (
+          <div className="mt-3 space-y-2">
+            <textarea
+              value={adminNote}
+              onChange={(event) => setAdminNote(event.target.value)}
+              rows={2}
+              maxLength={800}
+              placeholder="Optional review note visible to the driver"
+              className="min-h-16 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
+            />
+            <div className="flex flex-wrap gap-2">
               <ActButton
-                key={a.label}
-                label={a.label}
-                primary={i === 0}
+                label="Normal / No Maintenance Required"
+                primary={true}
                 pending={pending}
-                onClick={() => act(a.payload())}
+                onClick={() => act({ decision: "normal", adminNote })}
               />
-            ))}
+              <ActButton
+                label="Maintenance Required"
+                primary={false}
+                pending={pending}
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    "Mark this fleet as Maintenance Required and unassign its current driver?",
+                  );
+                  if (confirmed) {
+                    void act({ decision: "maintenance_required", adminNote });
+                  }
+                }}
+              />
+            </div>
           </div>
         )}
-        {err && <p className="mt-2 text-xs font-semibold text-[#D0453A]">{err}</p>}
+        {err && <p className="mt-2 text-xs font-semibold text-[var(--danger)]">{err}</p>}
       </div>
     </li>
   );
@@ -408,7 +329,7 @@ export function FuelExpenseRow({
   return (
     <li className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Fuel size={15} className="text-[#2E6FD6]" />
+        <Fuel size={15} className="text-[var(--info)]" />
         <span className="text-sm font-bold text-[var(--text)]">
           {formatNPR(expense.amount)}
         </span>
@@ -467,18 +388,18 @@ export function FuelExpenseRow({
         </div>
         {actions.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
-            {actions.map((a, i) => (
+            {actions.map((action, index) => (
               <ActButton
-                key={a.label}
-                label={a.label}
-                primary={i === 0}
+                key={action.label}
+                label={action.label}
+                primary={index === 0}
                 pending={pending}
-                onClick={() => act(a.payload())}
+                onClick={() => act(action.payload())}
               />
             ))}
           </div>
         )}
-        {err && <p className="mt-2 text-xs font-semibold text-[#D0453A]">{err}</p>}
+        {err && <p className="mt-2 text-xs font-semibold text-[var(--danger)]">{err}</p>}
       </div>
     </li>
   );

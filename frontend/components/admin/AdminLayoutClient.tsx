@@ -23,9 +23,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
-import { API_BASE_URL } from "@/lib/config";
+import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import { adminGetFleetReportStats } from "@/lib/api/fleetReports.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getSocket } from "@/lib/socket";
 
 const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
@@ -39,15 +40,6 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/users": "User Management",
   "/admin/inquiries": "Inquiries",
 };
-
-function resolveProfileImage(value?: string | null): string | null {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-  if (value.startsWith("/")) return `${API_BASE_URL}${value}`;
-  return value;
-}
 
 interface AdminLayoutClientProps {
   children: React.ReactNode;
@@ -66,7 +58,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const [openIncidentCount, setOpenIncidentCount] = useState(0);
+  const [pendingIncidentCount, setPendingIncidentCount] = useState(0);
 
   useEffect(() => {
     setProfileImageFailed(false);
@@ -82,9 +74,9 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
   const loadFleetNotifications = useCallback(async () => {
     try {
       const stats = await adminGetFleetReportStats(token);
-      setOpenIncidentCount(stats.openIncidents);
+      setPendingIncidentCount(stats.pendingIncidents);
     } catch {
-      setOpenIncidentCount(0);
+      setPendingIncidentCount(0);
     }
   }, [token]);
 
@@ -92,6 +84,16 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
     void loadFleetNotifications();
   }, [loadFleetNotifications]);
 
+  useEffect(() => {
+    const socket = getSocket(token);
+    const handleIssueReported = () => {
+      void loadFleetNotifications();
+    };
+    socket.on("fleet-issue-reported", handleIssueReported);
+    return () => {
+      socket.off("fleet-issue-reported", handleIssueReported);
+    };
+  }, [loadFleetNotifications, token]);
   useAutoRefresh(loadFleetNotifications, { intervalMs: 15_000 });
 
   const toggleCollapsed = () => {
@@ -104,20 +106,13 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       router.push("/login");
-    } catch (err) {
-      console.error("Sign out failed:", err);
+    } catch {
       router.push("/login");
     }
   };
 
   const displayName = activeUser?.fullName?.trim() || "Admin User";
-  const initials =
-    displayName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "AU";
+  const initials = getInitials(displayName, "AU");
 
   const navItems = [
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
@@ -273,12 +268,12 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
             <Link
               href="/admin/fleet/reports"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
-              aria-label={openIncidentCount > 0 ? `${openIncidentCount} open driver issue reports` : "Notifications"}
+              aria-label={pendingIncidentCount > 0 ? `${pendingIncidentCount} pending driver issue reports` : "Notifications"}
             >
               <Bell size={19} />
-              {openIncidentCount > 0 && (
+              {pendingIncidentCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#D0533F] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
-                  {openIncidentCount > 9 ? "9+" : openIncidentCount}
+                  {pendingIncidentCount > 9 ? "9+" : pendingIncidentCount}
                 </span>
               )}
             </Link>
@@ -307,12 +302,14 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
                 style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
               >
                 {profileImageSrc && !profileImageFailed ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={profileImageSrc}
                     alt={displayName}
+                    width={40}
+                    height={40}
                     className="h-full w-full object-cover"
                     onError={() => setProfileImageFailed(true)}
+                    unoptimized
                   />
                 ) : (
                   initials

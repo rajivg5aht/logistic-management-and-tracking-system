@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
 
+  async redirects() {
+    return [
+      {
+        source: "/billing",
+        destination: "/payments",
+        permanent: false,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {

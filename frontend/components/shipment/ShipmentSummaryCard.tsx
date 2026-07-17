@@ -6,15 +6,15 @@ interface ShipmentSummaryCardProps {
 
 export function ShipmentSummaryCard({ currentStep = 1 }: ShipmentSummaryCardProps) {
   const step1Status = currentStep === 1 ? "In Progress" : "Completed";
-  const step1Color = currentStep === 1 ? "text-[#6C63FF] font-bold" : "text-[#5f7f35] font-bold";
+  const step1Color = currentStep === 1 ? "text-[var(--step-active)] font-bold" : "text-[#5f7f35] font-bold";
   const step1LabelColor = currentStep >= 1 ? "text-slate-600" : "text-slate-400";
 
   const step2Status = currentStep < 2 ? "Pending" : currentStep === 2 ? "In Progress" : "Completed";
-  const step2Color = currentStep < 2 ? "text-slate-400 font-bold" : currentStep === 2 ? "text-[#6C63FF] font-bold" : "text-[#5f7f35] font-bold";
+  const step2Color = currentStep < 2 ? "text-slate-400 font-bold" : currentStep === 2 ? "text-[var(--step-active)] font-bold" : "text-[#5f7f35] font-bold";
   const step2LabelColor = currentStep >= 2 ? "text-slate-600" : "text-slate-400";
 
   const step3Status = currentStep < 3 ? "Pending" : currentStep === 3 ? "In Progress" : "Completed";
-  const step3Color = currentStep < 3 ? "text-slate-400 font-bold" : currentStep === 3 ? "text-[#6C63FF] font-bold" : "text-[#5f7f35] font-bold";
+  const step3Color = currentStep < 3 ? "text-slate-400 font-bold" : currentStep === 3 ? "text-[var(--step-active)] font-bold" : "text-[#5f7f35] font-bold";
   const step3LabelColor = currentStep >= 3 ? "text-slate-600" : "text-slate-400";
 
   return (

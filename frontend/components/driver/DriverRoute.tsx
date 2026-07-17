@@ -74,7 +74,7 @@ export default function DriverRoute({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
@@ -203,7 +203,7 @@ function DeliveryMilestones({ shipment }: { shipment: Shipment }) {
                 {!last && (
                   <span
                     className={`min-h-9 w-0.5 flex-1 ${
-                      row.status === "done" ? "bg-[#1E9E4C]" : "bg-[var(--border)]"
+                      row.status === "done" ? "bg-[var(--success)]" : "bg-[var(--border)]"
                     }`}
                   />
                 )}
@@ -231,7 +231,7 @@ function DeliveryMilestones({ shipment }: { shipment: Shipment }) {
 function MilestoneIcon({ status }: { status: MilestoneStatus }) {
   if (status === "done") {
     return (
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1E9E4C] text-white">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--success)] text-white">
         <CheckCircle2 size={15} />
       </span>
     );
@@ -245,7 +245,7 @@ function MilestoneIcon({ status }: { status: MilestoneStatus }) {
   }
   if (status === "failed") {
     return (
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FBE4E1] text-[#D0453A]">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--danger-soft)] text-[var(--danger)]">
         <AlertTriangle size={14} />
       </span>
     );
@@ -368,10 +368,10 @@ function DeliveryDetails({ shipment }: { shipment: Shipment }) {
           shipment.package.parcelType === "fragile") && (
           <div className="flex flex-wrap gap-2">
             {shipment.package.parcelType === "fragile" && (
-              <DetailBadge className="bg-[#FBE4E1] text-[#D0453A]">Fragile</DetailBadge>
+              <DetailBadge className="bg-[var(--danger-soft)] text-[var(--danger)]">Fragile</DetailBadge>
             )}
             {shipment.insurance && (
-              <DetailBadge className="bg-[#DEF3E6] text-[#1E9E4C]">Insured</DetailBadge>
+              <DetailBadge className="bg-[var(--success-soft)] text-[var(--success)]">Insured</DetailBadge>
             )}
             {shipment.specialHandling && (
               <DetailBadge className="bg-[var(--accent-soft)] text-[var(--accent-strong)]">

@@ -153,7 +153,7 @@ function TechnologyPreview() {
   return (
     <div className="relative">
       <div className="pointer-events-none absolute -inset-3 rounded-[1.5rem] bg-[rgba(29,122,140,0.08)] blur-2xl" />
-      <div className="relative overflow-hidden rounded-[1.35rem] border-[10px] border-[#2D2D2D] bg-[var(--surface)] shadow-[0_20px_45px_rgba(45,45,45,0.18)]">
+      <div className="relative overflow-hidden rounded-[1.35rem] border-[10px] border-[var(--text)] bg-[var(--surface)] shadow-[0_20px_45px_rgba(45,45,45,0.18)]">
         <div className="flex h-7 items-center border-b border-[var(--border)] bg-[var(--surface)] px-3 text-[8px] font-semibold text-[var(--text-muted)]">
           <span className="font-bold text-[var(--teal)]">CargoNep</span>
           <span className="mx-auto text-[var(--text)]">About Us - CargoNep</span>

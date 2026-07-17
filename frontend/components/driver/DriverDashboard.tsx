@@ -72,7 +72,7 @@ export default function DriverDashboard({
       label: "Active Delivery",
       value: stats ? String(stats.active) : "-",
       Icon: Package,
-      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+      tint: "bg-[var(--info-soft)] text-[var(--info)]",
     },
     {
       label: "Delivered Today",
@@ -84,7 +84,7 @@ export default function DriverDashboard({
       label: "Total Completed",
       value: stats ? String(stats.completed) : "-",
       Icon: TrendingUp,
-      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
     },
     {
       label: "COD to Collect",
@@ -109,7 +109,7 @@ export default function DriverDashboard({
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}

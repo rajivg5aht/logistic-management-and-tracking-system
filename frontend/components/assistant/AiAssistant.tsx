@@ -14,7 +14,7 @@ export function AiAssistant() {
           role="dialog"
           aria-label="AI Assistant"
         >
-          <div className="flex items-center justify-between gap-3 bg-[#1D7A8C] px-4 py-3.5 text-white">
+          <div className="flex items-center justify-between gap-3 bg-[var(--teal)] px-4 py-3.5 text-white">
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                 <Bot size={19} />
@@ -41,7 +41,7 @@ export function AiAssistant() {
               </span>
               <div className="rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 text-sm text-[var(--text)] shadow-sm">
                 Hi! I&apos;m your logistics assistant. Ask me about tracking, shipments,
-                or billing.
+                or payments.
                 <span className="mt-2 block text-xs font-semibold text-[var(--text-muted)]">
                   Full chat is coming soon.
                 </span>
@@ -61,7 +61,7 @@ export function AiAssistant() {
             <button
               type="button"
               disabled
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1D7A8C] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--teal)] text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Send message"
               suppressHydrationWarning
             >
@@ -74,7 +74,7 @@ export function AiAssistant() {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[#1D7A8C] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#15656e]"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[var(--teal)] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#15656e]"
         style={{ boxShadow: "var(--shadow-md)" }}
         aria-label="Open AI Assistant"
         aria-expanded={isOpen}

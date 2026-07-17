@@ -8,7 +8,7 @@ const BREADCRUMBS: Record<string, { section: string; page: string }> = {
   "/shipments": { section: "Shipments", page: "Create Shipment" },
   "/tracking": { section: "Tracking", page: "Track Shipment" },
   "/shipments/history": { section: "Shipments", page: "History" },
-  "/billing": { section: "Billing", page: "Invoices" },
+  "/payments": { section: "Payments", page: "History" },
   "/inquiries": { section: "Support", page: "My Inquiries" },
   "/profile": { section: "Profile", page: "Account" },
   "/change-password": { section: "Profile", page: "Change Password" },

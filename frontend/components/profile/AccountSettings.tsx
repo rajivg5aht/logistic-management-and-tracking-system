@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import Image from "next/image";
 import {
   updateProfileAction,
   updatePasswordAction,
   AuthFormState,
 } from "@/actions/auth.actions";
 import type { AuthUser } from "@/lib/api/auth.api";
+import { formatMemberSince } from "@/lib/ui-helpers";
 import {
   Camera,
   Shield,
@@ -21,13 +23,6 @@ type Tab = "profile" | "security";
 
 interface AccountSettingsProps {
   user: AuthUser;
-}
-
-function formatMemberSince(createdAt?: string): string {
-  if (!createdAt) return "—";
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
 export default function AccountSettings({ user }: AccountSettingsProps) {
@@ -160,11 +155,13 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
                 <div className="relative shrink-0">
                   <div className="h-24 w-24 overflow-hidden rounded-2xl border border-[rgba(200,162,74,0.25)] shadow-sm">
                     {previewImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={previewImage}
                         alt={user.fullName}
+                        width={96}
+                        height={96}
                         className="h-full w-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-[var(--accent-soft)] text-3xl font-bold text-[var(--text)]">
@@ -368,7 +365,7 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
                 <dt className="text-[var(--text-muted)]">Member Since</dt>
                 <dd className="font-semibold text-[var(--text)]">
-                  {formatMemberSince(user.createdAt)}
+                  {formatMemberSince(user.createdAt, "—")}
                 </dd>
               </div>
               <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">

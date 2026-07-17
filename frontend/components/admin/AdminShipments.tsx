@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   Search,
   RefreshCw,
@@ -70,9 +71,9 @@ const TABS: { label: string; status?: ShipmentStatus }[] = [
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   pending: "bg-[#FDECD8] text-[#C77718]",
-  "in-transit": "bg-[#E4EEFB] text-[#2E6FD6]",
-  delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
-  cancelled: "bg-[#FBE4E1] text-[#D0453A]",
+  "in-transit": "bg-[#E4EEFB] text-[var(--info)]",
+  delivered: "bg-[var(--success-soft)] text-[var(--success)]",
+  cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 type AdminDeliveryStage = Extract<
@@ -106,7 +107,7 @@ function editableDeliveryStage(
 
 const PAYMENT_STYLES: Record<string, string> = {
   cod: "bg-[#EEF1F4] text-[#5A6B82]",
-  prepaid: "bg-[#DEF3E6] text-[#1E9E4C]",
+  prepaid: "bg-[var(--success-soft)] text-[var(--success)]",
 };
 
 function timeAgo(dateStr: string): string {
@@ -310,8 +311,8 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
   };
 
   const statCards = [
-    { label: "Pending Orders", value: stats?.pending, sub: "Awaiting dispatch", Icon: ClipboardList, tint: "bg-[#E8F0FB] text-[#2E6FD6]" },
-    { label: "In Transit", value: stats?.inTransit, sub: "On the way", Icon: Truck, tint: "bg-[#FBF1DC] text-[#C99A3D]" },
+    { label: "Pending Orders", value: stats?.pending, sub: "Awaiting dispatch", Icon: ClipboardList, tint: "bg-[var(--info-soft)] text-[var(--info)]" },
+    { label: "In Transit", value: stats?.inTransit, sub: "On the way", Icon: Truck, tint: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
     { label: "Delivered", value: stats?.delivered, sub: "Completed", Icon: CircleCheckBig, tint: "bg-[#E6F4EC] text-[#1F9D57]" },
     { label: "Failed / Cancelled", value: stats?.cancelled, sub: "Needs attention", Icon: XCircle, tint: "bg-[#FBE9E5] text-[#D0533F]" },
   ];
@@ -408,7 +409,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
         {error ? (
           <div className="border-t border-[var(--border)] p-10 text-center">
-            <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#FBE4E1] text-[#D0453A]">
+            <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]">
               <AlertCircle size={24} />
             </div>
             <p className="text-sm font-semibold text-[var(--text)]">{error}</p>
@@ -516,7 +517,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         <td className="px-5 py-4">
                           {s.assignedDriver ? (
                             <span className="flex items-center gap-2">
-                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8F0FB] text-[10px] font-bold text-[#2E6FD6]">
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--info-soft)] text-[10px] font-bold text-[var(--info)]">
                                 {getInitials(s.assignedDriver)}
                               </span>
                               <span className="font-semibold text-[var(--text)]">{s.assignedDriver}</span>
@@ -560,7 +561,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                                 e.stopPropagation();
                                 handleDeleteOpen(s);
                               }}
-                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] cursor-pointer"
                               title="Delete shipment"
                               suppressHydrationWarning
                             >
@@ -741,7 +742,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
           {formError && <div className="form-error">{formError}</div>}
 
           <div className="flex gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FBE4E1] text-[#D0453A]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]">
               <AlertCircle size={20} />
             </div>
             <div>
@@ -768,7 +769,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               type="button"
               onClick={handleDeleteSubmit}
               disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#b23a30] cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#b23a30] cursor-pointer disabled:opacity-50"
             >
               {actionLoading && <Loader2 size={16} className="animate-spin" />}
               Delete
@@ -956,7 +957,7 @@ function ShipmentDetailDrawer({
                 <div className="relative pl-6">
                   <span className="absolute bottom-3 left-[6px] top-3 w-px bg-[var(--border)]" />
                   <div className="relative pb-5">
-                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1D7A8C] ring-4 ring-[#1D7A8C]/15" />
+                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--teal)] ring-4 ring-[var(--teal)]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                       Pickup - Sender
                     </p>
@@ -971,7 +972,7 @@ function ShipmentDetailDrawer({
                     </p>
                   </div>
                   <div className="relative">
-                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
+                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--accent-hover)] ring-4 ring-[var(--accent-hover)]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                       Delivery - Recipient
                     </p>
@@ -1012,16 +1013,16 @@ function ShipmentDetailDrawer({
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[#2E6FD6]">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[var(--info)]">
                     <Truck size={12} /> {SERVICE_LABELS[shipment.service] ?? shipment.service}
                   </span>
                   {shipment.insurance && (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#DEF3E6] px-2.5 py-1 text-[11px] font-bold text-[#1E9E4C]">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--success-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--success)]">
                       <ShieldCheck size={12} /> Insured
                     </span>
                   )}
                   {shipment.specialHandling && (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#FBF1DC] px-2.5 py-1 text-[11px] font-bold text-[#C99A3D]">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#FBF1DC] px-2.5 py-1 text-[11px] font-bold text-[var(--accent-hover)]">
                       <Sparkles size={12} /> Special handling
                     </span>
                   )}
@@ -1054,7 +1055,7 @@ function ShipmentDetailDrawer({
                 {shipment.assignedDriver ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E8F0FB] text-[11px] font-bold text-[#2E6FD6]">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--info-soft)] text-[11px] font-bold text-[var(--info)]">
                         {getInitials(shipment.assignedDriver)}
                       </span>
                       <div>
@@ -1069,7 +1070,7 @@ function ShipmentDetailDrawer({
                       </div>
                     </div>
                     {shipment.driverStage && (
-                      <span className="inline-flex rounded-full bg-[#E4EEFB] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#2E6FD6]">
+                      <span className="inline-flex rounded-full bg-[#E4EEFB] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--info)]">
                         {DRIVER_STAGE_LABELS[shipment.driverStage] ?? shipment.driverStage}
                       </span>
                     )}
@@ -1117,10 +1118,13 @@ function ShipmentDetailDrawer({
                 {shipment.proofOfDelivery ? (
                   <div className="space-y-3">
                     {shipment.proofOfDelivery.photoUrl && (
-                      <img
+                      <Image
                         src={shipment.proofOfDelivery.photoUrl}
                         alt="Proof of delivery"
+                        width={1200}
+                        height={600}
                         className="h-44 w-full rounded-xl border border-[var(--border)] object-cover"
+                        unoptimized
                       />
                     )}
                     <div className="grid grid-cols-2 gap-3">
@@ -1165,7 +1169,7 @@ function ShipmentDetailDrawer({
                         <span
                           className={`absolute -left-6 top-0.5 h-3.5 w-3.5 rounded-full ring-4 ${
                             i === 0
-                              ? "bg-[#1E9E4C] ring-[#1E9E4C]/15"
+                              ? "bg-[var(--success)] ring-[var(--success)]/15"
                               : "bg-[var(--text-muted)] ring-[var(--text-muted)]/10"
                           }`}
                         />

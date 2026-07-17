@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   BadgeCheck,
   Camera,
@@ -17,8 +18,12 @@ import {
 } from "@/actions/auth.actions";
 import { useAuth } from "@/context/AuthContext";
 import type { AuthUser } from "@/lib/api/auth.api";
-import { API_BASE_URL } from "@/lib/config";
-import { getInitials } from "@/lib/ui-helpers";
+import {
+  formatMemberSince,
+  formatStatusLabel,
+  getInitials,
+  resolveProfileImage,
+} from "@/lib/ui-helpers";
 
 const initialState: AuthFormState = { success: false };
 const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -27,28 +32,6 @@ type Tab = "profile" | "security";
 
 interface AdminProfileProps {
   user: AuthUser;
-}
-
-function formatMemberSince(createdAt?: string): string {
-  if (!createdAt) return "Not available";
-
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return "Not available";
-
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
-
-function resolveProfileImage(value?: string | null): string | null {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-  if (value.startsWith("/")) return `${API_BASE_URL}${value}`;
-  return value;
-}
-
-function formatStatus(status?: string): string {
-  return (status || "active").replace(/-/g, " ").toUpperCase();
 }
 
 export default function AdminProfile({ user }: AdminProfileProps) {
@@ -96,7 +79,7 @@ export default function AdminProfile({ user }: AdminProfileProps) {
     () => getInitials(currentUser.fullName, "AD"),
     [currentUser.fullName],
   );
-  const statusLabel = formatStatus(currentUser.status);
+  const statusLabel = formatStatusLabel(currentUser.status);
   const activeFormId = activeTab === "profile" ? "admin-profile-form" : "admin-security-form";
   const isPending = activeTab === "profile" ? profilePending : passwordPending;
   const visibleImage = previewImage && !imageUnavailable ? previewImage : null;
@@ -232,12 +215,14 @@ export default function AdminProfile({ user }: AdminProfileProps) {
                 <div className="relative shrink-0">
                   <div className="h-24 w-24 overflow-hidden rounded-2xl border border-[rgba(200,162,74,0.25)] shadow-sm">
                     {visibleImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={visibleImage}
                         alt={currentUser.fullName}
+                        width={96}
+                        height={96}
                         className="h-full w-full object-cover"
                         onError={() => setImageUnavailable(true)}
+                        unoptimized
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-[var(--accent-soft)] text-3xl font-bold text-[var(--text)]">

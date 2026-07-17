@@ -100,7 +100,7 @@ export default function DashboardOverview({
           </button>
           <Link
             href="/shipments"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1D7A8C] hover:bg-[#15656e] text-white text-sm font-bold transition-colors no-underline"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--teal)] hover:bg-[#15656e] text-white text-sm font-bold transition-colors no-underline"
           >
             <Plus size={16} />
             New Shipment
@@ -114,24 +114,24 @@ export default function DashboardOverview({
       >
         <button
           type="button"
-          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#1D7A8C]/40 hover:bg-[#F4FAFA] hover:shadow-[0_8px_20px_rgba(29,122,140,0.12)]"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[var(--teal)]/40 hover:bg-[#F4FAFA] hover:shadow-[0_8px_20px_rgba(29,122,140,0.12)]"
           suppressHydrationWarning
         >
           <Building2
             size={17}
-            className="text-[#1D7A8C] transition-transform group-hover:scale-110"
+            className="text-[var(--teal)] transition-transform group-hover:scale-110"
           />
           Delivery Network
         </button>
         <Link
-          href="/billing"
+          href="/payments"
           className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] no-underline shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[rgba(200,162,74,0.45)] hover:bg-[var(--accent-soft)] hover:shadow-[0_8px_20px_rgba(200,162,74,0.12)]"
         >
           <FileText
             size={17}
             className="text-[var(--accent)] transition-transform group-hover:scale-110"
           />
-          View Invoices
+          View Payments
         </Link>
         <Link
           href="/inquiries"
@@ -183,7 +183,7 @@ export default function DashboardOverview({
             />
             <button
               type="submit"
-              className="h-11 shrink-0 rounded-xl bg-[#1D7A8C] px-5 text-sm font-bold text-white transition-colors hover:bg-[#15656e]"
+              className="h-11 shrink-0 rounded-xl bg-[var(--teal)] px-5 text-sm font-bold text-white transition-colors hover:bg-[#15656e]"
               suppressHydrationWarning
             >
               Track Now

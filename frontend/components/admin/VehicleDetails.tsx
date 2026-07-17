@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   AlertCircle,
   AlertTriangle,
@@ -51,22 +52,22 @@ const STATUS_CONFIG: Record<
   VehicleStatus,
   { label: string; badge: string; hero: string; iconColor: string; dot: string }
 > = {
-  assigned: {
+  active: {
     label: "Active",
-    badge: "bg-[#DEF3E6] text-[#1E9E4C]",
+    badge: "bg-[var(--success-soft)] text-[var(--success)]",
     hero: "from-[#E9F6EE] to-[#CFE9D9]",
-    iconColor: "text-[#1E9E4C]",
-    dot: "bg-[#1E9E4C]",
+    iconColor: "text-[var(--success)]",
+    dot: "bg-[var(--success)]",
   },
-  maintenance: {
-    label: "Maintenance",
-    badge: "bg-[#FBF1DC] text-[#C99A3D]",
+  maintenance_required: {
+    label: "Maintenance Required",
+    badge: "bg-[#FBF1DC] text-[var(--accent-hover)]",
     hero: "from-[#FBF2DE] to-[#F3E2BC]",
-    iconColor: "text-[#C99A3D]",
-    dot: "bg-[#C99A3D]",
+    iconColor: "text-[var(--accent-hover)]",
+    dot: "bg-[var(--accent-hover)]",
   },
   available: {
-    label: "Idle",
+    label: "Available",
     badge: "bg-[#EDF1F6] text-[#5A6B82]",
     hero: "from-[#EFF2F7] to-[#DBE2EC]",
     iconColor: "text-[#5A6B82]",
@@ -74,10 +75,10 @@ const STATUS_CONFIG: Record<
   },
   inactive: {
     label: "Inactive",
-    badge: "bg-[#FBE4E1] text-[#D0453A]",
+    badge: "bg-[var(--danger-soft)] text-[var(--danger)]",
     hero: "from-[#FBE7E3] to-[#F3CEC8]",
-    iconColor: "text-[#D0453A]",
-    dot: "bg-[#D0453A]",
+    iconColor: "text-[var(--danger)]",
+    dot: "bg-[var(--danger)]",
   },
 };
 
@@ -130,14 +131,14 @@ function expiryMeta(value: string | null): {
       Icon: Minus,
     };
   if (days < 0)
-    return { label: "Expired", cls: "bg-[#FBE4E1] text-[#D0453A]", Icon: AlertTriangle };
+    return { label: "Expired", cls: "bg-[var(--danger-soft)] text-[var(--danger)]", Icon: AlertTriangle };
   if (days <= 30)
     return {
       label: `${days} day${days === 1 ? "" : "s"} left`,
-      cls: "bg-[#FBF1DC] text-[#C99A3D]",
+      cls: "bg-[#FBF1DC] text-[var(--accent-hover)]",
       Icon: Clock,
     };
-  return { label: "Valid", cls: "bg-[#DEF3E6] text-[#1E9E4C]", Icon: CheckCircle2 };
+  return { label: "Valid", cls: "bg-[var(--success-soft)] text-[var(--success)]", Icon: CheckCircle2 };
 }
 
 export default function VehicleDetails({
@@ -222,7 +223,7 @@ export default function VehicleDetails({
       <div className="space-y-6">
         <BackLink />
         <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-12 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FBE4E1] text-[#D0453A]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--danger-soft)] text-[var(--danger)]">
             <AlertCircle size={24} />
           </div>
           <p className="text-sm font-semibold text-[var(--text)]">
@@ -256,11 +257,13 @@ export default function VehicleDetails({
             className={`relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br ${cfg.hero} lg:h-full`}
           >
             {vehicle.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={vehicle.imageUrl}
                 alt={vehicle.registrationNumber}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(min-width: 1024px) 420px, 100vw"
+                className="object-cover"
+                unoptimized
               />
             ) : (
               <TypeIcon
@@ -406,13 +409,13 @@ export default function VehicleDetails({
                 <li key={`${entry.driverId}-${idx}`} className="relative">
                   <span
                     className={`absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--surface)] ${
-                      active ? "bg-[#1E9E4C]" : "bg-[var(--text-muted)]"
+                      active ? "bg-[var(--success)]" : "bg-[var(--text-muted)]"
                     }`}
                   />
                   <p className="text-sm font-bold text-[var(--text)]">
                     {driverNameById.get(entry.driverId) ?? "Former driver"}
                     {active && (
-                      <span className="ml-2 rounded-full bg-[#DEF3E6] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1E9E4C]">
+                      <span className="ml-2 rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--success)]">
                         Current
                       </span>
                     )}

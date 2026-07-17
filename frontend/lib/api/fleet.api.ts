@@ -7,8 +7,8 @@ import {
 
 export const VEHICLE_STATUSES = [
   "available",
-  "assigned",
-  "maintenance",
+  "active",
+  "maintenance_required",
   "inactive",
 ] as const;
 
@@ -60,8 +60,8 @@ export type VehiclePayload = {
 export type FleetStats = {
   total: number;
   available: number;
-  assigned: number;
-  maintenance: number;
+  active: number;
+  maintenanceRequired: number;
   inactive: number;
 };
 

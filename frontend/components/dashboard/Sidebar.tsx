@@ -55,7 +55,7 @@ export function Sidebar() {
     { label: "Shipments", href: "/shipments", icon: Mail },
     { label: "Tracking", href: "/tracking", icon: MapPinned },
     { label: "Shipment History", href: "/shipments/history", icon: Package },
-    { label: "Billing & Invoices", href: "/billing", icon: CreditCard },
+    { label: "Payments", href: "/payments", icon: CreditCard },
     { label: "My Inquiries", href: "/inquiries", icon: MessageSquareText },
     { label: "Profile", href: "/profile", icon: User },
   ];

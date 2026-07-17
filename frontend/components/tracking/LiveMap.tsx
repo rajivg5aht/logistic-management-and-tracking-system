@@ -1,10 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import { Loader2, MapPin } from "lucide-react";
-import { fetchRoute, type RouteResult } from "@/lib/routing";
+import { Clock3, Loader2, MapPin, Route } from "lucide-react";
 import type { LatLng } from "@/lib/nepalGeo";
+import { useLiveRoute } from "@/lib/hooks/useLiveRoute";
 
 const LiveTrackingMapInner = dynamic(() => import("./LiveTrackingMapInner"), {
   ssr: false,
@@ -14,6 +13,8 @@ const LiveTrackingMapInner = dynamic(() => import("./LiveTrackingMapInner"), {
 type MapLocation = {
   latitude: number;
   longitude: number;
+  speed?: number | null;
+  updatedAt?: string;
 } | null;
 
 type Props = {
@@ -43,30 +44,7 @@ export default function LiveMap({
   waitingLabel = "Waiting for driver location…",
 }: Props) {
   const resolvedHeight = typeof height === "number" ? `${height}px` : height;
-  const routeKey =
-    pickup && delivery ? `${pickup.join(",")}→${delivery.join(",")}` : "";
-  const [route, setRoute] = useState<(RouteResult & { key: string }) | null>(null);
-
-  useEffect(() => {
-    if (!pickup || !delivery) return;
-
-    const controller = new AbortController();
-    let active = true;
-
-    fetchRoute(pickup, delivery, controller.signal)
-      .then((result) => {
-        if (active) setRoute({ ...result, key: routeKey });
-      })
-      .catch(() => {
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [delivery, pickup, routeKey]);
-
-  const currentRoute = route?.key === routeKey ? route : null;
+  const route = useLiveRoute(pickup, delivery, location);
   const hasMapContext = Boolean(location || pickup || delivery);
 
   return (
@@ -79,8 +57,8 @@ export default function LiveMap({
           location={location}
           pickup={pickup}
           delivery={delivery}
-          geometry={currentRoute?.geometry ?? []}
-          approximate={currentRoute?.approximate ?? false}
+          geometry={route.geometry}
+          approximate={route.approximate}
           accent={accent}
         />
       ) : (
@@ -89,6 +67,34 @@ export default function LiveMap({
       {!location && (pickup || delivery) && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 z-[500] -translate-x-1/2 rounded-full border border-[var(--border)] bg-white/95 px-3 py-1.5 text-center text-[11px] font-semibold text-[var(--text-muted)] shadow-sm backdrop-blur">
           {waitingLabel}
+        </div>
+      )}
+      {location && route.remainingDistanceKm !== null && (
+        <div
+          aria-live="polite"
+          className="pointer-events-none absolute bottom-3 right-3 z-[500] grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#0C3B67]/12 bg-white/95 shadow-lg backdrop-blur"
+        >
+          <div className="min-w-24 px-3 py-2">
+            <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+              <Route size={11} /> Remaining
+            </p>
+            <p className="mt-0.5 text-sm font-black text-[#0C3B67]">
+              {route.remainingDistanceLabel}
+            </p>
+          </div>
+          <div className="min-w-24 border-l border-[var(--border)] px-3 py-2">
+            <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+              <Clock3 size={11} /> ETA
+            </p>
+            <p className="mt-0.5 text-sm font-black text-[#0C3B67]">
+              {route.etaLabel}
+            </p>
+            {route.arrivalLabel && route.etaMinutes !== 0 && (
+              <p className="text-[9px] font-bold text-[var(--text-muted)]">
+                by {route.arrivalLabel}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

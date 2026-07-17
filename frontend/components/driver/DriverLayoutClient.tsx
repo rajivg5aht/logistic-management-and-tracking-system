@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
-import { API_BASE_URL } from "@/lib/config";
+import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import {
   driverGetMe,
   driverUpdateAvailability,
@@ -45,20 +45,11 @@ const AVAILABILITY_META: Record<
   { label: string; dot: string; cls: string }
 > = {
   available: { label: "Available", dot: "bg-[var(--success)]", cls: "text-[var(--success)]" },
-  assigned: { label: "Assigned", dot: "bg-[#C99A3D]", cls: "text-[#C99A3D]" },
+  assigned: { label: "Assigned", dot: "bg-[var(--accent-hover)]", cls: "text-[var(--accent-hover)]" },
   "on-delivery": { label: "On Delivery", dot: "bg-[#C77718]", cls: "text-[#C77718]" },
   "off-duty": { label: "Off Duty", dot: "bg-[#5A6B82]", cls: "text-[#5A6B82]" },
-  inactive: { label: "Inactive", dot: "bg-[#D0453A]", cls: "text-[#D0453A]" },
+  inactive: { label: "Inactive", dot: "bg-[var(--danger)]", cls: "text-[var(--danger)]" },
 };
-function resolveProfileImage(value?: string | null): string | null {
-  if (!value) return null;
-  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-  if (value.startsWith("/")) return `${API_BASE_URL}${value}`;
-  return value;
-}
-
 export default function DriverLayoutClient({
   children,
   user,
@@ -150,22 +141,18 @@ export default function DriverLayoutClient({
   );
   const breadcrumbPage = pathname === "/driver/profile" ? "Profile" : currentNav?.label ?? "Dashboard";
 
-  const initials =
-    (activeUser.fullName?.trim() || "Driver")
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "D";
+  const initials = getInitials(activeUser.fullName, "D");
 
   const avatarContent =
     profileImageSrc && !profileImageFailed ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={profileImageSrc}
         alt={activeUser.fullName || "Driver"}
+        width={40}
+        height={40}
         className="h-full w-full object-cover"
         onError={() => setProfileImageFailed(true)}
+        unoptimized
       />
     ) : (
       initials
@@ -348,7 +335,7 @@ export default function DriverLayoutClient({
 
           <div className="ml-auto flex items-center gap-3">
             {toggleError && (
-              <span className="hidden max-w-[220px] truncate text-xs font-medium text-[#D0453A] sm:inline">
+              <span className="hidden max-w-[220px] truncate text-xs font-medium text-[var(--danger)] sm:inline">
                 {toggleError}
               </span>
             )}
@@ -460,7 +447,7 @@ export default function DriverLayoutClient({
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-[#D0453A] transition-colors hover:bg-[#FBE4E1] cursor-pointer"
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-[var(--danger)] transition-colors hover:bg-[var(--danger-soft)] cursor-pointer"
                         role="menuitem"
                       >
                         <LogOut size={16} /> Sign out

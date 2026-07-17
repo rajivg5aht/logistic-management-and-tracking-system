@@ -56,9 +56,14 @@
   --border-strong: #D5C4A9;
   --border-dark: rgba(0, 0, 0, 0.12);
 
-  --success: #5f7f35;
-  --danger: #b5473b;
+  --success: #1E9E4C;
+  --success-soft: #DEF3E6;
+  --danger: #D0453A;
+  --danger-soft: #FBE4E1;
+  --danger-border: #F3C6BF;
   --warning: #E9C46A;
+  --info: #2E6FD6;
+  --info-soft: #E8F0FB;
 
   --teal: #1D7A8C;
   --teal-tint: #E5F1F3;

@@ -58,7 +58,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? formatNPR(analytics.totalRevenue) : "—",
       sub: "Collected to date",
       icon: DollarSign,
-      iconClass: "bg-[#E5F1F3] text-[#1D7A8C]",
+      iconClass: "bg-[var(--teal-tint)] text-[var(--teal)]",
       ...deltaBadge(analytics?.revenueDelta ?? null),
     },
     {
@@ -66,7 +66,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? analytics.deliveries.toLocaleString("en-IN") : "—",
       sub: "Completed to date",
       icon: Truck,
-      iconClass: "bg-[#E5F1F3] text-[#1D7A8C]",
+      iconClass: "bg-[var(--teal-tint)] text-[var(--teal)]",
       ...deltaBadge(analytics?.deliveriesDelta ?? null),
     },
     {
@@ -82,7 +82,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? `${analytics.successRate}%` : "—",
       sub: "Delivered vs cancelled",
       icon: ShieldCheck,
-      iconClass: "bg-[#F3EBF9] text-[#6C63FF]",
+      iconClass: "bg-[#F3EBF9] text-[var(--step-active)]",
       ...deltaBadge(analytics?.successDelta ?? null, { unit: " pts" }),
     },
   ];
@@ -97,8 +97,8 @@ export default function AdminAnalytics({ token }: { token: string }) {
       color: "var(--teal)",
     },
     {
-      label: "Assigned",
-      value: percentage(fleetStats?.assigned ?? 0),
+      label: "Active",
+      value: percentage(fleetStats?.active ?? 0),
       color: "var(--accent)",
     },
     {
@@ -107,7 +107,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
         totalVehicles > 0
           ? 100 -
             percentage(fleetStats?.available ?? 0) -
-            percentage(fleetStats?.assigned ?? 0)
+            percentage(fleetStats?.active ?? 0)
           : 0,
       color: "var(--surface-muted)",
     },
@@ -287,9 +287,9 @@ export default function AdminAnalytics({ token }: { token: string }) {
               })}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-black text-[#6C63FF]">
+              <span className="text-3xl font-black text-[var(--step-active)]">
                 {percentage(
-                  (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0),
+                  (fleetStats?.available ?? 0) + (fleetStats?.active ?? 0),
                 )}
                 %
               </span>
@@ -366,7 +366,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                 />
                 <div className="relative flex items-center gap-3.5">
                   <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#3A2E12]"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[var(--accent-strong)]"
                     style={{
                       background: "linear-gradient(135deg, #F0D083, #C99A3D)",
                       boxShadow: "0 6px 16px rgba(201,154,61,0.35)",
@@ -375,7 +375,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                     <Crown size={20} className="stroke-[2.4]" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#C99A3D]">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--accent-hover)]">
                       Top region
                     </span>
                     <div className="flex items-baseline justify-between gap-3">

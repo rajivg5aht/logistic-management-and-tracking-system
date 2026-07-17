@@ -133,20 +133,8 @@ export type DriverFleetIncident = {
   location: string;
   status: string;
   adminNote: string;
-  resolutionNote: string;
-  rejectionReason: string;
-  maintenanceAction: string;
-  workOrder: {
-    status: string;
-    assignedToName: string | null;
-    vendorName: string;
-    expectedCompletionAt: string | null;
-    repairNotes: string;
-    updatedAt: string;
-  } | null;
   reviewedAt: string | null;
   resolvedAt: string | null;
-  rejectedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -196,7 +184,8 @@ export type DriverFuelExpensePayload = {
 
 function fuelExpenseBody(payload: Partial<DriverFuelExpensePayload>): BodyInit {
   if (!payload.receipt) {
-    const { receipt: _receipt, ...jsonPayload } = payload;
+    const jsonPayload = { ...payload };
+    delete jsonPayload.receipt;
     return JSON.stringify(jsonPayload);
   }
 

@@ -46,7 +46,7 @@ export function DetailedSummaryCard() {
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <FileText className="h-5 w-5 text-[#1D7A8C]" />
+        <FileText className="h-5 w-5 text-[var(--teal)]" />
         <h2 className="text-[17px] font-bold text-[#1E293B]">
           Shipment Summary
         </h2>
@@ -55,8 +55,8 @@ export function DetailedSummaryCard() {
       <div className="space-y-0.5">
         <div className="flex gap-4">
           <div className="flex flex-col items-center shrink-0">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#E5F1F3] border border-[#1D7A8C]/20">
-              <div className="h-2.5 w-2.5 rounded-full bg-[#1D7A8C]" />
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--teal-tint)] border border-[var(--teal)]/20">
+              <div className="h-2.5 w-2.5 rounded-full bg-[var(--teal)]" />
             </div>
             <div className="flex-1 w-[1.5px] border-l-2 border-dashed border-slate-200 my-1 h-12" />
           </div>
@@ -135,7 +135,7 @@ export function DetailedSummaryCard() {
           {insurance && (
             <div className="flex items-center justify-between">
               <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-[#1D7A8C]" />
+                <Shield className="h-3.5 w-3.5 text-[var(--teal)]" />
                 Insurance
               </span>
               <span className="font-bold text-slate-700">{formatNPR(prices.insuranceFee)}</span>
@@ -155,14 +155,14 @@ export function DetailedSummaryCard() {
 
       <div className="bg-[#EAF5F8]/70 border border-[#E2E8F0]/30 rounded-xl p-4.5 mb-5">
         <div className="flex items-center justify-between">
-          <span className="text-[13.5px] font-bold text-[#1D7A8C]">
+          <span className="text-[13.5px] font-bold text-[var(--teal)]">
             Estimated Total
           </span>
-          <span className="text-[18px] font-extrabold text-[#1D7A8C]">
+          <span className="text-[18px] font-extrabold text-[var(--teal)]">
             {formatNPR(prices.total)}
           </span>
         </div>
-        <span className="text-[9.5px] text-[#1D7A8C]/80 mt-2 block font-medium">
+        <span className="text-[9.5px] text-[var(--teal)]/80 mt-2 block font-medium">
           *Price based on weight, dimensions &amp; selected service
         </span>
       </div>

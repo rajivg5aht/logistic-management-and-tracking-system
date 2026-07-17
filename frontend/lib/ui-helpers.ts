@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "@/lib/config";
+
 export type PageToken = number | "...";
 
 export function getInitials(name?: string | null, fallback = "?"): string {
@@ -31,4 +33,37 @@ export function getPageNumbers(current: number, total: number): PageToken[] {
   pages.push(total);
 
   return pages;
+}
+
+export function resolveProfileImage(value?: string | null): string | null {
+  if (!value) return null;
+  if (
+    value.startsWith("data:") ||
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    return value;
+  }
+  if (value.startsWith("/")) return `${API_BASE_URL}${value}`;
+  return value;
+}
+
+export function formatMemberSince(
+  createdAt?: string,
+  fallback = "Not available",
+): string {
+  if (!createdAt) return fallback;
+
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return fallback;
+
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+export function formatDriverCode(id: string): string {
+  return `LN-DR-${id.slice(-4).toUpperCase()}`;
+}
+
+export function formatStatusLabel(status = "active"): string {
+  return status.replace(/[-_]/g, " ").toUpperCase();
 }

@@ -10,7 +10,7 @@ export function PickupAddressCard() {
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF1FF]">
           <svg
-            className="h-4 w-4 text-[#6C63FF]"
+            className="h-4 w-4 text-[var(--step-active)]"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -37,7 +37,7 @@ export function PickupAddressCard() {
             placeholder="e.g. John Doe"
             value={pickupAddress.fullName}
             onChange={(e) => updatePickupField("fullName", e.target.value)}
-            className={`w-full h-11 border rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all ${
+            className={`w-full h-11 border rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all ${
               !pickupAddress.fullName.trim() ? "border-[#E2E8F0]" : "border-[#E2E8F0]"
             }`}
             suppressHydrationWarning
@@ -59,7 +59,7 @@ export function PickupAddressCard() {
               value={pickupAddress.phoneNumber}
               onChange={(e) => updatePickupField("phoneNumber", e.target.value.replace(/[^0-9]/g, ""))}
               maxLength={10}
-              className="w-full h-11 border border-[#E2E8F0] rounded-r-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+              className="w-full h-11 border border-[#E2E8F0] rounded-r-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
               suppressHydrationWarning
             />
           </div>
@@ -74,7 +74,7 @@ export function PickupAddressCard() {
             placeholder="Street name, Building No, Tole"
             value={pickupAddress.streetAddress}
             onChange={(e) => updatePickupField("streetAddress", e.target.value)}
-            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
             suppressHydrationWarning
           />
         </div>
@@ -88,7 +88,7 @@ export function PickupAddressCard() {
               <select
                 value={pickupAddress.district}
                 onChange={(e) => updatePickupField("district", e.target.value)}
-                className={`w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10 ${
+                className={`w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all appearance-none pr-10 ${
                   pickupAddress.district ? "text-slate-800" : "text-slate-400"
                 }`}
                 suppressHydrationWarning
@@ -109,7 +109,7 @@ export function PickupAddressCard() {
               placeholder="e.g. Kathmandu"
               value={pickupAddress.city}
               onChange={(e) => updatePickupField("city", e.target.value)}
-              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
               suppressHydrationWarning
             />
           </div>
@@ -120,7 +120,7 @@ export function PickupAddressCard() {
             type="checkbox"
             checked={pickupAddress.saveToAddressBook}
             onChange={(e) => updatePickupField("saveToAddressBook", e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF] cursor-pointer"
+            className="w-4 h-4 rounded border-slate-300 text-[var(--step-active)] focus:ring-[var(--step-active)] accent-[var(--step-active)] cursor-pointer"
             suppressHydrationWarning
           />
           Save to address book

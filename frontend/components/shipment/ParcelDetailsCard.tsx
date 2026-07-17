@@ -28,7 +28,7 @@ export function ParcelDetailsCard() {
             onClick={() => updatePackageField("parcelType", "standard")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
               packageDetails.parcelType === "standard"
-                ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
+                ? "border-[var(--teal)] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
@@ -36,7 +36,7 @@ export function ParcelDetailsCard() {
               <div
                 className={`p-2.5 rounded-lg ${
                   packageDetails.parcelType === "standard"
-                    ? "bg-[#EAF5F8] text-[#1D7A8C]"
+                    ? "bg-[#EAF5F8] text-[var(--teal)]"
                     : "bg-slate-50 text-slate-500"
                 }`}
               >
@@ -44,7 +44,7 @@ export function ParcelDetailsCard() {
               </div>
 
               {packageDetails.parcelType === "standard" ? (
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--teal)]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
               ) : (
@@ -62,7 +62,7 @@ export function ParcelDetailsCard() {
             onClick={() => updatePackageField("parcelType", "fragile")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
               packageDetails.parcelType === "fragile"
-                ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
+                ? "border-[var(--teal)] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
@@ -70,7 +70,7 @@ export function ParcelDetailsCard() {
               <div
                 className={`p-2.5 rounded-lg ${
                   packageDetails.parcelType === "fragile"
-                    ? "bg-[#EAF5F8] text-[#1D7A8C]"
+                    ? "bg-[#EAF5F8] text-[var(--teal)]"
                     : "bg-slate-50 text-slate-500"
                 }`}
               >
@@ -78,7 +78,7 @@ export function ParcelDetailsCard() {
               </div>
 
               {packageDetails.parcelType === "fragile" ? (
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--teal)]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
               ) : (
@@ -96,7 +96,7 @@ export function ParcelDetailsCard() {
             onClick={() => updatePackageField("parcelType", "pallet")}
             className={`relative border rounded-xl p-5 cursor-pointer transition-all duration-200 flex flex-col items-start select-none ${
               packageDetails.parcelType === "pallet"
-                ? "border-[#1D7A8C] bg-[#EAF5F8]/30"
+                ? "border-[var(--teal)] bg-[#EAF5F8]/30"
                 : "border-[#E2E8F0] bg-white hover:border-slate-300"
             }`}
           >
@@ -104,7 +104,7 @@ export function ParcelDetailsCard() {
               <div
                 className={`p-2.5 rounded-lg ${
                   packageDetails.parcelType === "pallet"
-                    ? "bg-[#EAF5F8] text-[#1D7A8C]"
+                    ? "bg-[#EAF5F8] text-[var(--teal)]"
                     : "bg-slate-50 text-slate-500"
                 }`}
               >
@@ -112,7 +112,7 @@ export function ParcelDetailsCard() {
               </div>
 
               {packageDetails.parcelType === "pallet" ? (
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1D7A8C]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--teal)]">
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </div>
               ) : (
@@ -138,7 +138,7 @@ export function ParcelDetailsCard() {
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
               Total Weight <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all overflow-hidden">
+            <div className="flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 focus-within:border-[var(--step-active)] focus-within:ring-1 focus-within:ring-[var(--step-active)] transition-all overflow-hidden">
               <input
                 type="text"
                 inputMode="decimal"
@@ -173,7 +173,7 @@ export function ParcelDetailsCard() {
               <button
                 type="button"
                 onClick={incrementQuantity}
-                className="bg-[#E5F1F3] hover:bg-[#d8e8eb] text-[#1D7A8C] rounded-md w-7 h-7 flex items-center justify-center cursor-pointer font-bold transition-colors"
+                className="bg-[var(--teal-tint)] hover:bg-[#d8e8eb] text-[var(--teal)] rounded-md w-7 h-7 flex items-center justify-center cursor-pointer font-bold transition-colors"
                 suppressHydrationWarning
               >
                 +
@@ -187,7 +187,7 @@ export function ParcelDetailsCard() {
             Dimensions (Outer Box) <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
-            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
+            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[var(--step-active)] focus-within:ring-1 focus-within:ring-[var(--step-active)] transition-all">
               <input
                 type="text"
                 inputMode="decimal"
@@ -200,7 +200,7 @@ export function ParcelDetailsCard() {
               <span className="text-slate-400 text-[10px] font-bold shrink-0 ml-2 select-none">CM</span>
             </div>
 
-            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
+            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[var(--step-active)] focus-within:ring-1 focus-within:ring-[var(--step-active)] transition-all">
               <input
                 type="text"
                 inputMode="decimal"
@@ -213,7 +213,7 @@ export function ParcelDetailsCard() {
               <span className="text-slate-400 text-[10px] font-bold shrink-0 ml-2 select-none">CM</span>
             </div>
 
-            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[#6C63FF] focus-within:ring-1 focus-within:ring-[#6C63FF] transition-all">
+            <div className="relative flex items-center border border-[#E2E8F0] rounded-lg bg-white h-11 px-3.5 focus-within:border-[var(--step-active)] focus-within:ring-1 focus-within:ring-[var(--step-active)] transition-all">
               <input
                 type="text"
                 inputMode="decimal"

@@ -2,20 +2,18 @@
 
 import dynamic from "next/dynamic";
 import { Loader2, MapPin } from "lucide-react";
+import type {
+  FleetMapMarker,
+  FleetMapRoute,
+} from "./FleetTrackingMapInner";
 
-export type FleetMapMarker = {
-  shipmentId: string;
-  trackingId: string;
-  latitude: number;
-  longitude: number;
-  driverName: string;
-  statusLabel: string;
-  isSelected: boolean;
-  isStale: boolean;
-};
-
+export type {
+  FleetMapMarker,
+  FleetMapRoute,
+} from "./FleetTrackingMapInner";
 type Props = {
   markers: FleetMapMarker[];
+  route?: FleetMapRoute | null;
   selectedShipmentId?: string | null;
   onSelect: (shipmentId: string) => void;
   height?: number | string;
@@ -44,6 +42,7 @@ function MapMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 export default function FleetTrackingMap({
   markers,
+  route = null,
   selectedShipmentId,
   onSelect,
   height = "100%",
@@ -57,13 +56,14 @@ export default function FleetTrackingMap({
     >
       <FleetTrackingMapInner
         markers={markers}
+        route={route}
         selectedShipmentId={selectedShipmentId}
         onSelect={onSelect}
       />
 
       {markers.length === 0 && (
         <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[500] rounded-xl border border-[var(--border)] bg-white/92 p-4 text-center shadow-sm backdrop-blur">
-          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-[#E5F1F3] text-[#1D7A8C]">
+          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--teal-tint)] text-[var(--teal)]">
             <MapPin size={18} />
           </div>
           <p className="mt-2 text-sm font-bold text-[var(--text)]">

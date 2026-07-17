@@ -45,9 +45,9 @@ function bucketOf(s: Shipment): TripBucket {
 }
 
 const BUCKET_META: Record<TripBucket, { label: string; dot: string; text: string; bg: string }> = {
-  delivered: { label: "Delivered", dot: "bg-[#1E9E4C]", text: "text-[#1E9E4C]", bg: "bg-[#DEF3E6]" },
-  failed: { label: "Failed", dot: "bg-[#D0453A]", text: "text-[#D0453A]", bg: "bg-[#FBE4E1]" },
-  "in-transit": { label: "In Transit", dot: "bg-[#2E6FD6]", text: "text-[#2E6FD6]", bg: "bg-[#E4EEFB]" },
+  delivered: { label: "Delivered", dot: "bg-[var(--success)]", text: "text-[var(--success)]", bg: "bg-[var(--success-soft)]" },
+  failed: { label: "Failed", dot: "bg-[var(--danger)]", text: "text-[var(--danger)]", bg: "bg-[var(--danger-soft)]" },
+  "in-transit": { label: "In Transit", dot: "bg-[var(--info)]", text: "text-[var(--info)]", bg: "bg-[#E4EEFB]" },
   pending: { label: "Pending", dot: "bg-[#C77718]", text: "text-[#C77718]", bg: "bg-[#FDECD8]" },
 };
 
@@ -65,8 +65,8 @@ const RANGE_OPTIONS = [
 ];
 
 const STAT_TINTS = [
-  "bg-[#DEF3E6] text-[#1E9E4C]",
-  "bg-[#E8F0FB] text-[#2E6FD6]",
+  "bg-[var(--success-soft)] text-[var(--success)]",
+  "bg-[var(--info-soft)] text-[var(--info)]",
   "bg-[#FDECD8] text-[#C77718]",
 ];
 
@@ -214,7 +214,7 @@ export default function DriverAssignments({ token }: { token: string }) {
       value: money(derived.totalEarnings),
       foot:
         derived.trendPct != null ? (
-          <span className="inline-flex items-center gap-1 text-[#1E9E4C]">
+          <span className="inline-flex items-center gap-1 text-[var(--success)]">
             <ArrowUpRight size={13} className="stroke-[2.6]" />
             {derived.trendPct >= 0 ? "+" : ""}
             {derived.trendPct}% from last month
@@ -252,7 +252,7 @@ export default function DriverAssignments({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
@@ -290,7 +290,7 @@ export default function DriverAssignments({ token }: { token: string }) {
         >
           <div className="flex items-start justify-between">
             <p className="text-[12px] font-bold text-[var(--text-muted)]">Efficiency Score</p>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[#6C63FF]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[var(--step-active)]">
               <Gauge size={17} />
             </span>
           </div>
@@ -379,7 +379,7 @@ export default function DriverAssignments({ token }: { token: string }) {
 
                 <div className="mt-3 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#1E9E4C]" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--success)]" />
                     <p className="truncate text-sm font-semibold text-[var(--text)]">
                       {s.pickup.city || s.pickup.streetAddress || "Pickup"}
                     </p>

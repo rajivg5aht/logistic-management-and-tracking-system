@@ -145,7 +145,7 @@ function ShipmentPageContent() {
                 <button
                   type="button"
                   onClick={handleNextFromStep1}
-                  className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-7 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-strong)] text-sm font-bold px-7 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                   suppressHydrationWarning
                 >
                   Next Step
@@ -171,7 +171,7 @@ function ShipmentPageContent() {
                 <button
                   type="button"
                   onClick={handleNextFromStep2}
-                  className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-strong)] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                   suppressHydrationWarning
                 >
                   Next Step: Service Type
@@ -197,7 +197,7 @@ function ShipmentPageContent() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep(4)}
-                  className="bg-[#E9C46A] hover:bg-[#C99A3D] text-[#3A2E12] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-strong)] text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                   suppressHydrationWarning
                 >
                   Next Step: Review & Pay →

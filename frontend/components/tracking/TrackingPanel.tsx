@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -31,7 +32,7 @@ import { getDistrictCoords } from "@/lib/nepalGeo";
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   pending: "bg-[#FFF3DD] text-[#A96512]",
-  "in-transit": "bg-[#EAF1FC] text-[#2E6FD6]",
+  "in-transit": "bg-[#EAF1FC] text-[var(--info)]",
   delivered: "bg-[#E2F5EA] text-[#18864B]",
   cancelled: "bg-[#FDE8E5] text-[#C43D32]",
 };
@@ -268,14 +269,14 @@ export default function TrackingPanel({
               <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2.5 text-xs">
                   <span className="flex items-center gap-1.5 font-bold text-[var(--text-soft)]">
-                    <MapPin size={14} className="text-[#1D7A8C]" />
+                    <MapPin size={14} className="text-[var(--teal)]" />
                     Live location
                     <span className="rounded-md bg-[var(--surface-soft)] px-2 py-0.5 text-[10px] font-black uppercase text-[var(--text)]">
                       #{shipment.trackingId}
                     </span>
                   </span>
                   {liveLocation ? (
-                    <span className="flex items-center gap-1.5 rounded-full bg-[#1D7A8C] px-2.5 py-1 font-bold text-white">
+                    <span className="flex items-center gap-1.5 rounded-full bg-[var(--teal)] px-2.5 py-1 font-bold text-white">
                       <span className="relative flex h-2 w-2">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -357,10 +358,13 @@ export default function TrackingPanel({
                     Delivery confirmation
                   </h2>
                   {shipment.proofOfDelivery.photoUrl && (
-                    <img
+                    <Image
                       src={shipment.proofOfDelivery.photoUrl}
                       alt="Proof of delivery"
+                      width={1200}
+                      height={600}
                       className="mt-4 h-44 w-full rounded-xl object-cover"
+                      unoptimized
                     />
                   )}
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -419,7 +423,7 @@ export default function TrackingPanel({
                           className={`flex h-7 w-7 items-center justify-center rounded-full ${
                             isLatest
                               ? "bg-[var(--accent)] text-white ring-4 ring-[var(--accent-soft)]"
-                              : "bg-[#1E9E4C] text-white"
+                              : "bg-[var(--success)] text-white"
                           }`}
                         >
                           {isLatest &&
@@ -431,7 +435,7 @@ export default function TrackingPanel({
                           )}
                         </span>
                         {index < journey.length - 1 && (
-                          <span className="min-h-14 w-0.5 flex-1 bg-[#1E9E4C]" />
+                          <span className="min-h-14 w-0.5 flex-1 bg-[var(--success)]" />
                         )}
                       </div>
                       <div className="pb-6">

@@ -58,16 +58,16 @@ function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   "in-transit": "bg-[#FDECD8] text-[#C77718]",
-  delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
-  pending: "bg-[#FBF1DC] text-[#C99A3D]",
-  cancelled: "bg-[#FBE4E1] text-[#D0453A]",
+  delivered: "bg-[var(--success-soft)] text-[var(--success)]",
+  pending: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 const AVATAR_STYLES = [
-  "bg-[#E8F0FB] text-[#2E6FD6]",
-  "bg-[#E5F1F3] text-[#1D7A8C]",
-  "bg-[#FBF1DC] text-[#C99A3D]",
-  "bg-[#F0ECFB] text-[#6C63FF]",
+  "bg-[var(--info-soft)] text-[var(--info)]",
+  "bg-[var(--teal-tint)] text-[var(--teal)]",
+  "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  "bg-[#F0ECFB] text-[var(--step-active)]",
 ];
 
 function getDestination(shipment: Shipment): string {
@@ -145,7 +145,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
       label: "Total Shipments",
       value: shipmentStats?.total.toLocaleString("en-IN") ?? "-",
       Icon: Package,
-      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+      tint: "bg-[var(--info-soft)] text-[var(--info)]",
     },
     {
       label: "Active Now",
@@ -157,7 +157,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
       label: "Delivered Today",
       value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "-",
       Icon: CircleCheckBig,
-      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
     },
     {
       label: "Pending COD",
@@ -174,7 +174,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
   const fleetTotal = fleetStats?.total ?? 0;
   const fleetOperational =
-    (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0);
+    (fleetStats?.available ?? 0) + (fleetStats?.active ?? 0);
   const fleetHealthPct =
     fleetTotal > 0 ? Math.round((fleetOperational / fleetTotal) * 100) : 0;
   const systemStatusMessage = fleetError
@@ -194,17 +194,17 @@ export default function OverviewDashboard({ token }: { token: string }) {
     },
     {
       label: "Maintenance",
-      sub: `${fleetStats?.maintenance ?? 0} Vehicles`,
+      sub: `${fleetStats?.maintenanceRequired ?? 0} Vehicles`,
       Icon: Wrench,
       accent: "#C99A3D",
-      tint: "bg-[#FBF1DC] text-[#C99A3D]",
+      tint: "bg-[#FBF1DC] text-[var(--accent-hover)]",
     },
     {
       label: "Inactive",
       sub: `${fleetStats?.inactive ?? 0} Vehicles`,
       Icon: AlertTriangle,
       accent: "#D0453A",
-      tint: "bg-[#FBE4E1] text-[#D0453A]",
+      tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
 
@@ -271,7 +271,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     : "Seven-day shipment volume is unavailable"}
               </p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#E8F0FB] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#123E6B]">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--info-soft)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#123E6B]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#123E6B]" aria-hidden="true" />
               Auto-refresh · 15s
             </span>

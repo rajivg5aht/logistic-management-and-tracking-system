@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Truck,
   AlertTriangle,
@@ -37,26 +38,24 @@ import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const VEHICLE_STATUS_META: Record<string, { label: string; cls: string }> = {
   available: { label: "Available", cls: "bg-[#E6F4EC] text-[#1F9D57]" },
-  assigned: { label: "Active Duty", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
-  maintenance: { label: "Maintenance", cls: "bg-[#FBF0DA] text-[#C08A2D]" },
+  active: { label: "Active", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
+  maintenance_required: { label: "Maintenance Required", cls: "bg-[#FBF0DA] text-[#C08A2D]" },
   inactive: { label: "Inactive", cls: "bg-[#FBE9E5] text-[#D0533F]" },
 };
 
 const SEVERITY_META: Record<string, string> = {
   low: "bg-[#E6F4EC] text-[#1F9D57]",
-  medium: "bg-[#E8F0FB] text-[#2E6FD6]",
+  medium: "bg-[var(--info-soft)] text-[var(--info)]",
   high: "bg-[#FBF0DA] text-[#C08A2D]",
   critical: "bg-[#FBE9E5] text-[#D0533F]",
 };
 
 const STATUS_META: Record<string, string> = {
-  open: "bg-[#FBE9E5] text-[#D0533F]",
-  reviewing: "bg-[#FBF0DA] text-[#C08A2D]",
+  pending_review: "bg-[#FBF0DA] text-[#C08A2D]",
   maintenance_required: "bg-[#FCE8D8] text-[#C06A2D]",
-  in_repair: "bg-[#E8F0FB] text-[#2E6FD6]",
   resolved: "bg-[#E6F4EC] text-[#1F9D57]",
   rejected: "bg-[#FBE9E5] text-[#D0533F]",
-  submitted: "bg-[#E8F0FB] text-[#2E6FD6]",
+  submitted: "bg-[var(--info-soft)] text-[var(--info)]",
   under_review: "bg-[#FBF0DA] text-[#C08A2D]",
   approved: "bg-[#E6F4EC] text-[#1F9D57]",
   reimbursed: "bg-[#E7F5F2] text-[var(--teal)]",
@@ -102,7 +101,7 @@ function expiryTone(value: string | null | undefined): string {
   const target = new Date(value).getTime();
   if (Number.isNaN(target)) return "text-[var(--text)]";
   const days = (target - Date.now()) / 86_400_000;
-  if (days < 0) return "text-[#D0453A] font-bold";
+  if (days < 0) return "text-[var(--danger)] font-bold";
   if (days < 30) return "text-[#C08A2D] font-bold";
   return "text-[var(--text)]";
 }
@@ -180,7 +179,7 @@ export default function DriverFleet({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
@@ -188,7 +187,25 @@ export default function DriverFleet({ token }: { token: string }) {
       {loading ? (
         <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
       ) : !vehicle ? (
-        <EmptyState />
+        <>
+          <EmptyState />
+          {fleet && fleet.incidents.length > 0 && (
+            <div
+              className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
+              style={{ boxShadow: "var(--shadow-sm)" }}
+            >
+              <h2 className="mb-4 text-lg font-black text-[var(--text)]">
+                Issue Reports
+              </h2>
+              <IncidentsTab
+                fleet={fleet}
+                token={token}
+                onChanged={() => load(true)}
+                onEdit={(incident) => setModal({ type: "incident", incident })}
+              />
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -199,11 +216,13 @@ export default function DriverFleet({ token }: { token: string }) {
               <div className="flex flex-col sm:flex-row">
                 <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#1E293B] to-[#334155] sm:h-auto sm:w-52">
                   {vehicle.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- arbitrary remote vehicle photos, matches AdminFleetManagement
-                    <img
+                    <Image
                       src={vehicle.imageUrl}
                       alt={vehicle.registrationNumber}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="(min-width: 640px) 208px, 100vw"
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <Truck size={52} strokeWidth={1.5} className="text-white/70" />
@@ -228,7 +247,7 @@ export default function DriverFleet({ token }: { token: string }) {
                   </h2>
                   <p className="text-sm font-semibold text-[var(--text-muted)]">
                     ID: {vehicle.registrationNumber}
-                    {vehicle.year ? ` Â· ${vehicle.year}` : ""}
+                    {vehicle.year ? ` · ${vehicle.year}` : ""}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs font-medium text-[var(--text-muted)]">
                     <span className="inline-flex items-center gap-1.5">
@@ -264,7 +283,7 @@ export default function DriverFleet({ token }: { token: string }) {
                 Icon={Fuel}
                 title="Log Fuel Expense"
                 subtitle="Record a refuelling stop"
-                tint="bg-[#E8F0FB] text-[#2E6FD6]"
+                tint="bg-[var(--info-soft)] text-[var(--info)]"
                 onClick={() => setModal({ type: "fuel" })}
               />
             </div>
@@ -429,11 +448,10 @@ function OverviewTab({ fleet }: { fleet: DriverFleet }) {
   const v = fleet.vehicle!;
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <DetailRow Icon={MapPin} label="Branch" value={v.branch || "â€”"} />
       <DetailRow
         Icon={Package}
         label="Capacity"
-        value={v.capacityKg != null ? `${v.capacityKg} kg` : "â€”"}
+        value={v.capacityKg != null ? `${v.capacityKg} kg` : "—"}
       />
       <DetailRow
         Icon={Gauge}
@@ -501,7 +519,7 @@ function HistoryTab({ fleet }: { fleet: DriverFleet }) {
               </td>
               <td className="py-3 pr-4 text-[var(--text-soft)]">{fmtDate(a.assignedAt)}</td>
               <td className="py-3 pr-4 text-[var(--text-soft)]">
-                {a.unassignedAt ? fmtDate(a.unassignedAt) : "â€”"}
+                {a.unassignedAt ? fmtDate(a.unassignedAt) : "—"}
               </td>
               <td className="py-3">
                 <span
@@ -588,7 +606,7 @@ function IncidentsTab({
   return (
     <ul className="space-y-3">
       {fleet.incidents.map((inc) => {
-        const editable = inc.status === "open";
+        const editable = inc.status === "pending_review";
         return (
           <li
             key={inc.id}
@@ -622,11 +640,8 @@ function IncidentsTab({
                 <MapPin size={12} /> {inc.location}
               </p>
             )}
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3">
               <DriverNote label="Admin note" value={inc.adminNote} />
-              <DriverNote label="Maintenance action" value={inc.maintenanceAction} />
-              <DriverNote label="Resolution" value={inc.resolutionNote} />
-              <DriverNote label="Rejection reason" value={inc.rejectionReason} />
             </div>
             {editable && (
               <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)] pt-3">
@@ -683,7 +698,7 @@ function FuelTab({
             className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4"
           >
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F0FB] text-[#2E6FD6]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--info-soft)] text-[var(--info)]">
                 <Fuel size={18} />
               </div>
               <div className="min-w-0">
@@ -784,7 +799,7 @@ function ModalShell({
 
 function FormError({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-3.5 py-2.5 text-sm font-semibold text-[#D0453A]">
+    <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3.5 py-2.5 text-sm font-semibold text-[var(--danger)]">
       {message}
     </div>
   );

@@ -22,14 +22,48 @@ export type AuthFormState = {
   user?: AuthUser;
 };
 
-async function getAuthToken(): Promise<string | null> {
+const passwordUpdateSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters long"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+const passwordChangeSchema = passwordUpdateSchema.safeExtend({
+  currentPassword: z.string().min(1, "Current password is required"),
+});
+
+function cookieOptions(httpOnly: boolean) {
+  return {
+    httpOnly,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge: AUTH_COOKIE_MAX_AGE,
+    path: "/",
+  };
+}
+
+function buildProfilePayload(formData: FormData): UpdateProfilePayload {
+  const payload: UpdateProfilePayload = {
+    fullName: formData.get("fullName") as string,
+    email: formData.get("email") as string,
+    phoneNumber: formData.get("phoneNumber") as string,
+  };
+  const profileImage = formData.get("profileImage");
+  if (profileImage instanceof File && profileImage.size > 0) {
+    payload.profileImage = profileImage;
+  }
+  return payload;
+}
+
+async function getAuthToken(role: AuthUser["role"]): Promise<string | null> {
   const cookieStore = await cookies();
-  return (
-    cookieStore.get("token_customer")?.value ||
-    cookieStore.get("token_admin")?.value ||
-    cookieStore.get("token_driver")?.value ||
-    null
-  );
+  return cookieStore.get(`token_${role}`)?.value ?? null;
 }
 
 export async function registerAction(
@@ -121,21 +155,9 @@ export async function loginAction(
   const tokenCookieName = `token_${user.role}`;
   const userCookieName = `user_${user.role}`;
 
-  cookieStore.set(tokenCookieName, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(tokenCookieName, token, cookieOptions(true));
 
-  cookieStore.set(userCookieName, JSON.stringify(user), {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(userCookieName, JSON.stringify(user), cookieOptions(false));
 
   if (user.role === "admin") {
     redirect("/admin");
@@ -152,7 +174,7 @@ export async function updateProfileAction(
 ): Promise<AuthFormState> {
   try {
     const cookieStore = await cookies();
-    const token = await getAuthToken();
+    const token = await getAuthToken("customer");
 
     if (!token) {
       return {
@@ -161,26 +183,15 @@ export async function updateProfileAction(
       };
     }
 
-    const profileImage = formData.get("profileImage");
-    const payload: UpdateProfilePayload = {
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phoneNumber") as string,
-    };
-
-    if (profileImage instanceof File && profileImage.size > 0) {
-      payload.profileImage = profileImage;
-    }
+    const payload = buildProfilePayload(formData);
 
     const updatedUser = await updateProfile(token, payload);
 
-    cookieStore.set(`user_${updatedUser.role}`, JSON.stringify(updatedUser), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: AUTH_COOKIE_MAX_AGE,
-      path: "/",
-    });
+    cookieStore.set(
+      `user_${updatedUser.role}`,
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
 
     return {
       success: true,
@@ -199,19 +210,7 @@ export async function updatePasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const passwordSchema = z
-    .object({
-      newPassword: z
-        .string()
-        .min(6, "Password must be at least 6 characters long"),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords do not match",
-      path: ["confirmPassword"],
-    });
-
-  const parsed = passwordSchema.safeParse({
+  const parsed = passwordUpdateSchema.safeParse({
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -224,7 +223,7 @@ export async function updatePasswordAction(
   }
 
   try {
-    const token = await getAuthToken();
+    const token = await getAuthToken("customer");
 
     if (!token) {
       return {
@@ -290,16 +289,7 @@ export async function updateAdminProfileAction(
       };
     }
 
-    const profileImage = formData.get("profileImage");
-    const payload: UpdateProfilePayload = {
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phoneNumber") as string,
-    };
-
-    if (profileImage instanceof File && profileImage.size > 0) {
-      payload.profileImage = profileImage;
-    }
+    const payload = buildProfilePayload(formData);
 
     const updatedUser = await updateProfile(token, payload);
     if (updatedUser.role !== "admin") {
@@ -309,13 +299,11 @@ export async function updateAdminProfileAction(
       };
     }
 
-    cookieStore.set("user_admin", JSON.stringify(updatedUser), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: AUTH_COOKIE_MAX_AGE,
-      path: "/",
-    });
+    cookieStore.set(
+      "user_admin",
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
 
     return {
       success: true,
@@ -334,20 +322,7 @@ export async function updateAdminPasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const passwordSchema = z
-    .object({
-      currentPassword: z.string().min(1, "Current password is required"),
-      newPassword: z
-        .string()
-        .min(6, "Password must be at least 6 characters long"),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords do not match",
-      path: ["confirmPassword"],
-    });
-
-  const parsed = passwordSchema.safeParse({
+  const parsed = passwordChangeSchema.safeParse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
@@ -387,6 +362,7 @@ export async function updateAdminPasswordAction(
     };
   }
 }
+
 export async function updateDriverProfileAction(
   _prevState: AuthFormState,
   formData: FormData,
@@ -402,16 +378,7 @@ export async function updateDriverProfileAction(
       };
     }
 
-    const profileImage = formData.get("profileImage");
-    const payload: UpdateProfilePayload = {
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phoneNumber") as string,
-    };
-
-    if (profileImage instanceof File && profileImage.size > 0) {
-      payload.profileImage = profileImage;
-    }
+    const payload = buildProfilePayload(formData);
 
     const updatedUser = await updateProfile(token, payload);
     if (updatedUser.role !== "driver") {
@@ -421,13 +388,11 @@ export async function updateDriverProfileAction(
       };
     }
 
-    cookieStore.set("user_driver", JSON.stringify(updatedUser), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: AUTH_COOKIE_MAX_AGE,
-      path: "/",
-    });
+    cookieStore.set(
+      "user_driver",
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
 
     return {
       success: true,
@@ -446,19 +411,7 @@ export async function updateDriverPasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const passwordSchema = z
-    .object({
-      newPassword: z
-        .string()
-        .min(6, "Password must be at least 6 characters long"),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords do not match",
-      path: ["confirmPassword"],
-    });
-
-  const parsed = passwordSchema.safeParse({
+  const parsed = passwordUpdateSchema.safeParse({
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });

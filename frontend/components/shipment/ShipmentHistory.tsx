@@ -9,7 +9,6 @@ import {
   Container,
   ChevronLeft,
   ChevronRight,
-  MessageCircle,
   AlertCircle,
   PackageOpen,
   Edit2,
@@ -37,8 +36,8 @@ const STATUS_META: Record<ShipmentStatus, { text: string; bg: string; color: str
   pending: {
     text: "Pending",
     bg: "bg-[rgba(233,196,106,0.16)]",
-    color: "text-[#C99A3D]",
-    dot: "bg-[#C99A3D]",
+    color: "text-[var(--accent-hover)]",
+    dot: "bg-[var(--accent-hover)]",
   },
   "in-transit": {
     text: "In Transit",
@@ -236,7 +235,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           )}
           <Link
             href="/shipments"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1D7A8C] text-white text-sm font-bold hover:bg-[#15656e] transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--teal)] text-white text-sm font-bold hover:bg-[#15656e] transition-colors"
           >
             <Plus size={16} />
             New Shipment
@@ -287,7 +286,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </p>
           <Link
             href="/shipments"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#E9C46A] px-5 py-2.5 text-sm font-bold text-[#3A2E12] transition-colors hover:bg-[#C99A3D]"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--accent-strong)] transition-colors hover:bg-[var(--accent-hover)]"
           >
             <Plus size={16} />
             Book Your First Shipment
@@ -361,7 +360,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                           <button
                             type="button"
                             onClick={() => setEditing(shipment)}
-                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[#1D7A8C]/40 hover:bg-[#F4FAFA] hover:text-[#1D7A8C] cursor-pointer"
+                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[var(--teal)]/40 hover:bg-[#F4FAFA] hover:text-[var(--teal)] cursor-pointer"
                             title="Edit shipment"
                             suppressHydrationWarning
                           >
@@ -432,7 +431,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                     disabled={page === "..."}
                     className={`min-w-[40px] h-10 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                       page === safePage
-                        ? "bg-[#1D7A8C] text-white"
+                        ? "bg-[var(--teal)] text-white"
                         : page === "..."
                         ? "text-[var(--text-muted)] cursor-default"
                         : "border border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
@@ -626,15 +625,6 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
         </div>
       </Modal>
 
-      <button
-        type="button"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1D7A8C] hover:bg-[#15656e] text-white text-sm font-semibold shadow-lg transition-all hover:scale-105"
-        style={{ boxShadow: 'var(--shadow-md)' }}
-        suppressHydrationWarning
-      >
-        <MessageCircle size={18} />
-        Need help tracking?
-      </button>
     </div>
   );
 }

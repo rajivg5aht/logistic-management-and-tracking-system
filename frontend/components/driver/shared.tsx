@@ -63,8 +63,8 @@ const ACTION_CONFIG: Record<DriverStage, { label: string; tone: Tone }> = {
 
 const TONE_CLASS: Record<Tone, string> = {
   primary: "bg-[var(--accent)] text-white hover:opacity-90",
-  success: "bg-[#1E9E4C] text-white hover:opacity-90",
-  danger: "border border-[#F3C6BF] bg-[#FBE4E1] text-[#D0453A] hover:bg-[#f7d6d1]",
+  success: "bg-[var(--success)] text-white hover:opacity-90",
+  danger: "border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[#f7d6d1]",
   muted: "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]",
 };
 
@@ -90,7 +90,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
       <div
         className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${
           failed
-            ? "border-[#F3C6BF] bg-[#FBE4E1] text-[#D0453A]"
+            ? "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]"
             : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)]"
         }`}
       >
@@ -111,7 +111,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
           <div key={s} className="flex flex-1 items-center last:flex-none">
             <div className="flex flex-col items-center">
               {done ? (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1E9E4C] text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--success)] text-white">
                   <CheckCircle2 size={15} />
                 </div>
               ) : active ? (
@@ -132,7 +132,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
             {i < MAIN_PATH.length - 1 && (
               <div
                 className={`mx-1 h-0.5 flex-1 rounded ${
-                  i < currentIndex ? "bg-[#1E9E4C]" : "bg-[var(--border)]"
+                  i < currentIndex ? "bg-[var(--success)]" : "bg-[var(--border)]"
                 }`}
               />
             )}
@@ -208,7 +208,7 @@ export function ActiveAssignmentCard({
       <div className="mt-5 space-y-1">
         <div className="flex gap-3">
           <div className="flex flex-col items-center">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#1E9E4C] bg-[#DEF3E6] text-[10px] font-black text-[#1E9E4C]">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[var(--success)] bg-[var(--success-soft)] text-[10px] font-black text-[var(--success)]">
               A
             </div>
             <div className="my-1 h-8 w-0.5 bg-[var(--border)]" />
@@ -253,7 +253,7 @@ export function ActiveAssignmentCard({
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E5F1F3] text-[#1D7A8C]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--teal-tint)] text-[var(--teal)]">
               <Navigation size={17} />
             </div>
             <div>
@@ -280,7 +280,7 @@ export function ActiveAssignmentCard({
               <button
                 type="button"
                 onClick={tracking.stop}
-                className="flex items-center gap-1.5 rounded-lg border border-[#F3C6BF] bg-[#FBE4E1] px-3 py-2 text-xs font-bold text-[#D0453A] transition-colors hover:bg-[#f7d6d1]"
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs font-bold text-[var(--danger)] transition-colors hover:bg-[#f7d6d1]"
               >
                 <Square size={13} />
                 Stop Sharing
@@ -290,7 +290,7 @@ export function ActiveAssignmentCard({
                 type="button"
                 onClick={tracking.start}
                 disabled={!tracking.trackable}
-                className="flex items-center gap-1.5 rounded-lg bg-[#1D7A8C] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 <Navigation size={13} />
                 Start Live GPS
@@ -315,7 +315,7 @@ export function ActiveAssignmentCard({
           />
         </div>
         {tracking.error && (
-          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[#D0453A]">
+          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[var(--danger)]">
             {tracking.error}
           </p>
         )}
@@ -360,7 +360,7 @@ export function ActiveAssignmentCard({
       )}
 
       {error && (
-        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#D0453A]">
+        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--danger)]">
           <AlertTriangle size={14} /> {error}
         </p>
       )}
