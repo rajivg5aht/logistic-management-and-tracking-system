@@ -18,6 +18,20 @@ export const connectToMongoDB = async (): Promise<void> => {
   }
 };
 
+export const connectToMongoDBTest = async (): Promise<void> => {
+  const testUri =
+    process.env.MONGO_URI_TEST || "mongodb://localhost:27017/logistics_test";
+  try {
+    await mongoose.connect(testUri, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log("MongoDB (test) connected successfully");
+  } catch (error) {
+    console.error("MongoDB (test) connection failed:", error);
+    throw error;
+  }
+};
+
 export const disconnectFromMongoDB = async (): Promise<void> => {
   try {
     if (mongoose.connection.readyState === 0) return;
