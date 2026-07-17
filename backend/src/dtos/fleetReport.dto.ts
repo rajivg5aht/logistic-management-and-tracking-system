@@ -1,15 +1,11 @@
 import { z } from "zod";
-import { VEHICLE_INCIDENT_STATUSES } from "../models/vehicleIncident.model";
 import { VEHICLE_FUEL_EXPENSE_STATUSES } from "../models/vehicleFuelExpense.model";
 
 const OptionalReportNote = z.string().trim().max(800).optional();
 
 export const AdminIncidentUpdateDTO = z.object({
-  status: z.enum(VEHICLE_INCIDENT_STATUSES).optional(),
+  decision: z.enum(["normal", "maintenance_required"]),
   adminNote: OptionalReportNote,
-  resolutionNote: OptionalReportNote,
-  rejectionReason: OptionalReportNote,
-  maintenanceAction: OptionalReportNote,
 });
 
 export type AdminIncidentUpdateDTO = z.infer<typeof AdminIncidentUpdateDTO>;

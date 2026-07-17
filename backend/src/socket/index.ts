@@ -11,6 +11,14 @@ const trackingService = new TrackingService();
 let io: Server | null = null;
 
 const roomName = (shipmentId: string): string => `shipment-${shipmentId}`;
+const ADMIN_NOTIFICATIONS_ROOM = "admin-notifications";
+
+export type FleetIssueNotification = {
+  incidentId: string;
+  vehicleRegistration: string;
+  driverName: string;
+  createdAt: string;
+};
 
 const extractShipmentId = (payload: unknown): string | null => {
   if (typeof payload === "string") return payload;
@@ -29,6 +37,16 @@ const emitError = (socket: Socket, error: any): void => {
 };
 
 export const getIO = (): Server | null => io;
+
+export const emitFleetIssueReported = (
+  notification: FleetIssueNotification,
+): void => {
+  io?.to(ADMIN_NOTIFICATIONS_ROOM).emit("fleet-issue-reported", notification);
+};
+
+export const emitShipmentUpdated = (shipment: { id: string }): void => {
+  io?.to(roomName(shipment.id)).emit("shipment-updated", shipment);
+};
 
 export const initSocketServer = (server: HttpServer): Server => {
   io = new Server(server, {
@@ -78,6 +96,9 @@ export const initSocketServer = (server: HttpServer): Server => {
 
   io.on("connection", (socket) => {
     const user = socket.data.user as TrackingUser;
+    if (user.role === "admin") {
+      socket.join(ADMIN_NOTIFICATIONS_ROOM);
+    }
 
     socket.on("join-shipment-room", async (payload) => {
       try {

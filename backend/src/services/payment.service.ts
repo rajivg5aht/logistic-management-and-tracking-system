@@ -102,6 +102,15 @@ export class PaymentService {
     return this.sanitize(payment);
   }
 
+  async cancelPendingCharge(
+    shipmentId: mongoose.Types.ObjectId | string,
+  ): Promise<void> {
+    await PaymentModel.updateOne(
+      { shipmentId, type: "charge", status: "pending" },
+      { $set: { status: "failed", notes: "Shipment cancelled" } },
+    );
+  }
+
   async recordCodCollection(
     shipmentId: mongoose.Types.ObjectId | string,
     driverId: string,

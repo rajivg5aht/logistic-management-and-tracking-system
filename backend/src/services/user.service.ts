@@ -17,6 +17,7 @@ import type {
 } from "../dtos/driver.dto";
 import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
+import { emitFleetIssueReported } from "../socket";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
@@ -30,8 +31,6 @@ import {
   VehicleFuelExpenseModel,
   type IVehicleFuelExpense,
 } from "../models/vehicleFuelExpense.model";
-import { MaintenanceWorkOrderModel, type IMaintenanceWorkOrder } from "../models/maintenanceWorkOrder.model";
-
 const userRepository = new UserMongoRepository();
 
 export type SafeUser = {
@@ -98,24 +97,11 @@ export type DriverFleetIncident = {
   location: string;
   status: string;
   adminNote: string;
-  resolutionNote: string;
-  rejectionReason: string;
-  maintenanceAction: string;
-  workOrder: {
-    status: string;
-    assignedToName: string | null;
-    vendorName: string;
-    expectedCompletionAt: Date | null;
-    repairNotes: string;
-    updatedAt: Date;
-  } | null;
   reviewedAt: Date | null;
   resolvedAt: Date | null;
-  rejectedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
-
 export type DriverFuelExpense = {
   id: string;
   fuelType: string;
@@ -202,8 +188,6 @@ export class UserService {
 
   private sanitizeFleetIncident(
     incident: IVehicleIncident,
-    workOrder?: IMaintenanceWorkOrder,
-    repairAssigneeNames: Map<string, string> = new Map(),
   ): DriverFleetIncident {
     return {
       id: incident._id.toString(),
@@ -213,29 +197,12 @@ export class UserService {
       location: incident.location,
       status: incident.status,
       adminNote: incident.adminNote ?? "",
-      resolutionNote: incident.resolutionNote ?? "",
-      rejectionReason: incident.rejectionReason ?? "",
-      maintenanceAction: incident.maintenanceAction ?? "",
-      workOrder: workOrder
-        ? {
-            status: workOrder.status,
-            assignedToName: workOrder.assignedTo
-              ? repairAssigneeNames.get(workOrder.assignedTo.toString()) ?? null
-              : null,
-            vendorName: workOrder.vendorName ?? "",
-            expectedCompletionAt: workOrder.expectedCompletionAt ?? null,
-            repairNotes: workOrder.repairNotes ?? "",
-            updatedAt: workOrder.updatedAt,
-          }
-        : null,
       reviewedAt: incident.reviewedAt ?? null,
       resolvedAt: incident.resolvedAt ?? null,
-      rejectedAt: incident.rejectedAt ?? null,
       createdAt: incident.createdAt,
       updatedAt: incident.updatedAt,
     };
   }
-
   private sanitizeFuelExpense(
     expense: IVehicleFuelExpense,
   ): DriverFuelExpense {
@@ -924,56 +891,35 @@ export class UserService {
       )
       .sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
 
-    const [incidents, fuelExpenses] = vehicle
-      ? await Promise.all([
-          VehicleIncidentModel.find({
-            vehicleId: vehicle._id,
-            driverId: driver._id,
-          })
-            .sort({ createdAt: -1 })
-            .limit(25),
-          VehicleFuelExpenseModel.find({
-            vehicleId: vehicle._id,
-            driverId: driver._id,
-          })
-            .sort({ createdAt: -1 })
-            .limit(25),
-        ])
-      : [[], []];
-
-    const workOrders = incidents.length
-      ? await MaintenanceWorkOrderModel.find({
-          incidentId: { $in: incidents.map((incident) => incident._id) },
+    const incidentsPromise = VehicleIncidentModel.find({
+      driverId: driver._id,
+    })
+      .sort({ createdAt: -1 })
+      .limit(25);
+    const fuelExpensesPromise = vehicle
+      ? VehicleFuelExpenseModel.find({
+          vehicleId: vehicle._id,
+          driverId: driver._id,
         })
-      : [];
-    const repairAssigneeIds = workOrders
-      .map((workOrder) => workOrder.assignedTo)
-      .filter((id): id is mongoose.Types.ObjectId => !!id);
-    const repairAssignees = repairAssigneeIds.length
-      ? await UserModel.find({ _id: { $in: repairAssigneeIds } }).select(
-          "_id fullName",
-        )
-      : [];
-    const repairAssigneeNames = new Map(
-      repairAssignees.map((user) => [user._id.toString(), user.fullName]),
-    );
-    const workOrdersByIncident = new Map(
-      workOrders.map((workOrder) => [workOrder.incidentId.toString(), workOrder]),
-    );
-
+          .sort({ createdAt: -1 })
+          .limit(25)
+      : Promise.resolve([]);
+    const [incidents, fuelExpenses] = await Promise.all([
+      incidentsPromise,
+      fuelExpensesPromise,
+    ]);
     return {
       vehicle: vehicle
         ? this.sanitizeDriverFleetVehicle(vehicle, driver._id.toString())
         : null,
       assignmentHistory,
       incidents: incidents.map((incident) =>
-        this.sanitizeFleetIncident(
-          incident,
-          workOrdersByIncident.get(incident._id.toString()),
-          repairAssigneeNames,
-        ),
+        this.sanitizeFleetIncident(incident),
       ),
-      fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),
+
+      fuelExpenses: fuelExpenses.map((expense) =>
+        this.sanitizeFuelExpense(expense),
+      ),
     };
   }
   private async getOwnedFleetIncident(
@@ -1006,13 +952,6 @@ export class UserService {
     return expense;
   }
 
-  private async moveVehicleToMaintenance(vehicleId: mongoose.Types.ObjectId) {
-    const vehicle = await VehicleModel.findById(vehicleId);
-    if (!vehicle || vehicle.status === "inactive") return;
-    vehicle.status = "maintenance";
-    await vehicle.save();
-  }
-
   async createDriverFleetIncident(
     driverId: string,
     input: DriverFleetIncidentDTO,
@@ -1031,9 +970,12 @@ export class UserService {
       location: input.location,
     });
 
-    if (input.severity === "critical") {
-      await this.moveVehicleToMaintenance(vehicle._id);
-    }
+    emitFleetIssueReported({
+      incidentId: incident._id.toString(),
+      vehicleRegistration: vehicle.registrationNumber,
+      driverName: driver.fullName,
+      createdAt: incident.createdAt.toISOString(),
+    });
 
     return this.sanitizeFleetIncident(incident);
   }
@@ -1044,7 +986,7 @@ export class UserService {
     input: DriverFleetIncidentUpdateDTO,
   ): Promise<DriverFleetIncident> {
     const incident = await this.getOwnedFleetIncident(driverId, incidentId);
-    if (incident.status !== "open") {
+    if (incident.status !== "pending_review") {
       throw new HttpException(400, "Incident is already under admin review");
     }
 
@@ -1054,11 +996,6 @@ export class UserService {
     if (input.location !== undefined) incident.location = input.location;
 
     await incident.save();
-
-    if (incident.severity === "critical") {
-      await this.moveVehicleToMaintenance(incident.vehicleId);
-    }
-
     return this.sanitizeFleetIncident(incident);
   }
 
@@ -1067,7 +1004,7 @@ export class UserService {
     incidentId: string,
   ): Promise<boolean> {
     const incident = await this.getOwnedFleetIncident(driverId, incidentId);
-    if (incident.status !== "open") {
+    if (incident.status !== "pending_review") {
       throw new HttpException(400, "Incident is already under admin review");
     }
 

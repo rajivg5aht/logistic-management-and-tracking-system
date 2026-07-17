@@ -23,6 +23,7 @@ import {
 } from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
 import { PaymentService } from "./payment.service";
+import { emitShipmentUpdated } from "../socket";
 
 const shipmentRepository = new ShipmentMongoRepository();
 const paymentService = new PaymentService();
@@ -216,6 +217,7 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to cancel shipment");
     }
+    await paymentService.cancelPendingCharge(id);
     if (shipment.assignedDriverId) {
       await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
         availabilityStatus: "available",
@@ -360,7 +362,7 @@ export class ShipmentService {
           if (
             !vehicle ||
             vehicle.assignedDriverId?.toString() !== driver._id.toString() ||
-            vehicle.status !== "assigned"
+            vehicle.status !== "active"
           ) {
             throw new HttpException(
               400,
@@ -468,7 +470,13 @@ export class ShipmentService {
       throw new HttpException(500, "Failed to update shipment");
     }
 
-    return this.sanitize(updated);
+    if (updateData.status === "cancelled" && shipment.status !== "cancelled") {
+      await paymentService.cancelPendingCharge(id);
+    }
+
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async adminDeleteShipment(id: string): Promise<boolean> {
@@ -604,7 +612,9 @@ export class ShipmentService {
       });
     }
 
-    return this.sanitize(updated);
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async driverUpsertProof(
@@ -649,7 +659,9 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to save proof of delivery");
     }
-    return this.sanitize(updated);
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async driverDeleteProof(driverId: string, id: string): Promise<SafeShipment> {

@@ -3,8 +3,8 @@ import { VEHICLE_TYPES, VehicleType } from "../types/user.type";
 
 export const VEHICLE_STATUSES = [
   "available",
-  "assigned",
-  "maintenance",
+  "active",
+  "maintenance_required",
   "inactive",
 ] as const;
 

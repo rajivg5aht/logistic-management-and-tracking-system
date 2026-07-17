@@ -3,10 +3,17 @@ import { MONGODB_URL } from "../configs/constant";
 
 export const connectToMongoDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(MONGODB_URL);
+    await mongoose.connect(MONGODB_URL, {
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection failed:", error);
+    console.error(
+      `Could not reach MongoDB at ${MONGODB_URL}. ` +
+        "Make sure MongoDB is running (e.g. start the 'MongoDB' service) " +
+        "and that MONGO_URI in your .env is correct.",
+    );
     throw error;
   }
 };

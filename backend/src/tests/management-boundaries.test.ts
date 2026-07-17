@@ -13,6 +13,9 @@ import {
   CUSTOMER_HISTORY_STATUSES,
 } from "../types/shipment.type";
 import { AdminUpdateShipmentDTO } from "../dtos/shipment.dto";
+import { AdminIncidentUpdateDTO } from "../dtos/fleetReport.dto";
+import { VEHICLE_INCIDENT_STATUSES } from "../models/vehicleIncident.model";
+import { VEHICLE_STATUSES } from "../models/vehicle.model";
 
 test("generic user creation accepts only customer accounts", () => {
   const base = {
@@ -147,4 +150,33 @@ test("admin shipment updates accept only operational delivery stages", () => {
 
 test("customer history deletion is limited to terminal shipments", () => {
   assert.deepEqual(CUSTOMER_HISTORY_STATUSES, ["delivered", "cancelled"]);
+});
+test("fleet issue workflow exposes only the two admin decisions", () => {
+  assert.deepEqual(VEHICLE_INCIDENT_STATUSES, [
+    "pending_review",
+    "resolved",
+    "maintenance_required",
+  ]);
+  assert.equal(
+    AdminIncidentUpdateDTO.safeParse({ decision: "normal" }).success,
+    true,
+  );
+  assert.equal(
+    AdminIncidentUpdateDTO.safeParse({ decision: "maintenance_required" })
+      .success,
+    true,
+  );
+  assert.equal(
+    AdminIncidentUpdateDTO.safeParse({ status: "in_repair" }).success,
+    false,
+  );
+});
+
+test("fleet status choices are limited to the simplified lifecycle", () => {
+  assert.deepEqual(VEHICLE_STATUSES, [
+    "available",
+    "active",
+    "maintenance_required",
+    "inactive",
+  ]);
 });

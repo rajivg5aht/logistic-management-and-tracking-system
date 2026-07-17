@@ -247,7 +247,7 @@ export class ShipmentController {
     }
   }
 
-  async adminGetStats(req: Request, res: Response) {
+  async adminGetStats(_req: Request, res: Response) {
     try {
       const stats = await shipmentService.getStats();
       return ApiResponseHelper.success(
@@ -264,7 +264,7 @@ export class ShipmentController {
     }
   }
 
-  async adminGetAnalytics(req: Request, res: Response) {
+  async adminGetAnalytics(_req: Request, res: Response) {
     try {
       const analytics = await shipmentService.getAnalytics();
       return ApiResponseHelper.success(

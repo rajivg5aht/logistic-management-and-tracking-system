@@ -30,11 +30,14 @@ export const MONGODB_URL: string =
 
 export const SECRET_KEY: string = jwtSecret;
 
+const configuredCorsOrigins = parseOriginList(process.env.CORS_ORIGINS);
+const configuredFrontendOrigins = parseOriginList(process.env.FRONTEND_ORIGIN);
+
 export const CORS_ORIGINS: string[] =
-  parseOriginList(process.env.CORS_ORIGINS).length > 0
-    ? parseOriginList(process.env.CORS_ORIGINS)
-    : parseOriginList(process.env.FRONTEND_ORIGIN).length > 0
-      ? parseOriginList(process.env.FRONTEND_ORIGIN)
+  configuredCorsOrigins.length > 0
+    ? configuredCorsOrigins
+    : configuredFrontendOrigins.length > 0
+      ? configuredFrontendOrigins
       : localOrigins;
 
 export const FRONTEND_ORIGIN: string = CORS_ORIGINS[0];

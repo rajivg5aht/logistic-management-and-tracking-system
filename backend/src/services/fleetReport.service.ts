@@ -5,7 +5,6 @@ import { VehicleModel } from "../models/vehicle.model";
 import {
   VehicleIncidentModel,
   type IVehicleIncident,
-  type VehicleIncidentStatus,
 } from "../models/vehicleIncident.model";
 import {
   VehicleFuelExpenseModel,
@@ -16,6 +15,7 @@ import type {
   AdminIncidentUpdateDTO,
   AdminFuelExpenseUpdateDTO,
 } from "../dtos/fleetReport.dto";
+import { VehicleService } from "./vehicle.service";
 
 export type AdminIncident = {
   id: string;
@@ -29,13 +29,9 @@ export type AdminIncident = {
   location: string;
   status: string;
   adminNote: string;
-  resolutionNote: string;
-  rejectionReason: string;
-  maintenanceAction: string;
   reviewedBy: string | null;
   reviewedAt: Date | null;
   resolvedAt: Date | null;
-  rejectedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -72,16 +68,6 @@ type ListParams = {
   limit: number;
 };
 
-const ACTIVE_INCIDENT_STATUSES: VehicleIncidentStatus[] = [
-  "open",
-  "reviewing",
-  "monitoring",
-  "maintenance_required",
-  "assigned_to_maintenance",
-  "in_repair",
-  "awaiting_verification",
-];
-
 function trimmed(value?: string): string | undefined {
   const next = value?.trim();
   return next ? next : undefined;
@@ -92,6 +78,8 @@ function objectId(value: string): mongoose.Types.ObjectId {
 }
 
 export class FleetReportService {
+  private readonly vehicleService = new VehicleService();
+
   private async buildLookups(
     driverIds: mongoose.Types.ObjectId[],
     vehicleIds: mongoose.Types.ObjectId[],
@@ -103,9 +91,12 @@ export class FleetReportService {
       ),
     ]);
     return {
-      names: new Map(drivers.map((d) => [d._id.toString(), d.fullName])),
+      names: new Map(drivers.map((driver) => [driver._id.toString(), driver.fullName])),
       regs: new Map(
-        vehicles.map((v) => [v._id.toString(), v.registrationNumber]),
+        vehicles.map((vehicle) => [
+          vehicle._id.toString(),
+          vehicle.registrationNumber,
+        ]),
       ),
     };
   }
@@ -127,13 +118,9 @@ export class FleetReportService {
       location: incident.location,
       status: incident.status,
       adminNote: incident.adminNote ?? "",
-      resolutionNote: incident.resolutionNote ?? "",
-      rejectionReason: incident.rejectionReason ?? "",
-      maintenanceAction: incident.maintenanceAction ?? "",
       reviewedBy: incident.reviewedBy?.toString() ?? null,
       reviewedAt: incident.reviewedAt ?? null,
       resolvedAt: incident.resolvedAt ?? null,
-      rejectedAt: incident.rejectedAt ?? null,
       createdAt: incident.createdAt,
       updatedAt: incident.updatedAt,
     };
@@ -179,13 +166,6 @@ export class FleetReportService {
     return query;
   }
 
-  private async markVehicleForMaintenance(vehicleId: mongoose.Types.ObjectId) {
-    const vehicle = await VehicleModel.findById(vehicleId);
-    if (!vehicle || vehicle.status === "inactive") return;
-    vehicle.status = "maintenance";
-    await vehicle.save();
-  }
-
   async listIncidents({
     status,
     vehicleId,
@@ -202,14 +182,54 @@ export class FleetReportService {
     ]);
 
     const { names, regs } = await this.buildLookups(
-      incidents.map((i) => i.driverId),
-      incidents.map((i) => i.vehicleId),
+      incidents.map((incident) => incident.driverId),
+      incidents.map((incident) => incident.vehicleId),
     );
 
     return {
-      items: incidents.map((i) => this.sanitizeIncident(i, names, regs)),
+      items: incidents.map((incident) =>
+        this.sanitizeIncident(incident, names, regs),
+      ),
       total,
     };
+  }
+
+  async updateIncident(
+    id: string,
+    input: AdminIncidentUpdateDTO,
+    adminId: string,
+  ): Promise<AdminIncident> {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new HttpException(404, "Incident not found");
+    }
+
+    const incident = await VehicleIncidentModel.findById(id);
+    if (!incident) throw new HttpException(404, "Incident not found");
+    if (incident.status !== "pending_review") {
+      throw new HttpException(409, "This issue report has already been reviewed");
+    }
+
+    if (input.decision === "maintenance_required") {
+      await this.vehicleService.markMaintenanceRequired(
+        incident.vehicleId.toString(),
+      );
+      incident.status = "maintenance_required";
+      incident.resolvedAt = null;
+    } else {
+      incident.status = "resolved";
+      incident.resolvedAt = new Date();
+    }
+
+    incident.adminNote = input.adminNote?.trim() ?? "";
+    incident.reviewedBy = objectId(adminId);
+    incident.reviewedAt = new Date();
+    await incident.save();
+
+    const { names, regs } = await this.buildLookups(
+      [incident.driverId],
+      [incident.vehicleId],
+    );
+    return this.sanitizeIncident(incident, names, regs);
   }
 
   async listFuelExpenses({
@@ -228,88 +248,16 @@ export class FleetReportService {
     ]);
 
     const { names, regs } = await this.buildLookups(
-      expenses.map((e) => e.driverId),
-      expenses.map((e) => e.vehicleId),
+      expenses.map((expense) => expense.driverId),
+      expenses.map((expense) => expense.vehicleId),
     );
 
     return {
-      items: expenses.map((e) => this.sanitizeFuelExpense(e, names, regs)),
+      items: expenses.map((expense) =>
+        this.sanitizeFuelExpense(expense, names, regs),
+      ),
       total,
     };
-  }
-
-  async updateIncident(
-    id: string,
-    input: AdminIncidentUpdateDTO,
-    adminId: string,
-  ): Promise<AdminIncident> {
-    if (!mongoose.isValidObjectId(id)) {
-      throw new HttpException(404, "Incident not found");
-    }
-
-    const incident = await VehicleIncidentModel.findById(id);
-    if (!incident) throw new HttpException(404, "Incident not found");
-
-    const nextStatus = input.status as VehicleIncidentStatus | undefined;
-    const resolutionNote = trimmed(input.resolutionNote) ?? incident.resolutionNote;
-    const rejectionReason = trimmed(input.rejectionReason) ?? incident.rejectionReason;
-
-    if ((nextStatus === "closed" || nextStatus === "resolved") && !resolutionNote?.trim()) {
-      throw new HttpException(400, "Resolution note is required");
-    }
-    if (nextStatus === "rejected" && !rejectionReason?.trim()) {
-      throw new HttpException(400, "Rejection reason is required");
-    }
-
-    if (input.adminNote !== undefined) incident.adminNote = input.adminNote;
-    if (input.resolutionNote !== undefined) {
-      incident.resolutionNote = input.resolutionNote;
-    }
-    if (input.rejectionReason !== undefined) {
-      incident.rejectionReason = input.rejectionReason;
-    }
-    if (input.maintenanceAction !== undefined) {
-      incident.maintenanceAction = input.maintenanceAction;
-    }
-
-    if (nextStatus) {
-      const now = new Date();
-      incident.status = nextStatus;
-
-      if (nextStatus !== "open" && !incident.reviewedAt) {
-        incident.reviewedAt = now;
-        incident.reviewedBy = objectId(adminId);
-      }
-      if (nextStatus === "closed" || nextStatus === "resolved") {
-        incident.resolvedAt = now;
-        incident.rejectedAt = null;
-      } else if (nextStatus === "rejected") {
-        incident.rejectedAt = now;
-        incident.resolvedAt = null;
-      } else if (ACTIVE_INCIDENT_STATUSES.includes(nextStatus)) {
-        incident.resolvedAt = null;
-        incident.rejectedAt = null;
-      }
-    }
-
-    const requiresMaintenance =
-      incident.status === "maintenance_required" ||
-      incident.status === "assigned_to_maintenance" ||
-      incident.status === "in_repair" ||
-      incident.status === "awaiting_verification" ||
-      (ACTIVE_INCIDENT_STATUSES.includes(incident.status) &&
-        incident.severity === "critical");
-    if (requiresMaintenance) {
-      await this.markVehicleForMaintenance(incident.vehicleId);
-    }
-
-    await incident.save();
-
-    const { names, regs } = await this.buildLookups(
-      [incident.driverId],
-      [incident.vehicleId],
-    );
-    return this.sanitizeIncident(incident, names, regs);
   }
 
   async updateFuelExpense(
@@ -325,15 +273,20 @@ export class FleetReportService {
     if (!expense) throw new HttpException(404, "Fuel expense not found");
 
     const nextStatus = input.status as VehicleFuelExpenseStatus | undefined;
-    const rejectionReason = trimmed(input.rejectionReason) ?? expense.rejectionReason;
-    const paymentReference = trimmed(input.paymentReference) ?? expense.paymentReference;
+    const rejectionReason =
+      trimmed(input.rejectionReason) ?? expense.rejectionReason;
+    const paymentReference =
+      trimmed(input.paymentReference) ?? expense.paymentReference;
 
     if (nextStatus === "rejected" && !rejectionReason?.trim()) {
       throw new HttpException(400, "Rejection reason is required");
     }
     if (nextStatus === "reimbursed") {
       if (expense.status !== "approved" && expense.status !== "reimbursed") {
-        throw new HttpException(400, "Approve the fuel expense before reimbursement");
+        throw new HttpException(
+          400,
+          "Approve the fuel expense before reimbursement",
+        );
       }
       if (!paymentReference?.trim()) {
         throw new HttpException(400, "Payment reference is required");
@@ -378,20 +331,18 @@ export class FleetReportService {
   }
 
   async getStats(): Promise<{
-    openIncidents: number;
+    pendingIncidents: number;
     pendingFuelExpenses: number;
     approvedFuelExpenses: number;
   }> {
-    const [openIncidents, pendingFuelExpenses, approvedFuelExpenses] =
+    const [pendingIncidents, pendingFuelExpenses, approvedFuelExpenses] =
       await Promise.all([
-        VehicleIncidentModel.countDocuments({
-          status: { $in: ACTIVE_INCIDENT_STATUSES },
-        }),
+        VehicleIncidentModel.countDocuments({ status: "pending_review" }),
         VehicleFuelExpenseModel.countDocuments({
           status: { $in: ["submitted", "under_review"] },
         }),
         VehicleFuelExpenseModel.countDocuments({ status: "approved" }),
       ]);
-    return { openIncidents, pendingFuelExpenses, approvedFuelExpenses };
+    return { pendingIncidents, pendingFuelExpenses, approvedFuelExpenses };
   }
 }

@@ -11,12 +11,6 @@ adminFleetReportRouter.use(adminMiddleware);
 adminFleetReportRouter.get("/stats", controller.getStats);
 adminFleetReportRouter.get("/incidents", controller.getIncidents);
 adminFleetReportRouter.patch("/incidents/:id", controller.updateIncident);
-adminFleetReportRouter.post(
-  "/incidents/:id/work-orders",
-  controller.createWorkOrder,
-);
-adminFleetReportRouter.get("/work-orders", controller.getWorkOrders);
-adminFleetReportRouter.patch("/work-orders/:id", controller.updateWorkOrder);
 adminFleetReportRouter.get("/fuel-expenses", controller.getFuelExpenses);
 adminFleetReportRouter.patch(
   "/fuel-expenses/:id",
