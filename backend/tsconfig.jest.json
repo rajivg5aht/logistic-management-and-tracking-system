@@ -1,11 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "types": ["node", "jest"],
-    "esModuleInterop": true,
     "strict": false,
+    "isolatedModules": true,
+    "types": ["node", "jest"],
     "noEmit": false
   },
   "include": ["index.ts", "src/**/*"]
