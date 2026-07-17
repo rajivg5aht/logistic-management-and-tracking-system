@@ -110,12 +110,12 @@ export const validShipmentPayload = (overrides: Record<string, unknown> = {}) =>
     district: "Lalitpur",
   },
   package: {
-    parcelType: "standard",
+    parcelType: "standard" as const,
     weight: "2",
     quantity: 1,
   },
-  service: "standard",
-  paymentMethod: "cod",
+  service: "standard" as const,
+  paymentMethod: "cod" as const,
   amount: 500,
   ...overrides,
 });
