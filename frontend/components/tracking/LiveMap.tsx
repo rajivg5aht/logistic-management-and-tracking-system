@@ -19,7 +19,6 @@ type MapLocation = {
 
 type Props = {
   location: MapLocation;
-  pickup?: LatLng | null;
   delivery?: LatLng | null;
   height?: number | string;
   accent?: string;
@@ -37,15 +36,14 @@ function MapMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 export default function LiveMap({
   location,
-  pickup = null,
   delivery = null,
   height = 240,
   accent,
   waitingLabel = "Waiting for driver location…",
 }: Props) {
   const resolvedHeight = typeof height === "number" ? `${height}px` : height;
-  const route = useLiveRoute(pickup, delivery, location);
-  const hasMapContext = Boolean(location || pickup || delivery);
+  const route = useLiveRoute(delivery, location);
+  const hasMapContext = Boolean(location || delivery);
 
   return (
     <div
@@ -55,7 +53,6 @@ export default function LiveMap({
       {hasMapContext ? (
         <LiveTrackingMapInner
           location={location}
-          pickup={pickup}
           delivery={delivery}
           geometry={route.geometry}
           approximate={route.approximate}
@@ -64,7 +61,7 @@ export default function LiveMap({
       ) : (
         <MapMessage icon={<MapPin size={18} />} text={waitingLabel} />
       )}
-      {!location && (pickup || delivery) && (
+      {!location && delivery && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 z-[500] -translate-x-1/2 rounded-full border border-[var(--border)] bg-white/95 px-3 py-1.5 text-center text-[11px] font-semibold text-[var(--text-muted)] shadow-sm backdrop-blur">
           {waitingLabel}
         </div>

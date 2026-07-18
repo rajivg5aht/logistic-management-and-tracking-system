@@ -26,6 +26,8 @@ const MIN_ETA_SPEED_KPH = 12;
 const MAX_ETA_SPEED_KPH = 90;
 const MAX_ROUTE_SAMPLES = 800;
 
+const ROUTE_REFRESH_DISTANCE_KM = 0.25;
+
 export function formatDistance(distanceKm: number | null): string {
   if (distanceKm === null || !Number.isFinite(distanceKm)) return "--";
   if (distanceKm < 1) return `${Math.max(0, Math.round(distanceKm * 1000))} m`;
@@ -83,36 +85,54 @@ function remainingAlongRoute(
 }
 
 export function useLiveRoute(
-  pickup: LatLng | null,
   delivery: LatLng | null,
   location: LiveRouteLocation | null,
 ): LiveRouteProgress {
-  const pickupLat = pickup?.[0] ?? null;
-  const pickupLng = pickup?.[1] ?? null;
   const deliveryLat = delivery?.[0] ?? null;
   const deliveryLng = delivery?.[1] ?? null;
+  const driverLat = location?.latitude ?? null;
+  const driverLng = location?.longitude ?? null;
+
+  // Throttled routing origin: the driver position we last fetched a route from.
+  // It only advances once the driver has moved ROUTE_REFRESH_DISTANCE_KM, so the
+  // road-following line stays anchored to the driver without re-routing on every tick.
+  const [origin, setOrigin] = useState<LatLng | null>(null);
+  useEffect(() => {
+    if (driverLat === null || driverLng === null) {
+      setOrigin(null);
+      return;
+    }
+    setOrigin((prev) => {
+      if (!prev) return [driverLat, driverLng];
+      const moved = haversineKm(prev, [driverLat, driverLng]);
+      return moved >= ROUTE_REFRESH_DISTANCE_KM ? [driverLat, driverLng] : prev;
+    });
+  }, [driverLat, driverLng]);
+
+  const originLat = origin?.[0] ?? null;
+  const originLng = origin?.[1] ?? null;
   const routeKey =
-    pickupLat !== null &&
-    pickupLng !== null &&
+    originLat !== null &&
+    originLng !== null &&
     deliveryLat !== null &&
     deliveryLng !== null
-      ? `${pickupLat},${pickupLng}->${deliveryLat},${deliveryLng}`
+      ? `${originLat},${originLng}->${deliveryLat},${deliveryLng}`
       : "";
   const [route, setRoute] = useState<
     (RouteResult & { key: string }) | null
   >(null);
 
   useEffect(() => {
-    if (!routeKey || pickupLat === null || pickupLng === null || deliveryLat === null || deliveryLng === null) {
+    if (!routeKey || originLat === null || originLng === null || deliveryLat === null || deliveryLng === null) {
       return;
     }
 
     const controller = new AbortController();
     let active = true;
-    const routePickup: LatLng = [pickupLat, pickupLng];
+    const routeOrigin: LatLng = [originLat, originLng];
     const routeDelivery: LatLng = [deliveryLat, deliveryLng];
 
-    fetchRoute(routePickup, routeDelivery, controller.signal)
+    fetchRoute(routeOrigin, routeDelivery, controller.signal)
       .then((result) => {
         if (active) setRoute({ ...result, key: routeKey });
       })
@@ -124,14 +144,14 @@ export function useLiveRoute(
       active = false;
       controller.abort();
     };
-  }, [deliveryLat, deliveryLng, pickupLat, pickupLng, routeKey]);
+  }, [deliveryLat, deliveryLng, originLat, originLng, routeKey]);
 
   const currentRoute = route?.key === routeKey ? route : null;
   const geometry = useMemo<LatLng[]>(() => {
     if (currentRoute?.geometry.length) return currentRoute.geometry;
-    if (pickup && delivery) return [pickup, delivery];
+    if (origin && delivery) return [origin, delivery];
     return [];
-  }, [currentRoute, delivery, pickup]);
+  }, [currentRoute, delivery, origin]);
 
   const remainingByIndex = useMemo(
     () => buildRemainingDistances(geometry),

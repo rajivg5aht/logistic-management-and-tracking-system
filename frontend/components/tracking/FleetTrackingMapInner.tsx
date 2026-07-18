@@ -27,7 +27,6 @@ export type FleetMapMarker = {
 
 export type FleetMapRoute = {
   shipmentId: string;
-  pickup: LatLng | null;
   delivery: LatLng | null;
   geometry: LatLng[];
   approximate: boolean;
@@ -97,7 +96,6 @@ function makeEndpointIcon(label: string, color: string, textColor: string): L.Di
   });
 }
 
-const PICKUP_ICON = makeEndpointIcon("A", "#6C63FF", "#ffffff");
 const DELIVERY_ICON = makeEndpointIcon("B", "#E9C46A", "#3A2E12");
 
 function AnimatedFleetMarker({
@@ -207,7 +205,6 @@ function BoundsController({
       (marker) => marker.shipmentId === selectedShipmentId,
     );
     const routePoints: LatLng[] = [];
-    if (route?.pickup) routePoints.push(route.pickup);
     if (route?.delivery) routePoints.push(route.delivery);
     if (selected) routePoints.push([selected.latitude, selected.longitude]);
 
@@ -291,13 +288,6 @@ export default function FleetTrackingMapInner({
       />
       {route && route.geometry.length > 0 && (
         <Polyline positions={route.geometry} pathOptions={routeOptions} />
-      )}
-      {route?.pickup && (
-        <Marker position={route.pickup} icon={PICKUP_ICON} zIndexOffset={500}>
-          <Tooltip direction="top" offset={[0, -38]} opacity={0.95}>
-            Pickup
-          </Tooltip>
-        </Marker>
       )}
       {route?.delivery && (
         <Marker position={route.delivery} icon={DELIVERY_ICON} zIndexOffset={500}>

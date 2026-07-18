@@ -14,13 +14,22 @@ export interface DriverFix {
 
 const TERMINAL_STATUSES = ["delivered", "cancelled"];
 const TERMINAL_STAGES = ["delivered", "failed", "returned"];
+// Live GPS may only be shared once the driver has confirmed pickup.
+const PICKUP_CONFIRMED_STAGES = ["picked-up", "in-transit", "out-for-delivery"];
+
+export function isPickupConfirmed(shipment: Shipment): boolean {
+  return (
+    !!shipment.driverStage &&
+    PICKUP_CONFIRMED_STAGES.includes(shipment.driverStage)
+  );
+}
 
 export function isTrackable(shipment: Shipment): boolean {
   if (TERMINAL_STATUSES.includes(shipment.status)) return false;
   if (shipment.driverStage && TERMINAL_STAGES.includes(shipment.driverStage)) {
     return false;
   }
-  return true;
+  return isPickupConfirmed(shipment);
 }
 
 interface Result {

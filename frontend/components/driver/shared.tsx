@@ -23,7 +23,7 @@ import type {
   DriverStage,
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
-import { useDriverTracking } from "@/lib/hooks/useDriverTracking";
+import { useDriverTracking, isPickupConfirmed } from "@/lib/hooks/useDriverTracking";
 import LiveMap from "@/components/tracking/LiveMap";
 import { getDistrictCoords } from "@/lib/nepalGeo";
 
@@ -166,12 +166,15 @@ export function ActiveAssignmentCard({
   const codPaid = isCodShipment && shipment.paymentStatus === "paid";
 
   const tracking = useDriverTracking(token, shipment);
+  const pickupConfirmed = isPickupConfirmed(shipment);
   const driverLocation = tracking.isTracking ? tracking.lastFix : null;
   const liveGpsLabel = tracking.isTracking
     ? driverLocation
       ? "Sharing live GPS"
       : "Finding GPS..."
-    : "GPS not shared yet";
+    : pickupConfirmed
+      ? "GPS not shared yet"
+      : "Confirm pickup to share GPS";
 
   const advance = async (stage: DriverStage) => {
     setBusy(stage);
@@ -290,6 +293,11 @@ export function ActiveAssignmentCard({
                 type="button"
                 onClick={tracking.start}
                 disabled={!tracking.trackable}
+                title={
+                  !pickupConfirmed
+                    ? "Confirm pickup before sharing live GPS"
+                    : undefined
+                }
                 className="flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 <Navigation size={13} />
@@ -301,7 +309,6 @@ export function ActiveAssignmentCard({
         <div className="p-3">
           <LiveMap
             location={driverLocation}
-            pickup={getDistrictCoords(shipment.pickup.district ?? "")}
             delivery={getDistrictCoords(shipment.delivery.district ?? "")}
             height={withMap ? 360 : 200}
             accent="#1D7A8C"
@@ -310,7 +317,9 @@ export function ActiveAssignmentCard({
                 ? "Finding your GPS signal..."
                 : tracking.trackable
                   ? "Start live GPS to share your location."
-                  : "Live GPS is closed for this shipment."
+                  : pickupConfirmed
+                    ? "Live GPS is closed for this shipment."
+                    : "Confirm pickup to start sharing live GPS."
             }
           />
         </div>

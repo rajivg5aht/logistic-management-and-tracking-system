@@ -1105,7 +1105,6 @@ function ShipmentDetailDrawer({
                   </div>
                   <LiveMap
                     location={liveLocation}
-                    pickup={getDistrictCoords(shipment.pickup.district ?? "")}
                     delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                     height={220}
                     accent={NAVY}

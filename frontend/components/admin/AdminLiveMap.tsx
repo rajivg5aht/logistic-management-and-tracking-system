@@ -350,10 +350,8 @@ export default function AdminLiveMap({ token }: { token: string }) {
   }, [filteredOrders, selectedShipmentId]);
 
   const selectedShipment = selectedEntry?.shipment ?? null;
-  const selectedPickup = getDistrictCoords(selectedShipment?.pickup.district ?? "");
   const selectedDelivery = getDistrictCoords(selectedShipment?.delivery.district ?? "");
   const selectedRouteProgress = useLiveRoute(
-    selectedPickup,
     selectedDelivery,
     selectedEntry?.location ?? null,
   );
@@ -361,14 +359,12 @@ export default function AdminLiveMap({ token }: { token: string }) {
     if (!selectedShipment) return null;
     return {
       shipmentId: selectedShipment.id,
-      pickup: selectedPickup,
       delivery: selectedDelivery,
       geometry: selectedRouteProgress.geometry,
       approximate: selectedRouteProgress.approximate,
     };
   }, [
     selectedDelivery,
-    selectedPickup,
     selectedRouteProgress.approximate,
     selectedRouteProgress.geometry,
     selectedShipment,

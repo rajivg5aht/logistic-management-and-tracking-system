@@ -292,7 +292,6 @@ export default function TrackingPanel({
                 <div className="relative isolate">
                   <LiveMap
                     location={displayedLocation}
-                    pickup={getDistrictCoords(shipment.pickup.district ?? "")}
                     delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                     height={240}
                     accent="#1D7A8C"

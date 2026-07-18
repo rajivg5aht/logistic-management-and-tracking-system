@@ -22,7 +22,6 @@ type Props = {
     latitude: number;
     longitude: number;
   } | null;
-  pickup: LatLng | null;
   delivery: LatLng | null;
   geometry: LatLng[];
   approximate: boolean;
@@ -31,15 +30,13 @@ type Props = {
 
 function BoundsController({
   location,
-  pickup,
   delivery,
-}: Pick<Props, "location" | "pickup" | "delivery">) {
+}: Pick<Props, "location" | "delivery">) {
   const map = useMap();
   const initialized = useRef(false);
 
   useEffect(() => {
     const points: LatLng[] = [];
-    if (pickup) points.push(pickup);
     if (delivery) points.push(delivery);
     if (location) points.push([location.latitude, location.longitude]);
     if (points.length === 0) return;
@@ -60,7 +57,7 @@ function BoundsController({
       });
     }
     initialized.current = true;
-  }, [delivery, location, map, pickup]);
+  }, [delivery, location, map]);
 
   return null;
 }
@@ -81,7 +78,6 @@ function makeEndpointIcon(label: string, color: string, textColor: string): L.Di
   });
 }
 
-const PICKUP_ICON = makeEndpointIcon("A", "#6C63FF", "#ffffff");
 const DELIVERY_ICON = makeEndpointIcon("B", "#E9C46A", "#3A2E12");
 
 function makeDriverIcon(color: string): L.DivIcon {
@@ -165,7 +161,6 @@ function AnimatedDriverMarker({
 
 export default function LiveTrackingMapInner({
   location,
-  pickup,
   delivery,
   geometry,
   approximate,
@@ -188,8 +183,8 @@ export default function LiveTrackingMapInner({
 
   return (
     <MapContainer
-      center={driverPosition ?? pickup ?? delivery ?? NEPAL_CENTER}
-      zoom={driverPosition || pickup || delivery ? 13 : NEPAL_OVERVIEW_ZOOM}
+      center={driverPosition ?? delivery ?? NEPAL_CENTER}
+      zoom={driverPosition || delivery ? 13 : NEPAL_OVERVIEW_ZOOM}
       scrollWheelZoom
       style={{ height: "100%", width: "100%" }}
     >
@@ -199,13 +194,6 @@ export default function LiveTrackingMapInner({
       />
       {geometry.length > 0 && (
         <Polyline positions={geometry} pathOptions={routeOptions} />
-      )}
-      {pickup && (
-        <Marker position={pickup} icon={PICKUP_ICON} zIndexOffset={500}>
-          <Tooltip direction="top" offset={[0, -38]} opacity={0.95}>
-            Pickup
-          </Tooltip>
-        </Marker>
       )}
       {delivery && (
         <Marker position={delivery} icon={DELIVERY_ICON} zIndexOffset={500}>
@@ -219,7 +207,6 @@ export default function LiveTrackingMapInner({
       )}
       <BoundsController
         location={location}
-        pickup={pickup}
         delivery={delivery}
       />
     </MapContainer>
