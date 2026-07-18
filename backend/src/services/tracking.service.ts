@@ -45,6 +45,12 @@ export interface DriverTrackingStatus {
 
 const TERMINAL_STATUSES: ShipmentStatus[] = ["delivered", "cancelled"];
 const TERMINAL_STAGES: DriverStage[] = ["delivered", "failed", "returned"];
+// Live GPS may only be shared once the driver has confirmed pickup.
+const PICKUP_CONFIRMED_STAGES: DriverStage[] = [
+  "picked-up",
+  "in-transit",
+  "out-for-delivery",
+];
 
 export class TrackingService {
   private sanitize(location: IDriverLocation): SafeDriverLocation {
@@ -128,6 +134,15 @@ export class TrackingService {
       TERMINAL_STAGES.includes(shipment.driverStage as DriverStage)
     ) {
       throw new HttpException(409, "This delivery is already completed");
+    }
+    if (
+      !shipment.driverStage ||
+      !PICKUP_CONFIRMED_STAGES.includes(shipment.driverStage as DriverStage)
+    ) {
+      throw new HttpException(
+        409,
+        "Confirm pickup before sharing live GPS",
+      );
     }
 
     const updatedAt = new Date();

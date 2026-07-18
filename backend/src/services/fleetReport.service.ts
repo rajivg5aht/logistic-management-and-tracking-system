@@ -16,6 +16,7 @@ import type {
   AdminFuelExpenseUpdateDTO,
 } from "../dtos/fleetReport.dto";
 import { VehicleService } from "./vehicle.service";
+import { emitFleetReportUpdated } from "../socket";
 
 export type AdminIncident = {
   id: string;
@@ -229,7 +230,13 @@ export class FleetReportService {
       [incident.driverId],
       [incident.vehicleId],
     );
-    return this.sanitizeIncident(incident, names, regs);
+    const result = this.sanitizeIncident(incident, names, regs);
+    emitFleetReportUpdated(result.driverId, {
+      type: "incident",
+      id: result.id,
+      status: result.status,
+    });
+    return result;
   }
 
   async listFuelExpenses({
@@ -327,7 +334,13 @@ export class FleetReportService {
       [expense.driverId],
       [expense.vehicleId],
     );
-    return this.sanitizeFuelExpense(expense, names, regs);
+    const result = this.sanitizeFuelExpense(expense, names, regs);
+    emitFleetReportUpdated(result.driverId, {
+      type: "fuel-expense",
+      id: result.id,
+      status: result.status,
+    });
+    return result;
   }
 
   async getStats(): Promise<{
