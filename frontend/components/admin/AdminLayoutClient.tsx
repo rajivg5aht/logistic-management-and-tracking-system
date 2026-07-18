@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   LayoutGrid,
@@ -16,16 +16,21 @@ import {
   Wallet,
   LogOut,
   Menu,
-  Search,
   Bell,
   ChevronRight,
   MessageSquareText,
   UserRoundCog,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
+import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
+import { adminGetFleetReportStats } from "@/lib/api/fleetReports.api";
+import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { getSocket } from "@/lib/socket";
 
 const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin": "Overview",
+  "/admin/profile": "Profile",
   "/admin/live-map": "Live Map",
   "/admin/shipments": "Shipments",
   "/admin/drivers": "Driver Management",
@@ -39,28 +44,58 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
 interface AdminLayoutClientProps {
   children: React.ReactNode;
   user: AuthUser;
+  token: string;
 }
 
-export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
+export default function AdminLayoutClient({ children, user, token }: AdminLayoutClientProps) {
   const pathname = usePathname();
   const isFleetDetailsPage = pathname.startsWith("/admin/fleet/");
   const breadcrumbPage = ADMIN_BREADCRUMBS[pathname] ?? "Overview";
   const router = useRouter();
+  const { user: authenticatedUser } = useAuth();
+  const activeUser = authenticatedUser?.role === "admin" ? authenticatedUser : user;
+  const profileImageSrc = resolveProfileImage(activeUser?.profileImage);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [pendingIncidentCount, setPendingIncidentCount] = useState(0);
 
-  // Initialize collapsed state from localStorage
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImageSrc]);
+
   useEffect(() => {
     const savedState = localStorage.getItem("admin-sidebar-collapsed");
     if (savedState !== null) {
       setIsCollapsed(JSON.parse(savedState));
     }
-    // Mark hydrated only after the persisted state is applied so the initial
-    // correction doesn't animate (otherwise the sidebar visibly snaps shut).
     setHydrated(true);
   }, []);
+  const loadFleetNotifications = useCallback(async () => {
+    try {
+      const stats = await adminGetFleetReportStats(token);
+      setPendingIncidentCount(stats.pendingIncidents);
+    } catch {
+      setPendingIncidentCount(0);
+    }
+  }, [token]);
 
-  // Save collapsed state to localStorage
+  useEffect(() => {
+    void loadFleetNotifications();
+  }, [loadFleetNotifications]);
+
+  useEffect(() => {
+    const socket = getSocket(token);
+    const handleIssueReported = () => {
+      void loadFleetNotifications();
+    };
+    socket.on("fleet-issue-reported", handleIssueReported);
+    return () => {
+      socket.off("fleet-issue-reported", handleIssueReported);
+    };
+  }, [loadFleetNotifications, token]);
+  useAutoRefresh(loadFleetNotifications, { intervalMs: 15_000 });
+
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
@@ -71,21 +106,13 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       router.push("/login");
-    } catch (err) {
-      console.error("Sign out failed:", err);
-      // Fallback
+    } catch {
       router.push("/login");
     }
   };
 
-  const displayName = user?.fullName?.trim() || "Admin User";
-  const initials =
-    displayName
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "AU";
+  const displayName = activeUser?.fullName?.trim() || "Admin User";
+  const initials = getInitials(displayName, "AU");
 
   const navItems = [
     { label: "Overview", href: "/admin", icon: LayoutGrid, active: pathname === "/admin" },
@@ -102,13 +129,11 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
   return (
     <div className="flex min-h-screen bg-[var(--app-bg)] font-sans antialiased">
-      {/* Sidebar Panel */}
       <aside className={`fixed left-0 top-0 h-screen border-r border-[var(--border)] bg-[var(--surface)] flex flex-col z-40 ease-in-out ${
         hydrated ? "transition-all duration-280" : ""
       } ${
         isCollapsed ? "w-[76px]" : "w-[260px]"
       }`} style={hydrated ? { transitionDuration: '280ms' } : undefined}>
-        {/* Brand/Logo Header */}
         <div className={`flex items-center border-b border-[var(--border)] ${isCollapsed ? 'justify-center h-[72px]' : 'justify-between h-[72px] px-5'}`}>
           <div className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-2.5'}`}>
             <div className="relative flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden shrink-0">
@@ -122,7 +147,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             )}
           </div>
           
-          {/* Toggle Button */}
           {!isCollapsed && (
             <button 
               type="button"
@@ -137,7 +161,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           )}
         </div>
 
-        {/* Expand Button (shown when collapsed) */}
         {isCollapsed && (
           <div className="flex justify-center py-4 border-b border-[var(--border)]">
             <button 
@@ -153,7 +176,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </div>
         )}
 
-        {/* Navigation Menu */}
         <nav className="flex-1 py-6 px-3" id="sidebar-navigation">
           <ul className="space-y-1.5">
             {navItems.map((item) => {
@@ -171,7 +193,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     }`}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    {/* Active Left Vertical Stripe */}
                     {item.active && !isCollapsed && (
                       <div className="absolute left-0 top-1/4 h-1/2 w-1.5 rounded-r bg-[var(--accent)]" />
                     )}
@@ -180,7 +201,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                       <span className="whitespace-nowrap">{item.label}</span>
                     )}
                     
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <span className="absolute left-full ml-2 px-3 py-1.5 bg-[var(--surface-dark)] text-white text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity duration-200" style={{ boxShadow: 'var(--shadow-md)' }}>
                         {item.label}
@@ -193,7 +213,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </ul>
         </nav>
 
-        {/* Sidebar Bottom Footer */}
         <div className="border-t border-[var(--border)] p-3 space-y-1.5">
           {!isCollapsed ? (
             <>
@@ -237,7 +256,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
         </div>
       </aside>
 
-      {/* Main Body Column */}
       <div
         className={`flex-1 flex flex-col min-w-0 ease-in-out ${hydrated ? "transition-all duration-280" : ""}`}
         style={{
@@ -245,31 +263,20 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        {/* Top App Bar - height matches the sidebar brand header (72px) so their bottom borders align */}
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
-          <div className="relative w-full max-w-md">
-            <Search
-              size={17}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-            />
-            <input
-              type="text"
-              placeholder="Search shipments, IDs, or drivers..."
-              className="h-10 w-full rounded-xl border border-[var(--border)] bg-[#F1F3F6] pl-10 pr-4 text-sm font-medium text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[#123E6B]/40 focus:bg-white"
-              suppressHydrationWarning
-            />
-          </div>
-
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-end gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Link
+              href="/admin/fleet/reports"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
-              aria-label="Notifications"
-              suppressHydrationWarning
+              aria-label={pendingIncidentCount > 0 ? `${pendingIncidentCount} pending driver issue reports` : "Notifications"}
             >
               <Bell size={19} />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#D0533F] ring-2 ring-[var(--surface)]" />
-            </button>
+              {pendingIncidentCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#D0533F] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                  {pendingIncidentCount > 9 ? "9+" : pendingIncidentCount}
+                </span>
+              )}
+            </Link>
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
@@ -279,24 +286,39 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               <HelpCircle size={19} />
             </button>
 
-            <div className="ml-1 flex items-center gap-3 border-l border-[var(--border)] pl-3">
+            <Link
+              href="/admin/profile"
+              className={`ml-1 flex items-center gap-3 rounded-xl border-l border-[var(--border)] py-1 pl-3 pr-2 transition-colors hover:bg-[var(--surface-soft)] ${
+                pathname.startsWith("/admin/profile") ? "bg-[var(--accent-soft)]" : ""
+              }`}
+              aria-current={pathname.startsWith("/admin/profile") ? "page" : undefined}
+              aria-label="Open admin profile"
+            >
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                  Senior Admin
-                </p>
               </div>
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shrink-0"
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
                 style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
               >
-                {initials}
+                {profileImageSrc && !profileImageFailed ? (
+                  <Image
+                    src={profileImageSrc}
+                    alt={displayName}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                    onError={() => setProfileImageFailed(true)}
+                    unoptimized
+                  />
+                ) : (
+                  initials
+                )}
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
-        {/* Scrollable Layout Content */}
         <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
           {!isFleetDetailsPage && (
             <nav

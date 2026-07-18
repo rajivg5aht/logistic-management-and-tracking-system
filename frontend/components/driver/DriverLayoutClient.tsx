@@ -15,8 +15,11 @@ import {
   Truck,
   ChevronRight,
   ChevronDown,
+  UserRoundCog,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
+import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import {
   driverGetMe,
   driverUpdateAvailability,
@@ -42,12 +45,11 @@ const AVAILABILITY_META: Record<
   { label: string; dot: string; cls: string }
 > = {
   available: { label: "Available", dot: "bg-[var(--success)]", cls: "text-[var(--success)]" },
-  assigned: { label: "Assigned", dot: "bg-[#C99A3D]", cls: "text-[#C99A3D]" },
+  assigned: { label: "Assigned", dot: "bg-[var(--accent-hover)]", cls: "text-[var(--accent-hover)]" },
   "on-delivery": { label: "On Delivery", dot: "bg-[#C77718]", cls: "text-[#C77718]" },
   "off-duty": { label: "Off Duty", dot: "bg-[#5A6B82]", cls: "text-[#5A6B82]" },
-  inactive: { label: "Inactive", dot: "bg-[#D0453A]", cls: "text-[#D0453A]" },
+  inactive: { label: "Inactive", dot: "bg-[var(--danger)]", cls: "text-[var(--danger)]" },
 };
-
 export default function DriverLayoutClient({
   children,
   user,
@@ -55,6 +57,10 @@ export default function DriverLayoutClient({
 }: DriverLayoutClientProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: authenticatedUser } = useAuth();
+  const activeUser = authenticatedUser?.role === "driver" ? authenticatedUser : user;
+  const profileImageSrc = resolveProfileImage(activeUser?.profileImage);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -63,12 +69,15 @@ export default function DriverLayoutClient({
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImageSrc]);
+
   const loadMe = useCallback(async () => {
     try {
       const me = await driverGetMe(token);
       setAvailability(me.availabilityStatus ?? "available");
     } catch {
-      // Non-fatal: header just omits the live availability pill.
     }
   }, [token]);
 
@@ -76,18 +85,13 @@ export default function DriverLayoutClient({
     loadMe();
   }, [loadMe]);
 
-  // Keep availability in step with system-driven changes (e.g. a new assignment
-  // flips the driver to "assigned"/"on-delivery").
   useAutoRefresh(loadMe, { intervalMs: 15_000 });
 
-  // Close the mobile drawer and profile menu on navigation.
   useEffect(() => {
     setIsOpen(false);
     setProfileOpen(false);
   }, [pathname]);
 
-  // Restore the persisted desktop collapse state. Mark hydrated only afterwards
-  // so the initial correction doesn't animate the sidebar width.
   useEffect(() => {
     const saved = localStorage.getItem("driver-sidebar-collapsed");
     if (saved !== null) {
@@ -111,8 +115,6 @@ export default function DriverLayoutClient({
     }
   };
 
-  // Drivers may only flip between available and off-duty; assigned/on-delivery
-  // are system-controlled while a shipment is in progress.
   const canToggle = availability === "available" || availability === "off-duty";
 
   const handleToggle = async () => {
@@ -132,25 +134,32 @@ export default function DriverLayoutClient({
 
   const meta = availability ? AVAILABILITY_META[availability] : null;
 
-  // Breadcrumb page label, matched to the active sidebar item.
   const currentNav = NAV_ITEMS.find((item) =>
     item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
-  const breadcrumbPage = currentNav?.label ?? "Dashboard";
+  const breadcrumbPage = pathname === "/driver/profile" ? "Profile" : currentNav?.label ?? "Dashboard";
 
-  const initials =
-    (user.fullName?.trim() || "Driver")
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "D";
+  const initials = getInitials(activeUser.fullName, "D");
+
+  const avatarContent =
+    profileImageSrc && !profileImageFailed ? (
+      <Image
+        src={profileImageSrc}
+        alt={activeUser.fullName || "Driver"}
+        width={40}
+        height={40}
+        className="h-full w-full object-cover"
+        onError={() => setProfileImageFailed(true)}
+        unoptimized
+      />
+    ) : (
+      initials
+    );
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)] font-sans antialiased">
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
@@ -158,7 +167,6 @@ export default function DriverLayoutClient({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-[var(--border)] bg-[var(--surface)] ease-in-out md:translate-x-0 ${
           hydrated ? "transition-all duration-300" : ""
@@ -166,7 +174,6 @@ export default function DriverLayoutClient({
           isCollapsed ? "w-[76px]" : "w-64"
         }`}
       >
-        {/* Brand */}
         <div
           className={`flex h-[72px] items-center border-b border-[var(--border)] ${
             isCollapsed ? "justify-center" : "justify-between px-5"
@@ -185,7 +192,6 @@ export default function DriverLayoutClient({
           </Link>
           {!isCollapsed && (
             <>
-              {/* Desktop collapse */}
               <button
                 type="button"
                 onClick={toggleCollapsed}
@@ -196,7 +202,6 @@ export default function DriverLayoutClient({
               >
                 <Menu size={18} />
               </button>
-              {/* Mobile close */}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -209,7 +214,6 @@ export default function DriverLayoutClient({
           )}
         </div>
 
-        {/* Expand button (shown when collapsed) */}
         {isCollapsed && (
           <div className="flex justify-center border-b border-[var(--border)] py-4">
             <button
@@ -233,7 +237,6 @@ export default function DriverLayoutClient({
           </div>
         )}
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1.5">
             {NAV_ITEMS.map((item) => {
@@ -257,7 +260,6 @@ export default function DriverLayoutClient({
                     <Icon size={20} className="shrink-0" />
                     {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
 
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <span
                         className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-lg bg-[var(--surface-dark)] px-3 py-1.5 text-sm font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
@@ -273,12 +275,11 @@ export default function DriverLayoutClient({
           </ul>
         </nav>
 
-        {/* User + logout */}
         <div className="border-t border-[var(--border)] p-3">
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-1.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
-                {user.fullName?.charAt(0).toUpperCase() || "D"}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
+                {avatarContent}
               </div>
               <button
                 type="button"
@@ -292,11 +293,11 @@ export default function DriverLayoutClient({
             </div>
           ) : (
             <div className="flex items-center gap-3 rounded-xl p-2">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
-                {user.fullName?.charAt(0).toUpperCase() || "D"}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
+                {avatarContent}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-[var(--text)]">{user.fullName || "Driver"}</p>
+                <p className="truncate text-sm font-semibold text-[var(--text)]">{activeUser.fullName || "Driver"}</p>
                 <p className="truncate text-xs text-[var(--text-muted)]">Driver</p>
               </div>
               <button
@@ -312,13 +313,11 @@ export default function DriverLayoutClient({
         </div>
       </aside>
 
-      {/* Main column */}
       <div
         className={`ease-in-out ${hydrated ? "transition-all duration-300" : ""} ${
           isCollapsed ? "md:ml-[76px]" : "md:ml-64"
         }`}
       >
-        {/* Topbar */}
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface)]/95 px-4 backdrop-blur sm:px-6">
           <button
             type="button"
@@ -336,36 +335,44 @@ export default function DriverLayoutClient({
 
           <div className="ml-auto flex items-center gap-3">
             {toggleError && (
-              <span className="hidden max-w-[220px] truncate text-xs font-medium text-[#D0453A] sm:inline">
+              <span className="hidden max-w-[220px] truncate text-xs font-medium text-[var(--danger)] sm:inline">
                 {toggleError}
               </span>
             )}
 
-            {/* Profile menu */}
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => setProfileOpen((o) => !o)}
-                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] py-1 pl-1 pr-2 transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"
-                aria-label="Profile menu"
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-                suppressHydrationWarning
-              >
-                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent-strong)]">
-                  {initials}
-                  {meta && (
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--surface)] ${meta.dot}`}
-                    />
-                  )}
-                </span>
-                <ChevronDown size={15} className="text-[var(--text-muted)]" />
-              </button>
+              <div className="flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--surface-soft)]">
+                <Link
+                  href="/driver/profile"
+                  className="flex items-center rounded-full p-1"
+                  aria-label="Open driver profile"
+                >
+                  <span className="relative flex h-8 w-8">
+                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent-strong)]">
+                      {avatarContent}
+                    </span>
+                    {meta && (
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--surface)] ${meta.dot}`}
+                      />
+                    )}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((open) => !open)}
+                  className="rounded-full p-1.5 pr-2 text-[var(--text-muted)]"
+                  aria-label="Driver profile menu"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="menu"
+                  suppressHydrationWarning
+                >
+                  <ChevronDown size={15} />
+                </button>
+              </div>
 
               {profileOpen && (
                 <>
-                  {/* Click-away overlay */}
                   <button
                     type="button"
                     aria-hidden
@@ -378,20 +385,29 @@ export default function DriverLayoutClient({
                     style={{ boxShadow: "var(--shadow-md)" }}
                     role="menu"
                   >
-                    {/* Identity */}
                     <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
-                        {initials}
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-strong)]">
+                        {avatarContent}
                       </span>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[var(--text)]">
-                          {user.fullName || "Driver"}
+                          {activeUser.fullName || "Driver"}
                         </p>
                         <p className="truncate text-xs text-[var(--text-muted)]">Driver</p>
                       </div>
                     </div>
 
-                    {/* Availability */}
+                    <div className="border-b border-[var(--border)] p-2">
+                      <Link
+                        href="/driver/profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)]"
+                        role="menuitem"
+                      >
+                        <UserRoundCog size={16} />
+                        Profile
+                      </Link>
+                    </div>
                     {meta && (
                       <div className="border-b border-[var(--border)] p-2">
                         {canToggle ? (
@@ -427,12 +443,11 @@ export default function DriverLayoutClient({
                       </div>
                     )}
 
-                    {/* Sign out */}
                     <div className="p-2">
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-[#D0453A] transition-colors hover:bg-[#FBE4E1] cursor-pointer"
+                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-[var(--danger)] transition-colors hover:bg-[var(--danger-soft)] cursor-pointer"
                         role="menuitem"
                       >
                         <LogOut size={16} /> Sign out

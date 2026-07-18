@@ -151,15 +151,15 @@ export class VehicleService {
   }
 
   async getStats() {
-    const [total, available, assigned, maintenance, inactive] =
+    const [total, available, active, maintenanceRequired, inactive] =
       await Promise.all([
         VehicleModel.countDocuments(),
         VehicleModel.countDocuments({ status: "available" }),
-        VehicleModel.countDocuments({ status: "assigned" }),
-        VehicleModel.countDocuments({ status: "maintenance" }),
+        VehicleModel.countDocuments({ status: "active" }),
+        VehicleModel.countDocuments({ status: "maintenance_required" }),
         VehicleModel.countDocuments({ status: "inactive" }),
       ]);
-    return { total, available, assigned, maintenance, inactive };
+    return { total, available, active, maintenanceRequired, inactive };
   }
 
   async createVehicle(input: AdminCreateVehicleDTO): Promise<SafeVehicle> {
@@ -168,7 +168,7 @@ export class VehicleService {
     if (existing) {
       throw new HttpException(400, "Vehicle registration already exists");
     }
-    if (input.status === "assigned") {
+    if (input.status === "active") {
       throw new HttpException(
         400,
         "Assign a driver after creating the vehicle",
@@ -182,6 +182,45 @@ export class VehicleService {
     return this.sanitize(vehicle);
   }
 
+  private closeCurrentAssignment(vehicle: IVehicle) {
+    for (let index = vehicle.assignmentHistory.length - 1; index >= 0; index -= 1) {
+      if (!vehicle.assignmentHistory[index].unassignedAt) {
+        vehicle.assignmentHistory[index].unassignedAt = new Date();
+        break;
+      }
+    }
+  }
+
+  private detachDriver(vehicle: IVehicle): string | null {
+    const driverId = vehicle.assignedDriverId?.toString() ?? null;
+    if (!driverId) return null;
+    this.closeCurrentAssignment(vehicle);
+    vehicle.assignedDriverId = null;
+    return driverId;
+  }
+
+  private async clearDriverVehicle(driverId: string | null, vehicleId: string) {
+    if (!driverId) return;
+    await UserModel.updateOne(
+      { _id: driverId, assignedVehicleId: vehicleId },
+      { $set: { assignedVehicleId: null } },
+    );
+  }
+
+  async markMaintenanceRequired(vehicleId: string): Promise<SafeVehicle> {
+    const vehicle = await VehicleModel.findById(vehicleId);
+    if (!vehicle) throw new HttpException(404, "Vehicle not found");
+    if (vehicle.status === "inactive") {
+      throw new HttpException(400, "Inactive vehicles cannot enter maintenance");
+    }
+
+    const releasedDriverId = this.detachDriver(vehicle);
+    vehicle.status = "maintenance_required";
+    await vehicle.save();
+    await this.clearDriverVehicle(releasedDriverId, vehicle._id.toString());
+    return this.sanitize(vehicle);
+  }
+
   async updateVehicle(
     id: string,
     input: AdminUpdateVehicleDTO,
@@ -189,22 +228,30 @@ export class VehicleService {
     const vehicle = await VehicleModel.findById(id);
     if (!vehicle) throw new HttpException(404, "Vehicle not found");
 
-    if (
-      input.status &&
-      ["maintenance", "inactive"].includes(input.status) &&
-      vehicle.assignedDriverId
-    ) {
-      throw new HttpException(
-        400,
-        "Unassign the driver before changing this vehicle status",
-      );
-    }
-    if (input.status === "assigned" && !vehicle.assignedDriverId) {
+    if (input.status === "active" && !vehicle.assignedDriverId) {
       throw new HttpException(400, "Use vehicle assignment to set a driver");
     }
+    if (input.status === "available" && vehicle.assignedDriverId) {
+      throw new HttpException(
+        400,
+        "Unassign the driver before making this vehicle available",
+      );
+    }
+    if (input.status === "inactive" && vehicle.assignedDriverId) {
+      throw new HttpException(
+        400,
+        "Unassign the driver before deactivating this vehicle",
+      );
+    }
 
+    const releasedDriverId =
+      input.status === "maintenance_required" ||
+      vehicle.status === "maintenance_required"
+        ? this.detachDriver(vehicle)
+        : null;
     vehicle.set(this.normalizeInput(input));
     await vehicle.save();
+    await this.clearDriverVehicle(releasedDriverId, vehicle._id.toString());
     const [safeVehicle] = await this.withDriverNames([vehicle]);
     return safeVehicle;
   }
@@ -218,15 +265,6 @@ export class VehicleService {
     return safeVehicle;
   }
 
-  private async closeCurrentAssignment(vehicle: IVehicle) {
-    for (let i = vehicle.assignmentHistory.length - 1; i >= 0; i -= 1) {
-      if (!vehicle.assignmentHistory[i].unassignedAt) {
-        vehicle.assignmentHistory[i].unassignedAt = new Date();
-        break;
-      }
-    }
-  }
-
   async assignDriver(
     vehicleId: string,
     driverId: string | null,
@@ -235,6 +273,9 @@ export class VehicleService {
     if (!vehicle) throw new HttpException(404, "Vehicle not found");
 
     const currentDriverId = vehicle.assignedDriverId?.toString() ?? null;
+    if (driverId && !["available", "active"].includes(vehicle.status)) {
+      throw new HttpException(400, "Only available vehicles can be assigned");
+    }
     if (currentDriverId === driverId) {
       const [safeVehicle] = await this.withDriverNames([vehicle]);
       return safeVehicle;
@@ -242,13 +283,6 @@ export class VehicleService {
 
     const driver = driverId ? await UserModel.findById(driverId) : null;
     if (driverId) {
-      if (!["available", "assigned"].includes(vehicle.status)) {
-        throw new HttpException(
-          400,
-          "Only available vehicles can be assigned",
-        );
-      }
-
       if (!driver || driver.role !== "driver") {
         throw new HttpException(404, "Driver not found");
       }
@@ -270,7 +304,6 @@ export class VehicleService {
           "This driver is already assigned to another vehicle",
         );
       }
-
       const otherVehicle = await VehicleModel.findOne({
         _id: { $ne: vehicle._id },
         assignedDriverId: driver._id,
@@ -281,31 +314,26 @@ export class VehicleService {
           "This driver is already assigned to another vehicle",
         );
       }
+
     }
 
-    if (currentDriverId) {
-      await this.closeCurrentAssignment(vehicle);
-      vehicle.assignedDriverId = null;
-      vehicle.status = "available";
-    }
+    const releasedDriverId = this.detachDriver(vehicle);
 
     if (driver) {
       vehicle.assignedDriverId = driver._id;
-      vehicle.status = "assigned";
+      vehicle.status = "active";
       vehicle.assignmentHistory.push({
         driverId: driver._id,
         assignedAt: new Date(),
         unassignedAt: null,
       });
+    } else {
+      vehicle.status = "available";
     }
 
     await vehicle.save();
     await Promise.all([
-      currentDriverId
-        ? UserModel.findByIdAndUpdate(currentDriverId, {
-            assignedVehicleId: null,
-          })
-        : Promise.resolve(),
+      this.clearDriverVehicle(releasedDriverId, vehicle._id.toString()),
       driver
         ? UserModel.findByIdAndUpdate(driver._id, {
             assignedVehicleId: vehicle._id,
@@ -339,8 +367,6 @@ export class VehicleService {
     await vehicle.save();
   }
 
-  // Permanently removes a vehicle from the fleet. Guarded so we never delete a
-  // vehicle that is still assigned to a driver or tied to an active shipment.
   async removeVehicle(id: string): Promise<void> {
     const vehicle = await VehicleModel.findById(id);
     if (!vehicle) throw new HttpException(404, "Vehicle not found");

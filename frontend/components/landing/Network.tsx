@@ -29,7 +29,6 @@ function CoverageMap() {
         </filter>
       </defs>
 
-      {/* Grid */}
       {Array.from({ length: 16 }).map((_, i) => (
         <line key={`h${i}`} x1="0" y1={i * 20} x2="480" y2={i * 20} stroke="rgba(200,162,74,0.05)" strokeWidth="0.5" />
       ))}
@@ -37,7 +36,6 @@ function CoverageMap() {
         <line key={`v${i}`} x1={i * 20} y1="0" x2={i * 20} y2="300" stroke="rgba(200,162,74,0.05)" strokeWidth="0.5" />
       ))}
 
-      {/* Stylised terrain silhouette */}
       <path
         d="M20 210 L90 150 L140 185 L200 120 L260 170 L320 110 L380 165 L440 130 L460 175 L460 260 L20 260 Z"
         fill="rgba(200,162,74,0.04)"
@@ -45,7 +43,6 @@ function CoverageMap() {
         strokeWidth="1"
       />
 
-      {/* Routes */}
       {[
         { x1: 120, y1: 190, x2: 240, y2: 110 },
         { x1: 240, y1: 110, x2: 360, y2: 200 },
@@ -58,7 +55,6 @@ function CoverageMap() {
         </line>
       ))}
 
-      {/* Hub nodes */}
       {[
         { cx: 120, cy: 190 },
         { cx: 240, cy: 110 },
@@ -86,7 +82,6 @@ export default function Network() {
 
       <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[42fr_58fr] lg:gap-16">
-          {/* Left copy */}
           <div className="text-center lg:text-left">
             <div className="section-tag border-[rgba(200,162,74,0.28)] bg-[rgba(200,162,74,0.10)] text-[var(--accent)]">
               <span className="section-tag-dot" />Nationwide Coverage
@@ -106,14 +101,12 @@ export default function Network() {
             </div>
           </div>
 
-          {/* Right dashboard */}
           <div className="relative">
             <div className="pointer-events-none absolute -inset-3 rounded-3xl bg-gradient-to-tr from-[rgba(200,162,74,0.10)] via-transparent to-[rgba(200,162,74,0.05)] blur-2xl" />
             <div className="relative rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[var(--surface-dark-2)] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.4)]">
               <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0f0e0d]">
                 <CoverageMap />
 
-                {/* Performance chip */}
                 <div className="absolute right-3 top-3 flex items-center gap-2 rounded-lg border border-[rgba(200,162,74,0.18)] bg-[rgba(25,24,23,0.82)] px-3 py-2 backdrop-blur-md">
                   <Activity size={14} className="text-[var(--accent)]" />
                   <div className="leading-tight">
@@ -122,7 +115,6 @@ export default function Network() {
                   </div>
                 </div>
 
-                {/* Active routes list */}
                 <div className="absolute inset-x-3 bottom-3 space-y-2">
                   {activeRoutes.map((route) => (
                     <div

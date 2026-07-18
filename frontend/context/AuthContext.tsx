@@ -28,7 +28,6 @@ export function AuthProvider({
   const [isLoading, setIsLoading] = useState(!initialUser);
 
   useEffect(() => {
-    // Read user from role-specific cookie on mount if not provided by server
     if (!user) {
       const cookieName = `user_${role}=`;
       const cookieValue = document.cookie

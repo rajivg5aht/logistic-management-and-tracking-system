@@ -36,24 +36,27 @@ import {
 import { adminGetVehicles } from "@/lib/api/fleet.api";
 import Modal from "@/components/ui/Modal";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
-import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
+import {
+  formatDriverCode,
+  getInitials,
+  getPageNumbers,
+} from "@/lib/ui-helpers";
 
 const AVATAR_STYLES = [
   "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
   "bg-[var(--teal-tint)] text-[var(--teal)]",
-  "bg-[rgba(108,99,255,0.12)] text-[#6C63FF]",
+  "bg-[rgba(108,99,255,0.12)] text-[var(--step-active)]",
   "bg-[rgba(95,127,53,0.12)] text-[var(--success)]",
 ];
 
 const AVAILABILITY_CONFIG: Record<AvailabilityStatus, { label: string; cls: string }> = {
-  available: { label: "Available", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
-  assigned: { label: "Assigned", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
+  available: { label: "Available", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
+  assigned: { label: "Assigned", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
   "on-delivery": { label: "On Delivery", cls: "bg-[#FDECD8] text-[#C77718]" },
   "off-duty": { label: "Off Duty", cls: "bg-[#E9ECF1] text-[#5A6B82]" },
-  inactive: { label: "Inactive", cls: "bg-[#FBE4E1] text-[#D0453A]" },
+  inactive: { label: "Inactive", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
 };
 
-// Availability options for the "Status" filter dropdown.
 const STATUS_OPTIONS: { value: AvailabilityStatus | "all"; label: string }[] = [
   { value: "all", label: "All Statuses" },
   { value: "available", label: "Available" },
@@ -63,18 +66,12 @@ const STATUS_OPTIONS: { value: AvailabilityStatus | "all"; label: string }[] = [
   { value: "inactive", label: "Inactive" },
 ];
 
-// Denormalized vehicle detail keyed by driver id, for the assignment column.
 type VehicleAssignmentInfo = {
   registrationNumber: string;
   type: string;
   make: string;
   model: string;
 };
-
-// A short, human-friendly driver code derived from the real record id.
-function driverCode(id: string): string {
-  return `LN-DR-${id.slice(-4).toUpperCase()}`;
-}
 
 const EMPTY_FORM = {
   fullName: "",
@@ -87,8 +84,6 @@ const EMPTY_FORM = {
   availabilityStatus: "available" as AvailabilityStatus,
   status: "active" as "active" | "inactive",
 };
-
-
 
 export default function AdminDriverManagement({ token }: { token: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -172,7 +167,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     fetchDrivers();
   }, [fetchDrivers]);
 
-  // Reflect assignment / availability changes made elsewhere without a refresh.
   useAutoRefresh(() => fetchDrivers(true));
 
   const handleCreateOpen = () => {
@@ -290,7 +284,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       setError(null);
       await adminUpdateDriver(token, driver.id, {
         status: nextStatus,
-        // Reflect deactivation in availability too.
         availabilityStatus: nextStatus === "inactive" ? "inactive" : "available",
       });
       fetchDrivers();
@@ -329,7 +322,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     }
   };
 
-  // Client-side "has a vehicle?" filter, applied to the current page.
   const visibleDrivers = drivers.filter((driver) => {
     if (vehicleFilter === "assigned") return !!vehicleByDriver[driver.id];
     if (vehicleFilter === "unassigned") return !vehicleByDriver[driver.id];
@@ -346,7 +338,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Header */}
       <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
@@ -367,9 +358,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         </button>
       </div>
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total drivers */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -387,13 +376,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* On delivery */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               On Delivery
             </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DEF3E6] text-[#1E9E4C]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--success-soft)] text-[var(--success)]">
               <Truck size={16} />
             </span>
           </div>
@@ -402,7 +390,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
-              className="h-full rounded-full bg-[#1E9E4C] transition-all"
+              className="h-full rounded-full bg-[var(--success)] transition-all"
               style={{ width: `${onDeliveryPct}%` }}
             />
           </div>
@@ -411,13 +399,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* Off duty / inactive */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Off Duty / Inactive
             </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FBE4E1] text-[#D0453A]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--danger-soft)] text-[var(--danger)]">
               <Wrench size={16} />
             </span>
           </div>
@@ -429,13 +416,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </p>
         </div>
 
-        {/* Available */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Available
             </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DEF3E6] text-[#1E9E4C]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--success-soft)] text-[var(--success)]">
               <UserCheck size={16} />
             </span>
           </div>
@@ -449,15 +435,13 @@ export default function AdminDriverManagement({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           <AlertCircle size={16} />
           {error}
         </div>
       )}
 
-      {/* Table */}
       <div className="card overflow-hidden">
-        {/* Toolbar: search + filters */}
         <div className="flex flex-col gap-3 border-b border-[var(--border)] p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-md">
             <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
@@ -549,7 +533,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                       key={driver.id}
                       className="border-b border-[var(--border-light)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]"
                     >
-                      {/* Driver profile */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <span
@@ -560,18 +543,16 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           <div className="min-w-0">
                             <p className="font-semibold text-[var(--text)]">{driver.fullName}</p>
                             <p className="truncate text-xs text-[var(--text-muted)]">
-                              ID: {driverCode(driver.id)}
+                              ID: {formatDriverCode(driver.id)}
                             </p>
                           </div>
                         </div>
                       </td>
-                      {/* Status (availability) */}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${availability.cls}`}>
                           {availability.label}
                         </span>
                       </td>
-                      {/* Vehicle assignment */}
                       <td className="px-5 py-4">
                         {vehicle ? (
                           <div className="min-w-0">
@@ -586,14 +567,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           <span className="italic text-[var(--text-muted)]">Unassigned</span>
                         )}
                       </td>
-                      {/* Deliveries */}
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--text)]">
                           <Package size={14} className="text-[var(--text-muted)]" />
                           {(driver.deliveriesCount ?? 0).toLocaleString()}
                         </span>
                       </td>
-                      {/* Contact */}
                       <td className="px-5 py-4">
                         <div className="space-y-1">
                           <a
@@ -612,7 +591,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           </a>
                         </div>
                       </td>
-                      {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -637,7 +615,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(driver)}
-                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[#FBE4E1] hover:text-[#D0453A] cursor-pointer"
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] cursor-pointer"
                             aria-label="Delete driver"
                             title="Delete driver permanently"
                             suppressHydrationWarning
@@ -654,7 +632,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
           </table>
         </div>
 
-        {/* Pagination */}
         {meta && (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-4 sm:flex-row">
             <p className="text-xs font-medium text-[var(--text-muted)]">
@@ -702,7 +679,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         )}
       </div>
 
-      {/* Create / Edit modal */}
       <Modal
         isOpen={isCreateOpen || isEditOpen}
         onClose={() => {
@@ -725,16 +701,15 @@ export default function AdminDriverManagement({ token }: { token: string }) {
         />
       </Modal>
 
-      {/* Delete confirmation modal */}
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => !actionLoading && setDeleteTarget(null)}
         title="Delete Driver"
       >
         <div className="space-y-5">
-          <div className="flex items-start gap-3 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3">
-            <AlertCircle size={18} className="mt-0.5 shrink-0 text-[#D0453A]" />
-            <p className="text-sm font-medium text-[#D0453A]">
+          <div className="flex items-start gap-3 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-[var(--danger)]" />
+            <p className="text-sm font-medium text-[var(--danger)]">
               This permanently deletes{" "}
               <span className="font-bold">{deleteTarget?.fullName}</span> and their
               account. This action cannot be undone.
@@ -757,7 +732,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               type="button"
               onClick={handleDeleteConfirm}
               disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[#D0453A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#b93b31] disabled:opacity-60 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#b93b31] disabled:opacity-60 cursor-pointer"
             >
               {actionLoading && <Loader2 size={15} className="animate-spin" />}
               Delete Permanently
@@ -770,7 +745,6 @@ export default function AdminDriverManagement({ token }: { token: string }) {
   );
 }
 
-/* -- Shared create/edit form ----------------------------------------------- */
 function DriverForm({
   form,
   setForm,
@@ -888,7 +862,7 @@ function DriverForm({
       )}
 
       {formError && (
-        <p className="flex items-center gap-2 text-sm font-semibold text-[#D0453A]">
+        <p className="flex items-center gap-2 text-sm font-semibold text-[var(--danger)]">
           <AlertCircle size={15} /> {formError}
         </p>
       )}

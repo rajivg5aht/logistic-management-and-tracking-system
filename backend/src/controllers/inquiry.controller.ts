@@ -88,7 +88,7 @@ export class InquiryController {
     }
   }
 
-  async stats(req: Request, res: Response) {
+  async stats(_req: Request, res: Response) {
     try {
       return ApiResponseHelper.success(
         res,

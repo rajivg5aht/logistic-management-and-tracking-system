@@ -7,8 +7,6 @@ function generateReference(method: string): string {
   return `TXN-${method.toUpperCase()}-${Date.now().toString(36)}${rand}`.toUpperCase();
 }
 
-// Backfills one `charge` payment per existing shipment so the payments ledger
-// reflects history. Idempotent: shipments that already have a charge are skipped.
 async function migratePayments() {
   await connectToMongoDB();
 
@@ -27,8 +25,6 @@ async function migratePayments() {
     }
 
     const isPrepaid = shipment.paymentMethod !== "cod";
-    // Prepaid is captured up front; a "paid" COD historically means the driver
-    // collected the cash, so seed it as "collected" (admin can then settle it).
     const status = isPrepaid
       ? "paid"
       : shipment.paymentStatus === "paid"

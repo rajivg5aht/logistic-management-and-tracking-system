@@ -5,7 +5,6 @@ import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 const adminRouter = Router();
 const adminController = new AdminController();
 
-// Protect all routes under this router
 adminRouter.use(authMiddleware);
 adminRouter.use(adminMiddleware);
 

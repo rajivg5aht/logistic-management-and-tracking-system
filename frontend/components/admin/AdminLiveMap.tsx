@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Boxes,
+  Clock3,
   CreditCard,
   Gauge,
   LocateFixed,
@@ -28,8 +29,13 @@ import {
 import type { LiveLocation } from "@/lib/api/tracking.api";
 import { useAdminLiveLocations } from "@/lib/hooks/useAdminLiveLocations";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
+import { useLiveRoute } from "@/lib/hooks/useLiveRoute";
+import { getDistrictCoords } from "@/lib/nepalGeo";
 import { formatNPR } from "@/lib/pricing";
-import FleetTrackingMap, { type FleetMapMarker } from "@/components/tracking/FleetTrackingMap";
+import FleetTrackingMap, {
+  type FleetMapMarker,
+  type FleetMapRoute,
+} from "@/components/tracking/FleetTrackingMap";
 
 const NAVY = "#0C3B67";
 const STALE_AFTER_MINUTES = 10;
@@ -108,8 +114,8 @@ function needsAttention(shipment: Shipment, location: LiveLocation | null): bool
 }
 
 function statusTone(shipment: Shipment, location: LiveLocation | null): string {
-  if (needsAttention(shipment, location)) return "border-[#F3C6BF] bg-[#FBE4E1] text-[#D0453A]";
-  if (shipment.status === "in-transit") return "border-[#C8D8F6] bg-[#E4EEFB] text-[#2E6FD6]";
+  if (needsAttention(shipment, location)) return "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]";
+  if (shipment.status === "in-transit") return "border-[#C8D8F6] bg-[#E4EEFB] text-[var(--info)]";
   return "border-[#F3D9A0] bg-[#FDECD8] text-[#C77718]";
 }
 
@@ -142,14 +148,14 @@ function RouteBlock({ shipment }: { shipment: Shipment }) {
     <div className="relative pl-6">
       <span className="absolute bottom-3 left-[6px] top-3 w-px bg-[var(--border)]" />
       <div className="relative pb-5">
-        <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1E9E4C] ring-4 ring-[#1E9E4C]/15" />
+        <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--success)] ring-4 ring-[var(--success)]/15" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Pickup</p>
         <p className="mt-0.5 text-sm font-bold text-[var(--text)]">{shipment.pickup.fullName || "Sender"}</p>
         <p className="text-xs font-medium text-[var(--text-soft)]">{addressLine(shipment.pickup)}</p>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]"><Phone size={12} />{shipment.pickup.phoneNumber || "-"}</p>
       </div>
       <div className="relative">
-        <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#C99A3D] ring-4 ring-[#C99A3D]/15" />
+        <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--accent-hover)] ring-4 ring-[var(--accent-hover)]/15" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Delivery</p>
         <p className="mt-0.5 text-sm font-bold text-[var(--text)]">{shipment.delivery.recipientName || "Recipient"}</p>
         <p className="text-xs font-medium text-[var(--text-soft)]">{addressLine(shipment.delivery)}</p>
@@ -211,8 +217,8 @@ function SelectedDetails({ shipment, location }: { shipment: Shipment | null; lo
           <MiniTile icon={<Package size={13} />} label="Size" value={dimensionsLabel(shipment)} />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[#2E6FD6]"><Truck size={12} />{SERVICE_LABELS[shipment.service] ?? shipment.service}</span>
-          {shipment.insurance && <span className="inline-flex items-center gap-1 rounded-lg bg-[#DEF3E6] px-2.5 py-1 text-[11px] font-bold text-[#1E9E4C]"><ShieldCheck size={12} />Insured</span>}
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[var(--info)]"><Truck size={12} />{SERVICE_LABELS[shipment.service] ?? shipment.service}</span>
+          {shipment.insurance && <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--success-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--success)]"><ShieldCheck size={12} />Insured</span>}
           {shipment.specialHandling && <span className="inline-flex rounded-lg bg-[#FDECD8] px-2.5 py-1 text-[11px] font-bold text-[#C77718]">Special handling</span>}
         </div>
       </section>
@@ -226,7 +232,7 @@ function SelectedDetails({ shipment, location }: { shipment: Shipment | null; lo
           </div>
           <div className="flex flex-col items-end gap-1">
             <span className="rounded-md bg-white px-2.5 py-1 text-[11px] font-bold uppercase text-[var(--text-soft)]">{shipment.paymentMethod}</span>
-            <span className={`rounded-md px-2.5 py-1 text-[11px] font-bold uppercase ${shipment.paymentStatus === "paid" ? "bg-[#DEF3E6] text-[#1E9E4C]" : "bg-[#FDECD8] text-[#C77718]"}`}>{shipment.paymentStatus}</span>
+            <span className={`rounded-md px-2.5 py-1 text-[11px] font-bold uppercase ${shipment.paymentStatus === "paid" ? "bg-[var(--success-soft)] text-[var(--success)]" : "bg-[#FDECD8] text-[#C77718]"}`}>{shipment.paymentStatus}</span>
           </div>
         </div>
       </section>
@@ -241,11 +247,12 @@ function OrderListItem({ shipment, location, selected, onSelect }: { shipment: S
   return (
     <button
       type="button"
+      suppressHydrationWarning
       onClick={onSelect}
       className={`w-full rounded-xl border bg-[var(--surface)] p-3 text-left transition-all hover:border-[#123E6B]/35 hover:shadow-sm ${selected ? "border-[#123E6B] shadow-sm" : "border-[var(--border)]"}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stale ? "bg-[#FBE4E1] text-[#D0453A]" : "bg-[#E5F1F3] text-[#1D7A8C]"}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stale ? "bg-[var(--danger-soft)] text-[var(--danger)]" : "bg-[var(--teal-tint)] text-[var(--teal)]"}`}>
           {stale ? <AlertTriangle size={18} /> : <Truck size={18} />}
         </div>
         <div className="min-w-0 flex-1">
@@ -255,7 +262,7 @@ function OrderListItem({ shipment, location, selected, onSelect }: { shipment: S
               <p className="truncate text-[11px] font-semibold text-[var(--text-muted)]">{shipment.assignedDriver || "No driver assigned"}</p>
             </div>
             <div className="text-right">
-              <p className={`text-xs font-black ${stale ? "text-[#D0453A]" : "text-[#1D7A8C]"}`}>{location ? speedKph(location.speed) : "--"}</p>
+              <p className={`text-xs font-black ${stale ? "text-[var(--danger)]" : "text-[var(--teal)]"}`}>{location ? speedKph(location.speed) : "--"}</p>
               <p className="text-[10px] font-bold uppercase text-[var(--text-muted)]">{location ? (stale ? "stale" : "live") : "no gps"}</p>
             </div>
           </div>
@@ -342,6 +349,27 @@ export default function AdminLiveMap({ token }: { token: string }) {
     return filteredOrders.find(({ location }) => Boolean(location)) ?? filteredOrders[0] ?? null;
   }, [filteredOrders, selectedShipmentId]);
 
+  const selectedShipment = selectedEntry?.shipment ?? null;
+  const selectedDelivery = getDistrictCoords(selectedShipment?.delivery.district ?? "");
+  const selectedRouteProgress = useLiveRoute(
+    selectedDelivery,
+    selectedEntry?.location ?? null,
+  );
+  const selectedMapRoute = useMemo<FleetMapRoute | null>(() => {
+    if (!selectedShipment) return null;
+    return {
+      shipmentId: selectedShipment.id,
+      delivery: selectedDelivery,
+      geometry: selectedRouteProgress.geometry,
+      approximate: selectedRouteProgress.approximate,
+    };
+  }, [
+    selectedDelivery,
+    selectedRouteProgress.approximate,
+    selectedRouteProgress.geometry,
+    selectedShipment,
+  ]);
+
   const mapMarkers = useMemo<FleetMapMarker[]>(
     () => enriched.flatMap(({ shipment, location }) => {
       if (!location) return [];
@@ -375,7 +403,7 @@ export default function AdminLiveMap({ token }: { token: string }) {
       </div>
 
       {(error || trackingError) && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">{error || trackingError}</div>
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">{error || trackingError}</div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -386,13 +414,19 @@ export default function AdminLiveMap({ token }: { token: string }) {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]" style={{ minHeight: "min(720px, calc(100vh - 210px))" }}>
         <section className="relative isolate z-0 min-h-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-          <FleetTrackingMap markers={mapMarkers} selectedShipmentId={selectedEntry?.shipment.id} onSelect={setSelectedShipmentId} />
+          <FleetTrackingMap
+            markers={mapMarkers}
+            route={selectedMapRoute}
+            selectedShipmentId={selectedEntry?.shipment.id}
+            onSelect={setSelectedShipmentId}
+          />
 
           <div className="absolute left-4 top-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap gap-2">
             {FILTERS.map((item) => (
               <button
                 key={item.key}
                 type="button"
+                suppressHydrationWarning
                 onClick={() => setFilter(item.key)}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-black shadow-sm backdrop-blur transition-colors ${filter === item.key ? "border-transparent text-white" : "border-[var(--border)] bg-white/92 text-[var(--text)] hover:bg-white"}`}
                 style={filter === item.key ? { backgroundColor: NAVY } : undefined}
@@ -403,15 +437,44 @@ export default function AdminLiveMap({ token }: { token: string }) {
             ))}
           </div>
 
+          {selectedEntry?.location && selectedRouteProgress.remainingDistanceKm !== null && (
+            <div
+              aria-live="polite"
+              className="absolute bottom-4 right-4 z-10 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#0C3B67]/12 bg-white/94 shadow-lg backdrop-blur"
+            >
+              <div className="min-w-28 px-3 py-2.5">
+                <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                  <RouteIcon size={11} /> Remaining
+                </p>
+                <p className="mt-0.5 text-sm font-black" style={{ color: NAVY }}>
+                  {selectedRouteProgress.remainingDistanceLabel}
+                </p>
+              </div>
+              <div className="min-w-28 border-l border-[var(--border)] px-3 py-2.5">
+                <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                  <Clock3 size={11} /> ETA
+                </p>
+                <p className="mt-0.5 text-sm font-black" style={{ color: NAVY }}>
+                  {selectedRouteProgress.etaLabel}
+                </p>
+                {selectedRouteProgress.arrivalLabel && selectedRouteProgress.etaMinutes !== 0 && (
+                  <p className="text-[9px] font-bold text-[var(--text-muted)]">
+                    by {selectedRouteProgress.arrivalLabel}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="absolute bottom-4 left-4 z-10 flex flex-wrap gap-2 rounded-xl border border-[var(--border)] bg-white/92 p-2 shadow-sm backdrop-blur">
-            <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#1D7A8C]"><span className="h-2 w-2 rounded-full bg-[#1D7A8C]" />Live</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[var(--teal)]"><span className="h-2 w-2 rounded-full bg-[var(--teal)]" />Live</span>
             <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#C77718]"><span className="h-2 w-2 rounded-full bg-[#C77718]" />Stale</span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#D0453A]"><span className="h-2 w-2 rounded-full bg-[#D0453A]" />Missing</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[var(--danger)]"><span className="h-2 w-2 rounded-full bg-[var(--danger)]" />Missing</span>
           </div>
 
           {loading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/55 backdrop-blur-sm">
-              <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-[var(--text)] shadow-sm"><Loader2 size={16} className="animate-spin text-[#1D7A8C]" />Loading orders</div>
+              <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-[var(--text)] shadow-sm"><Loader2 size={16} className="animate-spin text-[var(--teal)]" />Loading orders</div>
             </div>
           )}
         </section>
@@ -423,12 +486,12 @@ export default function AdminLiveMap({ token }: { token: string }) {
                 <h2 className="text-lg font-black" style={{ color: NAVY }}>Active Orders</h2>
                 <p className="text-xs font-semibold text-[var(--text-muted)]">{filteredOrders.length} matching orders</p>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E5F1F3] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#1D7A8C]"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1D7A8C] opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-[#1D7A8C]" /></span>Live</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--teal-tint)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[var(--teal)]"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--teal)] opacity-75" /><span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--teal)]" /></span>Live</span>
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ID, driver, parcel..." className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm font-medium text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[#123E6B]/40" />
+                <input suppressHydrationWarning value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ID, driver, parcel..." className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm font-medium text-[var(--text)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[#123E6B]/40" />
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]"><SlidersHorizontal size={16} /></div>
             </div>

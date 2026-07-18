@@ -7,7 +7,6 @@ import {
   PAYMENT_METHODS,
 } from "../types/shipment.type";
 
-// DTO used by a customer when confirming & paying for a shipment.
 export const CreateShipmentDTO = z.object({
   pickup: PickupSchema,
   delivery: DeliverySchema,
@@ -21,7 +20,6 @@ export const CreateShipmentDTO = z.object({
 
 export type CreateShipmentDTO = z.infer<typeof CreateShipmentDTO>;
 
-// Customers may edit shipment details only while the shipment is pending.
 export const CustomerUpdateShipmentDTO = z
   .object({
     pickup: PickupSchema.optional(),
@@ -40,14 +38,12 @@ export type CustomerUpdateShipmentDTO = z.infer<
   typeof CustomerUpdateShipmentDTO
 >;
 
-// DTO used by an admin to update a shipment (status / driver assignment).
 export const AdminUpdateShipmentDTO = z.object({
   status: z.enum(SHIPMENT_STATUSES).optional(),
   driverStage: z
     .enum(["picked-up", "in-transit", "out-for-delivery", "delivered"])
     .optional(),
   assignedDriver: z.string().nullable().optional(),
-  // Real link to a driver's User account. `null`/"" clears the assignment.
   assignedDriverId: z.string().nullable().optional(),
   paymentStatus: z.enum(["paid", "pending"]).optional(),
 });

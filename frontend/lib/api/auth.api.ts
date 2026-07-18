@@ -78,11 +78,26 @@ export type UpdatePasswordPayload = {
   password: string;
 };
 
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export async function updatePassword(
   token: string,
   payload: UpdatePasswordPayload,
 ): Promise<AuthUser> {
   return authenticatedRequest<AuthUser>("/api/v1/auth/update", token, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function changePassword(
+  token: string,
+  payload: ChangePasswordPayload,
+): Promise<void> {
+  return authenticatedRequest<void>("/api/v1/auth/change-password", token, {
     method: "PUT",
     body: JSON.stringify(payload),
   });

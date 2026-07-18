@@ -2,12 +2,10 @@
 
 import {
   Calendar,
-  SlidersHorizontal,
   Package,
   Radio,
   CircleCheckBig,
   Wallet,
-  MoreHorizontal,
   CheckCircle2,
   Wrench,
   AlertTriangle,
@@ -35,48 +33,42 @@ import {
 } from "@/lib/api/fleet.api";
 import { getInitials } from "@/lib/ui-helpers";
 
-/* Screenshot-matched navy palette (kept local - the shared theme is gold/teal) */
-const NAVY = "#0C3B67"; // headings + KPI values
-const NAVY_BAR = "#123E6B"; // highlighted chart column
-const BAR_IDLE = "#DCE5EE"; // inactive chart columns
+const NAVY = "#0C3B67";
+const BAR_IDLE = "#DCE5EE";
+const MAX_BAR_HEIGHT = 84;
 
-type ChartBar = { day: string; count: number; h: number; active: boolean };
+type ChartBar = {
+  date: string;
+  day: string;
+  count: number;
+  heightPercent: number;
+};
 
-/**
- * Turns the raw 7-day volume series into chart bars: heights are scaled so the
- * busiest day fills the column, and that peak day is highlighted. Zero-volume
- * days keep a thin sliver so the axis stays readable.
- */
 function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
-  const maxCount = Math.max(1, ...dailyVolume.map((d) => d.count));
-  let peakIndex = 0;
-  dailyVolume.forEach((d, i) => {
-    if (d.count > dailyVolume[peakIndex].count) peakIndex = i;
-  });
+  const maxCount = Math.max(0, ...dailyVolume.map((day) => day.count));
 
-  return dailyVolume.map((d, i) => ({
-    day: d.label,
-    count: d.count,
-    // Cap the peak at 85% so the count label above each bar has headroom.
-    h: d.count === 0 ? 3 : Math.max(8, Math.round((d.count / maxCount) * 85)),
-    active: d.count > 0 && i === peakIndex,
+  return dailyVolume.map((day) => ({
+    date: day.date,
+    day: day.label,
+    count: day.count,
+    heightPercent:
+      maxCount === 0 ? 0 : Math.round((day.count / maxCount) * MAX_BAR_HEIGHT),
   }));
 }
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
   "in-transit": "bg-[#FDECD8] text-[#C77718]",
-  delivered: "bg-[#DEF3E6] text-[#1E9E4C]",
-  pending: "bg-[#FBF1DC] text-[#C99A3D]",
-  cancelled: "bg-[#FBE4E1] text-[#D0453A]",
+  delivered: "bg-[var(--success-soft)] text-[var(--success)]",
+  pending: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 const AVATAR_STYLES = [
-  "bg-[#E8F0FB] text-[#2E6FD6]",
-  "bg-[#E5F1F3] text-[#1D7A8C]",
-  "bg-[#FBF1DC] text-[#C99A3D]",
-  "bg-[#F0ECFB] text-[#6C63FF]",
+  "bg-[var(--info-soft)] text-[var(--info)]",
+  "bg-[var(--teal-tint)] text-[var(--teal)]",
+  "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  "bg-[#F0ECFB] text-[var(--step-active)]",
 ];
-
 
 function getDestination(shipment: Shipment): string {
   return [shipment.delivery.city, shipment.delivery.district]
@@ -89,21 +81,18 @@ export default function OverviewDashboard({ token }: { token: string }) {
   const [shipmentStats, setShipmentStats] = useState<ShipmentStats | null>(null);
   const [fleetStats, setFleetStats] = useState<FleetStats | null>(null);
   const [loadingShipments, setLoadingShipments] = useState(true);
-  const [shipmentError, setShipmentError] = useState<string | null>(null);
+  const [loadingShipmentStats, setLoadingShipmentStats] = useState(true);
+  const [recentShipmentsError, setRecentShipmentsError] = useState<string | null>(null);
+  const [shipmentStatsError, setShipmentStatsError] = useState<string | null>(null);
+  const [fleetError, setFleetError] = useState<string | null>(null);
 
   const loadRecentShipments = useCallback(async () => {
     try {
-      const [result, stats, fleet] = await Promise.all([
-        adminGetShipments(token, 1, 4),
-        adminGetShipmentStats(token),
-        adminGetFleetStats(token),
-      ]);
+      const result = await adminGetShipments(token, 1, 4);
       setShipments(result.data);
-      setShipmentStats(stats);
-      setFleetStats(fleet);
-      setShipmentError(null);
+      setRecentShipmentsError(null);
     } catch (error) {
-      setShipmentError(
+      setRecentShipmentsError(
         error instanceof Error ? error.message : "Failed to load recent shipments",
       );
     } finally {
@@ -111,19 +100,52 @@ export default function OverviewDashboard({ token }: { token: string }) {
     }
   }, [token]);
 
-  useEffect(() => {
-    loadRecentShipments();
-  }, [loadRecentShipments]);
+  const loadShipmentStats = useCallback(async () => {
+    try {
+      const stats = await adminGetShipmentStats(token);
+      setShipmentStats(stats);
+      setShipmentStatsError(null);
+    } catch (error) {
+      setShipmentStatsError(
+        error instanceof Error ? error.message : "Failed to load shipment analytics",
+      );
+    } finally {
+      setLoadingShipmentStats(false);
+    }
+  }, [token]);
 
-  // Keep the KPIs and recent-shipments table in sync as customers place orders.
-  useAutoRefresh(loadRecentShipments, { intervalMs: 15_000 });
+  const loadFleetStats = useCallback(async () => {
+    try {
+      const fleet = await adminGetFleetStats(token);
+      setFleetStats(fleet);
+      setFleetError(null);
+    } catch (error) {
+      setFleetError(
+        error instanceof Error ? error.message : "Failed to load fleet status",
+      );
+    }
+  }, [token]);
+
+  const loadDashboard = useCallback(async () => {
+    await Promise.all([
+      loadRecentShipments(),
+      loadShipmentStats(),
+      loadFleetStats(),
+    ]);
+  }, [loadFleetStats, loadRecentShipments, loadShipmentStats]);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  useAutoRefresh(loadDashboard, { intervalMs: 15_000 });
 
   const kpis = [
     {
       label: "Total Shipments",
       value: shipmentStats?.total.toLocaleString("en-IN") ?? "-",
       Icon: Package,
-      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+      tint: "bg-[var(--info-soft)] text-[var(--info)]",
     },
     {
       label: "Active Now",
@@ -135,7 +157,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
       label: "Delivered Today",
       value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "-",
       Icon: CircleCheckBig,
-      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
     },
     {
       label: "Pending COD",
@@ -150,14 +172,15 @@ export default function OverviewDashboard({ token }: { token: string }) {
     ? shipmentStats.dailyVolume.reduce((sum, d) => sum + d.count, 0)
     : 0;
 
-  // Fleet operational health: vehicles ready or on assignment vs. the whole fleet.
   const fleetTotal = fleetStats?.total ?? 0;
   const fleetOperational =
-    (fleetStats?.available ?? 0) + (fleetStats?.assigned ?? 0);
+    (fleetStats?.available ?? 0) + (fleetStats?.active ?? 0);
   const fleetHealthPct =
     fleetTotal > 0 ? Math.round((fleetOperational / fleetTotal) * 100) : 0;
-  const systemStatusMessage = !fleetStats
-    ? "Checking fleet status..."
+  const systemStatusMessage = fleetError
+    ? "Fleet status is temporarily unavailable."
+    : !fleetStats
+      ? "Checking fleet status..."
     : fleetTotal === 0
       ? "No vehicles registered in the fleet yet."
       : `${fleetOperational} of ${fleetTotal} vehicle${fleetTotal === 1 ? "" : "s"} operational across all hubs.`;
@@ -171,23 +194,22 @@ export default function OverviewDashboard({ token }: { token: string }) {
     },
     {
       label: "Maintenance",
-      sub: `${fleetStats?.maintenance ?? 0} Vehicles`,
+      sub: `${fleetStats?.maintenanceRequired ?? 0} Vehicles`,
       Icon: Wrench,
       accent: "#C99A3D",
-      tint: "bg-[#FBF1DC] text-[#C99A3D]",
+      tint: "bg-[#FBF1DC] text-[var(--accent-hover)]",
     },
     {
       label: "Inactive",
       sub: `${fleetStats?.inactive ?? 0} Vehicles`,
       Icon: AlertTriangle,
       accent: "#D0453A",
-      tint: "bg-[#FBE4E1] text-[#D0453A]",
+      tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ============ Page title + actions ============ */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl" style={{ color: NAVY }}>
@@ -198,18 +220,16 @@ export default function OverviewDashboard({ token }: { token: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <button type="button" className="btn-secondary btn-sm cursor-pointer" suppressHydrationWarning>
+          <div
+            className="btn-secondary btn-sm"
+            aria-label="Dashboard reporting period: last 7 days"
+          >
             <Calendar size={15} />
             Last 7 Days
-          </button>
-          <button type="button" className="btn-secondary btn-sm cursor-pointer" suppressHydrationWarning>
-            <SlidersHorizontal size={15} />
-            Filters
-          </button>
+          </div>
         </div>
       </div>
 
-      {/* ============ KPI cards ============ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.Icon;
@@ -233,14 +253,12 @@ export default function OverviewDashboard({ token }: { token: string }) {
         })}
       </div>
 
-      {/* ============ Chart + Fleet Health ============ */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Bar chart */}
         <div
           className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 lg:col-span-2"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-base font-extrabold" style={{ color: NAVY }}>
                 Shipments over last 7 days
@@ -248,23 +266,50 @@ export default function OverviewDashboard({ token }: { token: string }) {
               <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">
                 {shipmentStats
                   ? `${weekTotal.toLocaleString("en-IN")} shipment${weekTotal === 1 ? "" : "s"} in the last 7 days`
-                  : "Daily volume analysis from current hub"}
+                  : loadingShipmentStats
+                    ? "Loading seven-day shipment volume…"
+                    : "Seven-day shipment volume is unavailable"}
               </p>
             </div>
-            <button
-              type="button"
-              className="text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
-              aria-label="More options"
-              suppressHydrationWarning
-            >
-              <MoreHorizontal size={20} />
-            </button>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--info-soft)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#123E6B]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#123E6B]" aria-hidden="true" />
+              Auto-refresh · 15s
+            </span>
           </div>
 
-          {/* Bars */}
-          <div className="mt-8 flex h-52 items-end gap-2.5 sm:gap-4">
-            {bars === null
-              ? Array.from({ length: 7 }).map((_, index) => (
+          {shipmentStatsError && shipmentStats && (
+            <p className="mt-2 text-xs font-semibold text-[#B5473C]" role="status">
+              Could not refresh the chart. Showing the latest available data.
+            </p>
+          )}
+
+          <div
+            className="mt-8 flex h-52 items-end gap-2.5 sm:gap-4"
+            role={bars ? "list" : undefined}
+            aria-label={bars ? "Shipment counts for the last 7 days" : undefined}
+          >
+            {bars === null ? (
+              shipmentStatsError ? (
+                <div
+                  className="flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-4 text-center"
+                  role="alert"
+                >
+                  <p className="text-sm font-bold text-[var(--text)]">
+                    Shipment analytics could not be loaded.
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                    Check the connection and try again.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm mt-4 cursor-pointer"
+                    onClick={() => void loadShipmentStats()}
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                Array.from({ length: 7 }).map((_, index) => (
                   <div key={index} className="flex h-full flex-1 flex-col justify-end">
                     <div
                       className="w-full animate-pulse rounded-lg"
@@ -272,44 +317,52 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     />
                   </div>
                 ))
-              : bars.map((bar, index) => (
-                  <div key={index} className="flex h-full flex-1 flex-col justify-end">
-                    <span
-                      className={`mb-1.5 text-center text-sm font-black tabular-nums ${
-                        bar.count > 0 ? "text-[#123E6B]" : "text-[var(--text-muted)]"
-                      }`}
-                    >
-                      {bar.count}
-                    </span>
-                    <div
-                      className="w-full rounded-lg transition-all duration-500"
-                      style={{
-                        height: `${bar.h}%`,
-                        backgroundColor: bar.active ? NAVY_BAR : BAR_IDLE,
-                      }}
-                      title={`${bar.day}: ${bar.count} shipment${bar.count === 1 ? "" : "s"}`}
-                    />
-                  </div>
-                ))}
+              )
+            ) : (
+              bars.map((bar) => (
+                <div
+                  key={bar.date}
+                  className="flex h-full flex-1 flex-col justify-end"
+                  role="listitem"
+                  aria-label={`${bar.day}, ${bar.date}: ${bar.count} shipment${bar.count === 1 ? "" : "s"}`}
+                >
+
+                  <div
+                    className={`w-full rounded-lg transition-all duration-500 ${
+                      bar.count > 0
+                        ? "bg-[#123E6B] hover:bg-[#0C2E4E]"
+                        : "bg-[#DCE5EE]"
+                    }`}
+                    style={{
+                      height:
+                        bar.count === 0 ? "0.25rem" : `${bar.heightPercent}%`,
+                      minHeight: bar.count > 0 ? "0.75rem" : undefined,
+                    }}
+                    title={`${bar.day}: ${bar.count} shipment${bar.count === 1 ? "" : "s"}`}
+                  />
+                </div>
+              ))
+            )}
           </div>
-          {/* Day labels */}
-          <div className="mt-3 flex gap-2.5 sm:gap-4">
-            {(bars ?? Array.from({ length: 7 }, () => null)).map((bar, index) => (
-              <span
-                key={index}
-                className={`flex-1 text-center text-xs ${
-                  bar?.active
-                    ? "font-extrabold text-[#123E6B]"
-                    : "font-semibold text-[var(--text-muted)]"
-                }`}
-              >
-                {bar?.day ?? "-"}
-              </span>
-            ))}
-          </div>
+          {(bars !== null || !shipmentStatsError) && (
+            <div className="mt-3 flex gap-2.5 sm:gap-4">
+              {(bars ?? Array.from({ length: 7 }, () => null)).map((bar, index) => (
+                <span
+                  key={bar?.date ?? index}
+                  title={bar?.date}
+                  className={`flex-1 text-center text-xs ${
+                    bar && bar.count > 0
+                      ? "font-extrabold text-[#123E6B]"
+                      : "font-semibold text-[var(--text-muted)]"
+                  }`}
+                >
+                  {bar?.day ?? "-"}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Fleet Health + System Status */}
         <div
           className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
           style={{ boxShadow: "var(--shadow-sm)" }}
@@ -341,7 +394,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
             })}
           </div>
 
-          {/* System status dark card */}
           <div
             className="mt-4 rounded-[var(--radius-md)] p-4"
             style={{ background: "linear-gradient(150deg, #0C2E4E, #123A5E)" }}
@@ -370,7 +422,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* ============ Recent Shipments ============ */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"
         style={{ boxShadow: "var(--shadow-sm)" }}
@@ -422,10 +473,10 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     ))}
                   </tr>
                 ))
-              ) : shipmentError ? (
+              ) : recentShipmentsError ? (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-sm font-medium text-red-600">
-                    {shipmentError}
+                    {recentShipmentsError}
                   </td>
                 </tr>
               ) : shipments.length === 0 ? (

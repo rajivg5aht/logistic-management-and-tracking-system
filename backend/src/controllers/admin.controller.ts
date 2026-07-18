@@ -88,7 +88,7 @@ export class AdminController {
       if (body.role && body.role !== "customer") {
         return ApiResponseHelper.error(
           res,
-          "Drivers must be created in Driver Management",
+          "Only customer accounts can be created here. Drivers must be created in Driver Management",
           400,
         );
       }

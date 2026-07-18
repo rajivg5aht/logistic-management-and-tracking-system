@@ -16,8 +16,6 @@ export interface IProofOfDelivery {
   updatedAt: Date | null;
 }
 
-// Latest live GPS position of the assigned driver, mirrored from the
-// driver_locations collection so it travels with the shipment document.
 export interface ICurrentLocation {
   latitude: number;
   longitude: number;
@@ -31,7 +29,6 @@ export interface IShipment extends ShipmentType, Document {
   paymentStatus: "paid" | "pending";
   deliveredAt: Date | null;
   proofOfDelivery: IProofOfDelivery | null;
-  // Real link to the driver's User account (name is denormalized in assignedDriver).
   assignedDriverId: mongoose.Types.ObjectId | null;
   assignedVehicleId: mongoose.Types.ObjectId | null;
   currentLocation: ICurrentLocation | null;

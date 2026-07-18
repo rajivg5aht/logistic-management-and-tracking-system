@@ -36,7 +36,6 @@ export default function Footer() {
 
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-10 pb-12 md:grid-cols-4 lg:grid-cols-[2.2fr_1fr_1fr_1.6fr] lg:gap-12">
-          {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="text-xl font-bold tracking-tight">
               <span className="text-[var(--text-on-dark)]">Cargo</span>
@@ -62,7 +61,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Link columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
               <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--text-on-dark-muted)]">{title}</p>
@@ -78,7 +76,6 @@ export default function Footer() {
             </div>
           ))}
 
-          {/* Newsletter */}
           <div className="col-span-2 md:col-span-1">
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--text-on-dark-muted)]">Stay Updated</p>
             <p className="mb-4 text-sm leading-relaxed text-[var(--text-on-dark-muted)]">

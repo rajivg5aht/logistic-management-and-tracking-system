@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { RegisterForm } from "@/components/auth/RegisterForm";
-import RocketIcon from "@/components/auth/RocketIcon";
 
 export default function RegisterPage() {
   return (
@@ -14,19 +14,19 @@ export default function RegisterPage() {
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.35)] to-transparent" />
 
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex items-center gap-2.5">
-            <div className="rounded-xl border border-[rgba(200,162,74,0.25)] bg-[var(--accent-soft)] p-2.5">
-              <RocketIcon />
-            </div>
-            <span className="text-3xl font-extrabold tracking-tight text-[var(--text)]">
-              CargoNep
-            </span>
-          </div>
-          <h1 className="heading-md mb-2">
-            Get Started
-          </h1>
-          <p className="max-w-[320px] text-sm leading-relaxed text-[var(--text-muted)]">
-            Register your workspace and start tracking.
+          <Image
+            src="/logo.png"
+            alt="CargoNep"
+            width={96}
+            height={96}
+            priority
+            className="h-24 w-24 object-contain"
+          />
+          <span className="-mt-2 text-xl font-semibold tracking-tight text-[#1e293b]">
+            CargoNep
+          </span>
+          <p className="mt-1 text-sm font-medium text-[#475569]">
+            Streamlining Logistics Across the Himalayas
           </p>
         </div>
 

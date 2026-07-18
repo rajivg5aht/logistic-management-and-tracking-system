@@ -24,7 +24,6 @@ export default async function DriverLayout({
     redirect("/login");
   }
 
-  // Security: Only drivers can access this page
   if (user.role !== "driver") {
     redirect("/dashboard");
   }

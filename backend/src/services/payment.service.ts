@@ -39,7 +39,6 @@ type ListParams = {
   limit: number;
 };
 
-// Money that counts as received by the company.
 const RECEIVED_STATUSES = ["paid", "collected", "settled"] as const;
 
 function generateReference(method: string): string {
@@ -89,9 +88,6 @@ export class PaymentService {
     };
   }
 
-  // Called from ShipmentService.createShipment right after a booking is created.
-  // Prepaid wallet payments are captured up front (mock); COD stays pending until
-  // the driver collects the cash on delivery.
   async createChargeForShipment(shipment: IShipment): Promise<SafePayment> {
     const isPrepaid = shipment.paymentMethod !== "cod";
     const payment = await PaymentModel.create({
@@ -106,10 +102,15 @@ export class PaymentService {
     return this.sanitize(payment);
   }
 
-  // Mirrors the driver's COD cash collection into the ledger. The shipment's
-  // paymentStatus flag is still owned by ShipmentService (the analytics source);
-  // here we only move the COD charge record. Older shipments without a payment
-  // row (pre-migration) get one created on the fly.
+  async cancelPendingCharge(
+    shipmentId: mongoose.Types.ObjectId | string,
+  ): Promise<void> {
+    await PaymentModel.updateOne(
+      { shipmentId, type: "charge", status: "pending" },
+      { $set: { status: "failed", notes: "Shipment cancelled" } },
+    );
+  }
+
   async recordCodCollection(
     shipmentId: mongoose.Types.ObjectId | string,
     driverId: string,
@@ -134,7 +135,6 @@ export class PaymentService {
       });
     }
 
-    // Don't disturb a payment an admin has already reconciled.
     if (payment.status === "settled") return;
 
     if (collected) {

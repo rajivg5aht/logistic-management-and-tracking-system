@@ -24,12 +24,12 @@ import { formatNPR } from "@/lib/pricing";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Pending", cls: "bg-[#FBF1DC] text-[#C99A3D]" },
-  paid: { label: "Paid", cls: "bg-[#DEF3E6] text-[#1E9E4C]" },
-  collected: { label: "Collected", cls: "bg-[#E8F0FB] text-[#2E6FD6]" },
-  settled: { label: "Settled", cls: "bg-[#DCF1EE] text-[#1D7A8C]" },
-  refunded: { label: "Refunded", cls: "bg-[#FBE4E1] text-[#D0453A]" },
-  failed: { label: "Failed", cls: "bg-[#FBE4E1] text-[#D0453A]" },
+  pending: { label: "Pending", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  paid: { label: "Paid", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
+  collected: { label: "Collected", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
+  settled: { label: "Settled", cls: "bg-[#DCF1EE] text-[var(--teal)]" },
+  refunded: { label: "Refunded", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
+  failed: { label: "Failed", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
 };
 
 const METHOD_LABEL: Record<string, string> = {
@@ -111,31 +111,30 @@ export default function AdminPayments({ token }: { token: string }) {
       label: "Revenue Received",
       value: stats ? formatNPR(stats.revenue) : "-",
       Icon: Wallet,
-      tint: "bg-[#DEF3E6] text-[#1E9E4C]",
+      tint: "bg-[var(--success-soft)] text-[var(--success)]",
     },
     {
       label: "Outstanding COD",
       value: stats ? formatNPR(stats.outstandingCod) : "-",
       Icon: Clock,
-      tint: "bg-[#FBF1DC] text-[#C99A3D]",
+      tint: "bg-[#FBF1DC] text-[var(--accent-hover)]",
     },
     {
       label: "COD Held by Drivers",
       value: stats ? formatNPR(stats.codHeldByDrivers) : "-",
       Icon: HandCoins,
-      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+      tint: "bg-[var(--info-soft)] text-[var(--info)]",
     },
     {
       label: "Refunds",
       value: stats ? formatNPR(stats.refunds) : "-",
       Icon: Undo2,
-      tint: "bg-[#FBE4E1] text-[#D0453A]",
+      tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Heading */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--teal)]">
           Finance
@@ -148,7 +147,6 @@ export default function AdminPayments({ token }: { token: string }) {
         </p>
       </div>
 
-      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statTiles.map((t) => (
           <div
@@ -169,7 +167,6 @@ export default function AdminPayments({ token }: { token: string }) {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
           {METHOD_FILTERS.map((m) => (
@@ -208,12 +205,11 @@ export default function AdminPayments({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
 
-      {/* Ledger */}
       <div
         className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
         style={{ boxShadow: "var(--shadow-sm)" }}
@@ -265,7 +261,7 @@ export default function AdminPayments({ token }: { token: string }) {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           {isRefund && (
-                            <span className="rounded-full bg-[#FBE4E1] px-2 py-0.5 text-[10px] font-bold uppercase text-[#D0453A]">
+                            <span className="rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-[10px] font-bold uppercase text-[var(--danger)]">
                               Refund
                             </span>
                           )}
@@ -415,7 +411,7 @@ function RefundModal({
         </div>
         <form onSubmit={submit} className="space-y-4 p-5">
           {err && (
-            <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-3.5 py-2.5 text-sm font-semibold text-[#D0453A]">
+            <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3.5 py-2.5 text-sm font-semibold text-[var(--danger)]">
               {err}
             </div>
           )}

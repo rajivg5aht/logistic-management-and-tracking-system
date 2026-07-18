@@ -2,12 +2,15 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { FleetReportService } from "../services/fleetReport.service";
-import { IncidentStatusDTO, FuelExpenseStatusDTO } from "../dtos/fleetReport.dto";
+import {
+  AdminIncidentUpdateDTO,
+  AdminFuelExpenseUpdateDTO,
+} from "../dtos/fleetReport.dto";
+import { VEHICLE_INCIDENT_STATUSES } from "../models/vehicleIncident.model";
+import { VEHICLE_FUEL_EXPENSE_STATUSES } from "../models/vehicleFuelExpense.model";
+import type { AuthRequest } from "../middleware/auth.middleware";
 
 const fleetReportService = new FleetReportService();
-
-const INCIDENT_STATUSES = ["open", "reviewing", "resolved"] as const;
-const FUEL_STATUSES = ["submitted", "approved", "rejected"] as const;
 
 function parsePaging(req: Request) {
   const page = Math.max(parseInt(req.query.page as string) || 1, 1);
@@ -24,8 +27,8 @@ export class AdminFleetReportController {
     try {
       const { page, limit, vehicleId } = parsePaging(req);
       const requested = req.query.status as string | undefined;
-      const status = INCIDENT_STATUSES.includes(
-        requested as (typeof INCIDENT_STATUSES)[number],
+      const status = VEHICLE_INCIDENT_STATUSES.includes(
+        requested as (typeof VEHICLE_INCIDENT_STATUSES)[number],
       )
         ? requested
         : undefined;
@@ -52,20 +55,25 @@ export class AdminFleetReportController {
     }
   }
 
-  async updateIncidentStatus(req: Request, res: Response) {
+  async updateIncident(req: AuthRequest, res: Response) {
     try {
-      const parsed = IncidentStatusDTO.safeParse(req.body);
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = AdminIncidentUpdateDTO.safeParse(req.body);
       if (!parsed.success) {
         return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
       }
-      const incident = await fleetReportService.updateIncidentStatus(
+      const incident = await fleetReportService.updateIncident(
         req.params.id as string,
         parsed.data,
+        req.user.id,
       );
       return ApiResponseHelper.success(
         res,
         incident,
-        "Incident updated successfully",
+        "Incident reviewed successfully",
       );
     } catch (error: any) {
       return ApiResponseHelper.error(
@@ -80,8 +88,8 @@ export class AdminFleetReportController {
     try {
       const { page, limit, vehicleId } = parsePaging(req);
       const requested = req.query.status as string | undefined;
-      const status = FUEL_STATUSES.includes(
-        requested as (typeof FUEL_STATUSES)[number],
+      const status = VEHICLE_FUEL_EXPENSE_STATUSES.includes(
+        requested as (typeof VEHICLE_FUEL_EXPENSE_STATUSES)[number],
       )
         ? requested
         : undefined;
@@ -108,15 +116,20 @@ export class AdminFleetReportController {
     }
   }
 
-  async updateFuelExpenseStatus(req: Request, res: Response) {
+  async updateFuelExpense(req: AuthRequest, res: Response) {
     try {
-      const parsed = FuelExpenseStatusDTO.safeParse(req.body);
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = AdminFuelExpenseUpdateDTO.safeParse(req.body);
       if (!parsed.success) {
         return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
       }
-      const expense = await fleetReportService.updateFuelExpenseStatus(
+      const expense = await fleetReportService.updateFuelExpense(
         req.params.id as string,
         parsed.data,
+        req.user.id,
       );
       return ApiResponseHelper.success(
         res,

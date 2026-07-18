@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
+import type { ServiceType } from "@/lib/api/shipment.api";
 
-// All 77 districts of Nepal (alphabetical) for address selection.
 export const NEPAL_DISTRICTS = [
   "Achham", "Arghakhanchi", "Baglung", "Baitadi", "Bajhang", "Bajura", "Banke",
   "Bara", "Bardiya", "Bhaktapur", "Bhojpur", "Chitwan", "Dadeldhura", "Dailekh",
@@ -47,20 +47,29 @@ export interface PackageDetails {
   };
 }
 
-export type ServiceType = "standard" | "express" | "overnight";
+export type { ServiceType } from "@/lib/api/shipment.api";
 
 interface ShipmentContextType {
   pickupAddress: PickupAddress;
   setPickupAddress: (data: PickupAddress) => void;
-  updatePickupField: (field: string, value: string | boolean) => void;
+  updatePickupField: <K extends keyof PickupAddress>(
+    field: K,
+    value: PickupAddress[K],
+  ) => void;
 
   deliveryAddress: DeliveryAddress;
   setDeliveryAddress: (data: DeliveryAddress) => void;
-  updateDeliveryField: (field: string, value: string | boolean) => void;
+  updateDeliveryField: <K extends keyof DeliveryAddress>(
+    field: K,
+    value: DeliveryAddress[K],
+  ) => void;
 
   packageDetails: PackageDetails;
   setPackageDetails: (data: PackageDetails) => void;
-  updatePackageField: (field: string, value: string | number) => void;
+  updatePackageField: <K extends keyof Omit<PackageDetails, "dimensions">>(
+    field: K,
+    value: Omit<PackageDetails, "dimensions">[K],
+  ) => void;
   updateDimension: (field: "length" | "width" | "height", value: string) => void;
 
   selectedService: ServiceType;
@@ -107,15 +116,26 @@ export function ShipmentProvider({ children }: { children: ReactNode }) {
   const [insurance, setInsurance] = useState(false);
   const [specialHandling, setSpecialHandling] = useState(false);
 
-  const updatePickupField = (field: string, value: string | boolean) => {
+  const updatePickupField = <K extends keyof PickupAddress,>(
+    field: K,
+    value: PickupAddress[K],
+  ) => {
     setPickupAddress((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateDeliveryField = (field: string, value: string | boolean) => {
+  const updateDeliveryField = <K extends keyof DeliveryAddress,>(
+    field: K,
+    value: DeliveryAddress[K],
+  ) => {
     setDeliveryAddress((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updatePackageField = (field: string, value: string | number) => {
+  const updatePackageField = <
+    K extends keyof Omit<PackageDetails, "dimensions">,
+  >(
+    field: K,
+    value: Omit<PackageDetails, "dimensions">[K],
+  ) => {
     setPackageDetails((prev) => ({ ...prev, [field]: value }));
   };
 

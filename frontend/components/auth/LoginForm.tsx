@@ -9,7 +9,6 @@ const initialState: AuthFormState = {
   success: false,
 };
 
-/* --- Envelope Icon --- */
 function EnvelopeIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -29,7 +28,6 @@ function EnvelopeIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* --- Lock Icon --- */
 function LockIcon({ focused }: { focused: boolean }) {
   return (
     <svg
@@ -49,7 +47,6 @@ function LockIcon({ focused }: { focused: boolean }) {
   );
 }
 
-/* --- Eye Icon --- */
 function EyeIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,7 +56,6 @@ function EyeIcon() {
   );
 }
 
-/* --- Eye Off Icon --- */
 function EyeOffIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -83,10 +79,8 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
   return (
     <>
       <form action={formAction} className="space-y-4">
-        {/* Hidden role field */}
         <input type="hidden" name="role" value={role} />
 
-        {/* Email */}
         <div className="space-y-1.5">
           <label className="form-label" htmlFor="email">
             Email Address
@@ -109,7 +103,6 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
           <FieldError errors={state.fieldErrors?.email} />
         </div>
 
-        {/* Password */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="form-label" htmlFor="password">
@@ -148,14 +141,12 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
           <FieldError errors={state.fieldErrors?.password} />
         </div>
 
-        {/* Error message */}
         {state.message ? (
           <p className="form-error">
             {state.message}
           </p>
         ) : null}
 
-        {/* Sign In Button */}
         <button
           type="submit"
           disabled={isPending}
@@ -166,7 +157,6 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
         </button>
       </form>
 
-      {/* Create Account Link */}
       <p className="text-sm text-center text-[var(--text-muted)] mt-5">
         Don&apos;t have an account?{" "}
         <Link className="font-semibold hover:underline text-[var(--accent)] transition-colors duration-200" href="/register">

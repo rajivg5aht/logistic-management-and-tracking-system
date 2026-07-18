@@ -23,15 +23,15 @@ import type {
   DriverStage,
 } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
-import { useDriverTracking } from "@/lib/hooks/useDriverTracking";
+import { useDriverTracking, isPickupConfirmed } from "@/lib/hooks/useDriverTracking";
 import LiveMap from "@/components/tracking/LiveMap";
+import { getDistrictCoords } from "@/lib/nepalGeo";
 
 export const STAGE_LABEL: Record<DriverStage, string> = {
   ...DRIVER_STAGE_LABELS,
   failed: "Failed",
 };
 
-// The happy-path milestones shown in the stepper (side states handled apart).
 export const MAIN_PATH: DriverStage[] = [
   "assigned",
   "picked-up",
@@ -40,7 +40,6 @@ export const MAIN_PATH: DriverStage[] = [
   "delivered",
 ];
 
-// Mirrors the backend STAGE_TRANSITIONS so the UI only offers valid moves.
 export const STAGE_TRANSITIONS: Record<DriverStage, DriverStage[]> = {
   assigned: ["picked-up", "failed"],
   "picked-up": ["in-transit", "failed"],
@@ -64,8 +63,8 @@ const ACTION_CONFIG: Record<DriverStage, { label: string; tone: Tone }> = {
 
 const TONE_CLASS: Record<Tone, string> = {
   primary: "bg-[var(--accent)] text-white hover:opacity-90",
-  success: "bg-[#1E9E4C] text-white hover:opacity-90",
-  danger: "border border-[#F3C6BF] bg-[#FBE4E1] text-[#D0453A] hover:bg-[#f7d6d1]",
+  success: "bg-[var(--success)] text-white hover:opacity-90",
+  danger: "border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[#f7d6d1]",
   muted: "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]",
 };
 
@@ -82,7 +81,6 @@ export function shortLoc(addr?: ShipmentAddress): string {
   return [addr.city, addr.district].filter(Boolean).join(", ") || "—";
 }
 
-/* ── Milestone stepper ─────────────────────────────────────────────────────── */
 export function StageStepper({ stage }: { stage: DriverStage | null }) {
   const current = stage ?? "assigned";
 
@@ -92,7 +90,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
       <div
         className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold ${
           failed
-            ? "border-[#F3C6BF] bg-[#FBE4E1] text-[#D0453A]"
+            ? "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]"
             : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-soft)]"
         }`}
       >
@@ -113,7 +111,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
           <div key={s} className="flex flex-1 items-center last:flex-none">
             <div className="flex flex-col items-center">
               {done ? (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1E9E4C] text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--success)] text-white">
                   <CheckCircle2 size={15} />
                 </div>
               ) : active ? (
@@ -134,7 +132,7 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
             {i < MAIN_PATH.length - 1 && (
               <div
                 className={`mx-1 h-0.5 flex-1 rounded ${
-                  i < currentIndex ? "bg-[#1E9E4C]" : "bg-[var(--border)]"
+                  i < currentIndex ? "bg-[var(--success)]" : "bg-[var(--border)]"
                 }`}
               />
             )}
@@ -145,7 +143,6 @@ export function StageStepper({ stage }: { stage: DriverStage | null }) {
   );
 }
 
-/* ── Reusable active-assignment card with inline stage actions ─────────────── */
 export function ActiveAssignmentCard({
   shipment,
   token,
@@ -168,14 +165,16 @@ export function ActiveAssignmentCard({
   const codPending = isCodShipment && shipment.paymentStatus === "pending";
   const codPaid = isCodShipment && shipment.paymentStatus === "paid";
 
-  // Live GPS broadcast for this delivery (driver → customer/admin).
   const tracking = useDriverTracking(token, shipment);
+  const pickupConfirmed = isPickupConfirmed(shipment);
   const driverLocation = tracking.isTracking ? tracking.lastFix : null;
   const liveGpsLabel = tracking.isTracking
     ? driverLocation
       ? "Sharing live GPS"
       : "Finding GPS..."
-    : "GPS not shared yet";
+    : pickupConfirmed
+      ? "GPS not shared yet"
+      : "Confirm pickup to share GPS";
 
   const advance = async (stage: DriverStage) => {
     setBusy(stage);
@@ -209,11 +208,10 @@ export function ActiveAssignmentCard({
         </span>
       </div>
 
-      {/* Route: pickup → delivery */}
       <div className="mt-5 space-y-1">
         <div className="flex gap-3">
           <div className="flex flex-col items-center">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#1E9E4C] bg-[#DEF3E6] text-[10px] font-black text-[#1E9E4C]">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[var(--success)] bg-[var(--success-soft)] text-[10px] font-black text-[var(--success)]">
               A
             </div>
             <div className="my-1 h-8 w-0.5 bg-[var(--border)]" />
@@ -238,7 +236,6 @@ export function ActiveAssignmentCard({
         </div>
       </div>
 
-      {/* Meta grid */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MetaTile icon={<Phone size={14} />} label="Recipient" value={shipment.delivery.phoneNumber || "—"} />
         <MetaTile icon={<Package size={14} />} label="Parcel" value={`${shipment.package.parcelType} · ${shipment.package.weight || "—"}`} />
@@ -256,12 +253,10 @@ export function ActiveAssignmentCard({
         />
       </div>
 
-
-      {/* Live GPS sharing */}
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E5F1F3] text-[#1D7A8C]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--teal-tint)] text-[var(--teal)]">
               <Navigation size={17} />
             </div>
             <div>
@@ -288,7 +283,7 @@ export function ActiveAssignmentCard({
               <button
                 type="button"
                 onClick={tracking.stop}
-                className="flex items-center gap-1.5 rounded-lg border border-[#F3C6BF] bg-[#FBE4E1] px-3 py-2 text-xs font-bold text-[#D0453A] transition-colors hover:bg-[#f7d6d1]"
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs font-bold text-[var(--danger)] transition-colors hover:bg-[#f7d6d1]"
               >
                 <Square size={13} />
                 Stop Sharing
@@ -298,7 +293,12 @@ export function ActiveAssignmentCard({
                 type="button"
                 onClick={tracking.start}
                 disabled={!tracking.trackable}
-                className="flex items-center gap-1.5 rounded-lg bg-[#1D7A8C] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                title={
+                  !pickupConfirmed
+                    ? "Confirm pickup before sharing live GPS"
+                    : undefined
+                }
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 <Navigation size={13} />
                 Start Live GPS
@@ -309,6 +309,7 @@ export function ActiveAssignmentCard({
         <div className="p-3">
           <LiveMap
             location={driverLocation}
+            delivery={getDistrictCoords(shipment.delivery.district ?? "")}
             height={withMap ? 360 : 200}
             accent="#1D7A8C"
             waitingLabel={
@@ -316,29 +317,27 @@ export function ActiveAssignmentCard({
                 ? "Finding your GPS signal..."
                 : tracking.trackable
                   ? "Start live GPS to share your location."
-                  : "Live GPS is closed for this shipment."
+                  : pickupConfirmed
+                    ? "Live GPS is closed for this shipment."
+                    : "Confirm pickup to start sharing live GPS."
             }
           />
         </div>
         {tracking.error && (
-          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[#D0453A]">
+          <p className="border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[var(--danger)]">
             {tracking.error}
           </p>
         )}
       </div>
-      {/* Stepper */}
       {showStepper && (
         <div className="mt-6">
           <StageStepper stage={current} />
         </div>
       )}
 
-      {/* Actions */}
       {nextStages.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
           {nextStages.map((stage) =>
-            // The final delivery step (proof photo, signature, COD, confirm) now
-            // lives on its own focused page instead of crowding this card.
             stage === "delivered" ? (
               <Link
                 key={stage}
@@ -370,7 +369,7 @@ export function ActiveAssignmentCard({
       )}
 
       {error && (
-        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#D0453A]">
+        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--danger)]">
           <AlertTriangle size={14} /> {error}
         </p>
       )}
@@ -401,4 +400,3 @@ function MetaTile({
     </div>
   );
 }
-

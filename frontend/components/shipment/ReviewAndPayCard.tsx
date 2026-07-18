@@ -38,7 +38,7 @@ const SERVICE_INFO = {
     features: ["Guaranteed Next-Day", "Real-time GPS Tracking", "Signature Required"],
     icon: Zap,
     iconBg: "bg-[#EAF5F8]",
-    iconColor: "text-[#1D7A8C]",
+    iconColor: "text-[var(--teal)]",
   },
   overnight: {
     label: "Premium Overnight",
@@ -101,7 +101,6 @@ export function ReviewAndPayCard({
   const service = SERVICE_INFO[selectedService];
   const ServiceIcon = service.icon;
 
-  // Dynamic price calculation from shared utility
   const prices = calculatePrices(packageDetails, selectedService, insurance, specialHandling);
 
   const handleConfirm = () => {
@@ -143,11 +142,9 @@ export function ReviewAndPayCard({
     });
   };
 
-  // Stable reference used only while reviewing; the backend returns the final tracking ID.
   const referenceSeed = useId().replaceAll(":", "").toUpperCase();
   const refNumber = `CARGO-${referenceSeed.slice(-6).padStart(6, "0")}-X`;
 
-  // Estimated delivery date
   const today = new Date();
   const daysToAdd = selectedService === "overnight" ? 1 : selectedService === "express" ? 2 : 5;
   const estDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
@@ -157,7 +154,6 @@ export function ReviewAndPayCard({
     year: "numeric",
   });
 
-  // Format helpers
   const pickupCityLine = [pickupAddress.city, pickupAddress.district]
     .filter(Boolean)
     .join(", ");
@@ -183,7 +179,6 @@ export function ReviewAndPayCard({
       ? `${packageDetails.dimensions.length} × ${packageDetails.dimensions.width} × ${packageDetails.dimensions.height} cm`
       : "—";
 
-  // ── Success screen (after a shipment is created) ──
   if (placedShipment) {
     const paid = placedShipment.paymentStatus === "paid";
     return (
@@ -204,7 +199,7 @@ export function ReviewAndPayCard({
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Tracking ID
             </span>
-            <span className="text-[15px] font-extrabold text-[#1D7A8C]">
+            <span className="text-[15px] font-extrabold text-[var(--teal)]">
               #{placedShipment.trackingId}
             </span>
           </div>
@@ -233,7 +228,7 @@ export function ReviewAndPayCard({
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href={`/tracking?trackingId=${encodeURIComponent(placedShipment.trackingId)}`}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1D7A8C] to-[#15616D] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:shadow-md sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--teal)] to-[#15616D] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:shadow-md sm:w-auto"
           >
             Track This Shipment <ArrowRight className="h-4 w-4" />
           </Link>
@@ -258,14 +253,12 @@ export function ReviewAndPayCard({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* ── LEFT COLUMN ── */}
       <div className="lg:col-span-3 space-y-5">
-        {/* ─── Shipping Route ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF5F8]">
-                <MapPin className="h-4 w-4 text-[#1D7A8C]" />
+                <MapPin className="h-4 w-4 text-[var(--teal)]" />
               </div>
               <h3 className="text-[15px] font-bold text-slate-800">
                 Shipping Route
@@ -273,14 +266,13 @@ export function ReviewAndPayCard({
             </div>
             <button
               onClick={() => onEditStep(1)}
-              className="text-[12px] font-bold text-[#1D7A8C] hover:text-[#15616D] transition-colors cursor-pointer"
+              className="text-[12px] font-bold text-[var(--teal)] hover:text-[#15616D] transition-colors cursor-pointer"
             >
               Edit
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Pickup */}
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-2">
                 Pickup From
@@ -298,7 +290,6 @@ export function ReviewAndPayCard({
               </p>
             </div>
 
-            {/* Delivery */}
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-2">
                 Deliver To
@@ -318,7 +309,6 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Shipment Contents ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
@@ -331,14 +321,13 @@ export function ReviewAndPayCard({
             </div>
             <button
               onClick={() => onEditStep(2)}
-              className="text-[12px] font-bold text-[#1D7A8C] hover:text-[#15616D] transition-colors cursor-pointer"
+              className="text-[12px] font-bold text-[var(--teal)] hover:text-[#15616D] transition-colors cursor-pointer"
             >
               Edit
             </button>
           </div>
 
           <div className="flex items-center gap-5 flex-wrap">
-            {/* Package icon */}
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F8F7F4] border border-[#E2E8F0]">
               <Package className="h-6 w-6 text-slate-400" />
             </div>
@@ -379,11 +368,10 @@ export function ReviewAndPayCard({
             </div>
           </div>
 
-          {/* Insurance callout */}
           {insurance && (
             <div className="mt-4 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[#1D7A8C]" />
+                <Shield className="h-4 w-4 text-[var(--teal)]" />
                 <span className="text-[12px] font-semibold text-slate-600">
                   Full Value Insurance Coverage (Up to Rs 50,000)
                 </span>
@@ -392,7 +380,6 @@ export function ReviewAndPayCard({
           )}
         </div>
 
-        {/* ─── Payment Method ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F3EEFF]">
@@ -416,7 +403,7 @@ export function ReviewAndPayCard({
                   aria-pressed={isSelected}
                   className={`w-full flex items-center justify-between gap-4 p-4 rounded-xl border text-left cursor-pointer transition-all duration-200 ${
                     isSelected
-                      ? "border-[#1D7A8C] bg-[#EAF5F8]/40 shadow-sm"
+                      ? "border-[var(--teal)] bg-[#EAF5F8]/40 shadow-sm"
                       : "border-[#E2E8F0] bg-white hover:border-slate-300 hover:bg-slate-50/60"
                   }`}
                 >
@@ -424,12 +411,12 @@ export function ReviewAndPayCard({
                     <span
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
                         isSelected
-                          ? "border-[#1D7A8C]"
+                          ? "border-[var(--teal)]"
                           : "border-slate-300"
                       }`}
                     >
                       {isSelected && (
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#1D7A8C]" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--teal)]" />
                       )}
                     </span>
 
@@ -458,7 +445,7 @@ export function ReviewAndPayCard({
 
                   <ChevronRight
                     className={`h-4 w-4 shrink-0 ${
-                      isSelected ? "text-[#1D7A8C]" : "text-slate-400"
+                      isSelected ? "text-[var(--teal)]" : "text-slate-400"
                     }`}
                   />
                 </button>
@@ -467,14 +454,13 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Terms & Agreement ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
           <label className="flex items-start gap-3 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="w-5 h-5 rounded-full border-slate-300 text-[#1D7A8C] accent-[#1D7A8C] cursor-pointer mt-0.5 shrink-0"
+              className="w-5 h-5 rounded-full border-slate-300 text-[var(--teal)] accent-[var(--teal)] cursor-pointer mt-0.5 shrink-0"
             />
             <p className="text-[12px] text-slate-500 leading-relaxed">
               I agree to the{" "}
@@ -491,12 +477,9 @@ export function ReviewAndPayCard({
         </div>
       </div>
 
-      {/* ── RIGHT COLUMN (Sidebar) ── */}
       <div className="lg:col-span-2 space-y-5">
-        {/* ─── Order Summary ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-sm overflow-hidden">
-          {/* Accent Header */}
-          <div className="bg-gradient-to-r from-[#1D7A8C] to-[#15616D] px-6 py-4">
+          <div className="bg-gradient-to-r from-[var(--teal)] to-[#15616D] px-6 py-4">
             <h3 className="text-[15px] font-bold text-white">Order Summary</h3>
             <p className="text-[11px] font-medium text-white/70 mt-0.5">
               Ref: {refNumber}
@@ -504,7 +487,6 @@ export function ReviewAndPayCard({
           </div>
 
           <div className="p-6">
-            {/* Line items */}
             <div className="space-y-3.5 text-[13px]">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">
@@ -538,10 +520,8 @@ export function ReviewAndPayCard({
               )}
             </div>
 
-            {/* Divider */}
             <div className="border-t border-slate-100 my-5" />
 
-            {/* Total */}
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -551,14 +531,13 @@ export function ReviewAndPayCard({
                   {formatNPR(prices.total)}
                 </p>
               </div>
-              <span className="text-[11px] font-bold text-[#1D7A8C] bg-[#EAF5F8] px-2.5 py-1 rounded-md mb-1">
+              <span className="text-[11px] font-bold text-[var(--teal)] bg-[#EAF5F8] px-2.5 py-1 rounded-md mb-1">
                 NPR
               </span>
             </div>
           </div>
         </div>
 
-        {/* ─── Service Info Card ─── */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${service.iconBg}`}>
@@ -588,21 +567,19 @@ export function ReviewAndPayCard({
           </div>
         </div>
 
-        {/* ─── Error message ─── */}
         {errorMsg && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-medium text-red-700">
             {errorMsg}
           </div>
         )}
 
-        {/* ─── Confirm Button ─── */}
         <button
           type="button"
           onClick={handleConfirm}
           disabled={!agreedToTerms || isPending}
           className={`flex w-full items-center justify-center gap-2 py-3.5 rounded-xl text-[14px] font-bold transition-all duration-200 shadow-sm ${
             agreedToTerms && !isPending
-              ? "bg-gradient-to-r from-[#1D7A8C] to-[#15616D] text-white hover:shadow-md hover:shadow-[#1D7A8C]/20 active:scale-[0.98] cursor-pointer"
+              ? "bg-gradient-to-r from-[var(--teal)] to-[#15616D] text-white hover:shadow-md hover:shadow-[var(--teal)]/20 active:scale-[0.98] cursor-pointer"
               : "bg-slate-100 text-slate-400 cursor-not-allowed"
           }`}
           suppressHydrationWarning

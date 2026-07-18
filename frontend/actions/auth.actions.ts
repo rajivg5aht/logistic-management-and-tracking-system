@@ -3,10 +3,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  changePassword,
   loginUser,
   registerUser,
   updateProfile,
   updatePassword,
+  type AuthUser,
   type UpdateProfilePayload,
 } from "@/lib/api/auth.api";
 import { loginSchema, registerSchema } from "@/lib/schemas/auth.schema";
@@ -17,16 +19,51 @@ export type AuthFormState = {
   success: boolean;
   message?: string;
   fieldErrors?: Record<string, string[]>;
+  user?: AuthUser;
 };
 
-async function getAuthToken(): Promise<string | null> {
+const passwordUpdateSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters long"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+const passwordChangeSchema = passwordUpdateSchema.safeExtend({
+  currentPassword: z.string().min(1, "Current password is required"),
+});
+
+function cookieOptions(httpOnly: boolean) {
+  return {
+    httpOnly,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge: AUTH_COOKIE_MAX_AGE,
+    path: "/",
+  };
+}
+
+function buildProfilePayload(formData: FormData): UpdateProfilePayload {
+  const payload: UpdateProfilePayload = {
+    fullName: formData.get("fullName") as string,
+    email: formData.get("email") as string,
+    phoneNumber: formData.get("phoneNumber") as string,
+  };
+  const profileImage = formData.get("profileImage");
+  if (profileImage instanceof File && profileImage.size > 0) {
+    payload.profileImage = profileImage;
+  }
+  return payload;
+}
+
+async function getAuthToken(role: AuthUser["role"]): Promise<string | null> {
   const cookieStore = await cookies();
-  return (
-    cookieStore.get("token_customer")?.value ||
-    cookieStore.get("token_admin")?.value ||
-    cookieStore.get("token_driver")?.value ||
-    null
-  );
+  return cookieStore.get(`token_${role}`)?.value ?? null;
 }
 
 export async function registerAction(
@@ -118,21 +155,9 @@ export async function loginAction(
   const tokenCookieName = `token_${user.role}`;
   const userCookieName = `user_${user.role}`;
 
-  cookieStore.set(tokenCookieName, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(tokenCookieName, token, cookieOptions(true));
 
-  cookieStore.set(userCookieName, JSON.stringify(user), {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(userCookieName, JSON.stringify(user), cookieOptions(false));
 
   if (user.role === "admin") {
     redirect("/admin");
@@ -149,7 +174,7 @@ export async function updateProfileAction(
 ): Promise<AuthFormState> {
   try {
     const cookieStore = await cookies();
-    const token = await getAuthToken();
+    const token = await getAuthToken("customer");
 
     if (!token) {
       return {
@@ -158,30 +183,20 @@ export async function updateProfileAction(
       };
     }
 
-    const profileImage = formData.get("profileImage");
-    const payload: UpdateProfilePayload = {
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phoneNumber") as string,
-    };
-
-    if (profileImage instanceof File && profileImage.size > 0) {
-      payload.profileImage = profileImage;
-    }
+    const payload = buildProfilePayload(formData);
 
     const updatedUser = await updateProfile(token, payload);
 
-    cookieStore.set(`user_${updatedUser.role}`, JSON.stringify(updatedUser), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: AUTH_COOKIE_MAX_AGE,
-      path: "/",
-    });
+    cookieStore.set(
+      `user_${updatedUser.role}`,
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
 
     return {
       success: true,
       message: "Profile updated successfully",
+      user: updatedUser,
     };
   } catch (error) {
     return {
@@ -195,19 +210,7 @@ export async function updatePasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const passwordSchema = z
-    .object({
-      newPassword: z
-        .string()
-        .min(6, "Password must be at least 6 characters long"),
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords do not match",
-      path: ["confirmPassword"],
-    });
-
-  const parsed = passwordSchema.safeParse({
+  const parsed = passwordUpdateSchema.safeParse({
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -220,7 +223,7 @@ export async function updatePasswordAction(
   }
 
   try {
-    const token = await getAuthToken();
+    const token = await getAuthToken("customer");
 
     if (!token) {
       return {
@@ -269,4 +272,178 @@ export async function logoutAction() {
   cookieStore.delete("token_driver");
   cookieStore.delete("user_driver");
   redirect("/login");
+}
+
+export async function updateAdminProfileAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_admin")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    const payload = buildProfilePayload(formData);
+
+    const updatedUser = await updateProfile(token, payload);
+    if (updatedUser.role !== "admin") {
+      return {
+        success: false,
+        message: "Unauthorized admin profile response",
+      };
+    }
+
+    cookieStore.set(
+      "user_admin",
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
+
+    return {
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update profile",
+    };
+  }
+}
+
+export async function updateAdminPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = passwordChangeSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_admin")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    await changePassword(token, {
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
+
+    return {
+      success: true,
+      message: "Password updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update password",
+    };
+  }
+}
+
+export async function updateDriverProfileAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_driver")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    const payload = buildProfilePayload(formData);
+
+    const updatedUser = await updateProfile(token, payload);
+    if (updatedUser.role !== "driver") {
+      return {
+        success: false,
+        message: "Unauthorized driver profile response",
+      };
+    }
+
+    cookieStore.set(
+      "user_driver",
+      JSON.stringify(updatedUser),
+      cookieOptions(false),
+    );
+
+    return {
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update profile",
+    };
+  }
+}
+
+export async function updateDriverPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = passwordUpdateSchema.safeParse({
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token_driver")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        message: "Unauthorized - Please login again",
+      };
+    }
+
+    await updatePassword(token, { password: parsed.data.newPassword });
+
+    return {
+      success: true,
+      message: "Password updated successfully",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update password",
+    };
+  }
 }

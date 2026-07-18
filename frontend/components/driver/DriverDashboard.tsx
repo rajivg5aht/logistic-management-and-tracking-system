@@ -72,7 +72,7 @@ export default function DriverDashboard({
       label: "Active Delivery",
       value: stats ? String(stats.active) : "-",
       Icon: Package,
-      tint: "bg-[#E8F0FB] text-[#2E6FD6]",
+      tint: "bg-[var(--info-soft)] text-[var(--info)]",
     },
     {
       label: "Delivered Today",
@@ -84,7 +84,7 @@ export default function DriverDashboard({
       label: "Total Completed",
       value: stats ? String(stats.completed) : "-",
       Icon: TrendingUp,
-      tint: "bg-[#E5F1F3] text-[#1D7A8C]",
+      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
     },
     {
       label: "COD to Collect",
@@ -96,7 +96,6 @@ export default function DriverDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           Driver Dashboard
@@ -110,12 +109,11 @@ export default function DriverDashboard({
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
 
-      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tiles.map((t) => {
           const Icon = t.Icon;
@@ -140,7 +138,6 @@ export default function DriverDashboard({
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Active assignment */}
         <div className="lg:col-span-2">
           {loading ? (
             <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
@@ -167,7 +164,6 @@ export default function DriverDashboard({
           )}
         </div>
 
-        {/* Vehicle + quick link */}
         <div className="space-y-6">
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6"

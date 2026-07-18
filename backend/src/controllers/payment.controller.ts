@@ -6,7 +6,6 @@ import { AuthRequest } from "../middleware/auth.middleware";
 const paymentService = new PaymentService();
 
 export class PaymentController {
-  // Customer: my payment history
   async getMine(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -27,7 +26,6 @@ export class PaymentController {
     }
   }
 
-  // Customer: payments for one of my shipments
   async getByShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {

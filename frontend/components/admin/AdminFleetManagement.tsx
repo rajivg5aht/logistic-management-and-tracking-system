@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   AlertCircle,
   AlertTriangle,
@@ -62,39 +63,36 @@ const EMPTY_FORM = {
   odometerKm: "0",
 };
 
-// Card presentation per operational status: the badge on the hero, the hero
-// gradient, and the tint of the vehicle glyph.
 const CARD_STATUS: Record<
   VehicleStatus,
   { label: string; badge: string; hero: string; iconColor: string }
 > = {
-  assigned: {
+  active: {
     label: "Active",
-    badge: "bg-[#DEF3E6] text-[#1E9E4C]",
+    badge: "bg-[var(--success-soft)] text-[var(--success)]",
     hero: "from-[#E9F6EE] to-[#CFE9D9]",
-    iconColor: "text-[#1E9E4C]",
+    iconColor: "text-[var(--success)]",
   },
-  maintenance: {
-    label: "Maintenance",
-    badge: "bg-[#FBF1DC] text-[#C99A3D]",
+  maintenance_required: {
+    label: "Maintenance Required",
+    badge: "bg-[#FBF1DC] text-[var(--accent-hover)]",
     hero: "from-[#FBF2DE] to-[#F3E2BC]",
-    iconColor: "text-[#C99A3D]",
+    iconColor: "text-[var(--accent-hover)]",
   },
   available: {
-    label: "Idle",
+    label: "Available",
     badge: "bg-[#EDF1F6] text-[#5A6B82]",
     hero: "from-[#EFF2F7] to-[#DBE2EC]",
     iconColor: "text-[#5A6B82]",
   },
   inactive: {
     label: "Inactive",
-    badge: "bg-[#FBE4E1] text-[#D0453A]",
+    badge: "bg-[var(--danger-soft)] text-[var(--danger)]",
     hero: "from-[#FBE7E3] to-[#F3CEC8]",
-    iconColor: "text-[#D0453A]",
+    iconColor: "text-[var(--danger)]",
   },
 };
 
-// Friendlier labels than the raw enum for the card "Type" field.
 const TYPE_LABELS: Record<VehicleType, string> = {
   bike: "Bike",
   scooter: "Scooter",
@@ -117,23 +115,21 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString();
 }
 
-// The second detail column on a card adapts to what matters for that status:
-// who's driving it, when it's next serviced, or that it's ready to dispatch.
 function secondaryDetail(vehicle: Vehicle): {
   label: string;
   value: string;
   tone?: string;
 } {
   switch (vehicle.status) {
-    case "assigned":
+    case "active":
       return { label: "Driver", value: vehicle.assignedDriverName || "Unassigned" };
-    case "maintenance":
+    case "maintenance_required":
       return {
         label: "Service Due",
         value: vehicle.nextServiceAt
           ? formatDate(vehicle.nextServiceAt)
           : "Not scheduled",
-        tone: "text-[#C99A3D]",
+        tone: "text-[var(--accent-hover)]",
       };
     case "inactive":
       return { label: "Status", value: "Retired" };
@@ -145,8 +141,8 @@ function secondaryDetail(vehicle: Vehicle): {
 const FILTERS: Array<{ id: VehicleStatus | "all"; label: string }> = [
   { id: "all", label: "All Vehicles" },
   { id: "available", label: "Available" },
-  { id: "assigned", label: "Assigned" },
-  { id: "maintenance", label: "Maintenance" },
+  { id: "active", label: "Active" },
+  { id: "maintenance_required", label: "Maintenance Required" },
   { id: "inactive", label: "Inactive" },
 ];
 
@@ -174,13 +170,11 @@ export default function AdminFleetManagement({ token }: { token: string }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  // Pending destructive action (remove / deactivate) confirmed via a styled modal.
   const [confirmAction, setConfirmAction] = useState<{
     type: "remove" | "deactivate";
     vehicle: Vehicle;
   } | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  // Vehicle photo staged in the create/edit form; uploaded after the record saves.
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -236,7 +230,8 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           driver.status === "active" &&
           !!driver.phoneNumber &&
           !!driver.licenseNumber &&
-          (driver.availabilityStatus === "available" ||
+          (!driver.assignedVehicleId ||
+            driver.assignedVehicleId === selected?.id ||
             driver.id === selected?.assignedDriverId),
       ),
     [drivers, selected],
@@ -273,7 +268,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     setIsEditOpen(true);
   };
 
-  // Stage a chosen photo and show a local preview until it's uploaded on save.
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
     if (file) {
@@ -298,7 +292,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     year: form.year ? Number(form.year) : undefined,
     capacityKg: form.capacityKg ? Number(form.capacityKg) : undefined,
     branch: form.branch.trim(),
-    status: form.status === "assigned" ? undefined : form.status,
+    status: form.status === "active" ? undefined : form.status,
     insuranceExpiry: form.insuranceExpiry || null,
     registrationExpiry: form.registrationExpiry || null,
     lastServiceAt: form.lastServiceAt || null,
@@ -337,7 +331,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         const created = await adminCreateVehicle(token, payload);
         vehicleId = created.id;
       }
-      // Upload the staged photo once the vehicle exists (needs its id).
       if (imageFile) {
         await adminUploadVehicleImage(token, vehicleId, imageFile);
       }
@@ -376,8 +369,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     setConfirmAction({ type, vehicle });
   };
 
-  // Runs the pending remove/deactivate. Backend guards (assigned driver / active
-  // shipments) surface as an inline error and keep the modal open.
   const runConfirm = async () => {
     if (!confirmAction) return;
     const { type, vehicle } = confirmAction;
@@ -437,7 +428,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total vehicles - with an operational-utilisation bar */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Total Vehicles
@@ -452,7 +442,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                 width: `${
                   stats && stats.total > 0
                     ? Math.round(
-                        ((stats.available + stats.assigned) / stats.total) * 100,
+                        ((stats.available + stats.active) / stats.total) * 100,
                       )
                     : 0
                 }%`,
@@ -461,33 +451,30 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Active units - vehicles currently assigned/in service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Active Units
           </p>
           <p className="mt-2 text-3xl font-black text-[var(--text)]">
-            {stats ? stats.assigned : "-"}
+            {stats ? stats.active : "-"}
           </p>
-          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
+          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--success)]">
             <TrendingUp size={14} /> In active service
           </p>
         </div>
 
-        {/* In maintenance */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             In Maintenance
           </p>
-          <p className="mt-2 text-3xl font-black text-[#C99A3D]">
-            {stats ? stats.maintenance : "-"}
+          <p className="mt-2 text-3xl font-black text-[var(--accent-hover)]">
+            {stats ? stats.maintenanceRequired : "-"}
           </p>
-          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#D0453A]">
+          <p className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--danger)]">
             <AlertTriangle size={14} /> Needs attention
           </p>
         </div>
 
-        {/* Inactive - retired / out of service */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Inactive
@@ -523,12 +510,11 @@ export default function AdminFleetManagement({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      {/* ============ Asset Details (vehicle cards) ============ */}
       <div>
         <h2 className="mb-4 text-lg font-black tracking-tight text-[var(--text)]">
           Asset Details
@@ -560,26 +546,28 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               const cfg = CARD_STATUS[vehicle.status];
               const TypeIcon = TYPE_ICONS[vehicle.type];
               const detail = secondaryDetail(vehicle);
-              const canAssign = !["maintenance", "inactive"].includes(
+              const canAssign = !["maintenance_required", "inactive"].includes(
                 vehicle.status,
               );
               const isAssignPrimary =
-                vehicle.status === "available" || vehicle.status === "assigned";
+                vehicle.status === "available" || vehicle.status === "active";
 
               return (
                 <div
                   key={vehicle.id}
                   className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]"
                 >
-                  {/* Hero */}
                   <div
                     className={`relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br ${cfg.hero}`}
                   >
                     {vehicle.imageUrl ? (
-                      <img
+                      <Image
                         src={vehicle.imageUrl}
                         alt={vehicle.registrationNumber}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <TypeIcon
@@ -601,7 +589,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                     </span>
                   </div>
 
-                  {/* Body */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -615,7 +602,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                         </p>
                       </div>
 
-                      {/* Kebab menu */}
                       <div className="relative shrink-0">
                         <button
                           type="button"
@@ -668,7 +654,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                                     setMenuOpenId(null);
                                     openConfirm("deactivate", vehicle);
                                   }}
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
                                 >
                                   <Ban size={15} /> Deactivate
                                 </button>
@@ -679,7 +665,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                                   setMenuOpenId(null);
                                   openConfirm("remove", vehicle);
                                 }}
-                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[#D0453A] hover:bg-[#FBE4E1]"
+                                className="flex w-full items-center gap-2 border-t border-[var(--border)] px-3 py-2 text-left text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
                               >
                                 <Trash2 size={15} /> Remove Vehicle
                               </button>
@@ -689,7 +675,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Detail columns */}
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -713,15 +698,13 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                       </div>
                     </div>
 
-                    {/* Actions - assignment is a card-level action; editing lives
-                        in the kebab menu, and "Details" opens the full read-only page. */}
                     <div className="mt-4 flex items-center gap-2">
                       {isAssignPrimary && (
                         <button
                           type="button"
                           suppressHydrationWarning
                           onClick={() => openAssignment(vehicle)}
-                          className="flex-1 rounded-lg bg-[#E8F0FB] px-3 py-2 text-sm font-bold text-[#2E6FD6] transition-colors hover:bg-[#d8e6fa]"
+                          className="flex-1 rounded-lg bg-[var(--info-soft)] px-3 py-2 text-sm font-bold text-[var(--info)] transition-colors hover:bg-[#d8e6fa]"
                         >
                           {vehicle.status === "available" ? "Assign Driver" : "Reassign"}
                         </button>
@@ -740,7 +723,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Pagination */}
         {meta && meta.totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between">
             <span className="text-xs text-[var(--text-muted)]">
@@ -844,7 +826,6 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         </form>
       </Modal>
 
-      {/* Confirm remove / deactivate */}
       <Modal
         isOpen={!!confirmAction}
         onClose={() => setConfirmAction(null)}
@@ -858,7 +839,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           <div className="space-y-4">
             {confirmAction.vehicle.assignedDriverId ? (
               <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
-                <p className="flex items-center gap-2 font-bold text-[#C99A3D]">
+                <p className="flex items-center gap-2 font-bold text-[var(--accent-hover)]">
                   <AlertTriangle size={16} /> Action blocked
                 </p>
                 <p className="mt-2 text-[var(--text-soft)]">
@@ -874,8 +855,8 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                 </p>
               </div>
             ) : confirmAction.type === "remove" ? (
-              <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] p-4 text-sm">
-                <p className="font-bold text-[#D0453A]">
+              <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] p-4 text-sm">
+                <p className="font-bold text-[var(--danger)]">
                   This permanently deletes the vehicle.
                 </p>
                 <p className="mt-2 text-[var(--text-soft)]">
@@ -888,7 +869,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
               </div>
             ) : (
               <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
-                <p className="font-bold text-[#C99A3D]">
+                <p className="font-bold text-[var(--accent-hover)]">
                   This marks the vehicle as inactive.
                 </p>
                 <p className="mt-2 text-[var(--text-soft)]">
@@ -917,8 +898,8 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                 onClick={() => void runConfirm()}
                 className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40 ${
                   confirmAction.type === "remove"
-                    ? "bg-[#D0453A]"
-                    : "bg-[#C99A3D]"
+                    ? "bg-[var(--danger)]"
+                    : "bg-[var(--accent-hover)]"
                 }`}
               >
                 {saving && <Loader2 size={15} className="animate-spin" />}
@@ -965,10 +946,13 @@ function VehicleForm({
         <div className="flex items-center gap-4">
           <div className="flex h-20 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]">
             {imagePreview ? (
-              <img
+              <Image
                 src={imagePreview}
                 alt="Vehicle preview"
+                width={112}
+                height={80}
                 className="h-full w-full object-cover"
+                unoptimized
               />
             ) : (
               <ImageIcon size={22} className="text-[var(--text-muted)]" />
@@ -1073,17 +1057,17 @@ function VehicleForm({
           onChange={(event) =>
             set({ status: event.target.value as VehicleStatus })
           }
-          disabled={form.status === "assigned"}
+          disabled={form.status === "active"}
         >
-          {(["available", "maintenance", "inactive"] as VehicleStatus[]).map(
+          {(["available", "maintenance_required", "inactive"] as VehicleStatus[]).map(
             (status) => (
               <option key={status} value={status} className="capitalize">
-                {status}
+                {status.replaceAll("_", " ")}
               </option>
             ),
           )}
-          {form.status === "assigned" && (
-            <option value="assigned">Assigned</option>
+          {form.status === "active" && (
+            <option value="active">Active</option>
           )}
         </select>
       </div>

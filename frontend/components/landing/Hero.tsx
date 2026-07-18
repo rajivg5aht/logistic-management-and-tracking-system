@@ -31,11 +31,9 @@ function TerrainVisualization() {
 
       <rect width="600" height="380" fill="url(#heroSky)" />
 
-      {/* Sun / glow */}
       <circle cx="450" cy="105" r="90" fill="url(#heroSun)" opacity="0.55" />
       <circle cx="450" cy="105" r="26" fill="var(--accent)" opacity="0.9" filter="url(#heroBlur)" />
 
-      {/* Stars */}
       {[
         [70, 60], [130, 40], [200, 70], [280, 50], [90, 110], [340, 90], [520, 60], [560, 120],
       ].map(([cx, cy], i) => (
@@ -44,17 +42,12 @@ function TerrainVisualization() {
         </circle>
       ))}
 
-      {/* Back range */}
       <path d="M0 250 L110 150 L190 215 L280 130 L360 205 L460 120 L560 200 L600 165 L600 380 L0 380 Z" fill="#2a2723" />
-      {/* Snow caps back */}
       <path d="M280 130 L305 155 L255 155 Z M460 120 L488 150 L432 150 Z" fill="rgba(255,247,232,0.28)" />
 
-      {/* Front range */}
       <path d="M0 300 L90 215 L170 275 L250 195 L340 280 L430 205 L520 285 L600 235 L600 380 L0 380 Z" fill="#1a1816" />
-      {/* Snow caps front */}
       <path d="M250 195 L278 228 L222 228 Z M430 205 L456 236 L404 236 Z" fill="url(#heroSnow)" />
 
-      {/* Delivery route */}
       <path
         d="M70 330 Q210 300 300 250 T520 230"
         fill="none"
@@ -68,16 +61,13 @@ function TerrainVisualization() {
         <animate attributeName="stroke-dashoffset" values="0;-40" dur="1.6s" repeatCount="indefinite" />
       </path>
 
-      {/* Origin hub */}
       <g transform="translate(70,330)">
         <circle r="12" fill="url(#heroSun)" opacity="0.7" />
         <circle r="4" fill="var(--accent)" filter="url(#heroBlur)" />
       </g>
-      {/* Moving parcel */}
       <circle r="5" fill="var(--text-on-dark)" filter="url(#heroBlur)">
         <animateMotion dur="4.5s" repeatCount="indefinite" path="M70 330 Q210 300 300 250 T520 230" />
       </circle>
-      {/* Destination */}
       <g transform="translate(520,230)">
         <circle r="14" fill="url(#heroSun)" opacity="0.6">
           <animate attributeName="opacity" values="0.3;0.75;0.3" dur="2.4s" repeatCount="indefinite" />
@@ -105,13 +95,11 @@ export default function Hero() {
 
   return (
     <section id="hero" className="relative overflow-hidden bg-[var(--app-bg)] pb-16 pt-28 sm:pb-20 lg:pt-32">
-      {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,162,74,0.05)_0%,transparent_60%)]" />
       <div className="pointer-events-none absolute -right-48 -top-64 h-[720px] w-[720px] rounded-full bg-[radial-gradient(circle,rgba(200,162,74,0.05)_0%,transparent_70%)] blur-[130px]" />
 
       <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[48fr_52fr] lg:gap-16">
-          {/* Left column */}
           <div className="text-center lg:text-left">
             <div className="section-tag"><span className="section-tag-dot" />Simple &amp; Fast · Trusted Network</div>
 
@@ -126,7 +114,6 @@ export default function Hero() {
               heart of Kathmandu or a remote mountain trail, we bridge the gap.
             </p>
 
-            {/* Track form */}
             <form
               onSubmit={handleTrack}
               className="mx-auto mt-9 flex w-full max-w-[520px] flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)] sm:flex-row sm:items-center lg:mx-0"
@@ -147,7 +134,6 @@ export default function Hero() {
               </button>
             </form>
 
-            {/* Trust bar */}
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:gap-6 lg:items-center lg:justify-start">
               <div className="flex -space-x-2.5">
                 {["#C99A3D", "#E9C46A", "#3A2E12", "#1D7A8C"].map((c) => (
@@ -164,7 +150,6 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right column visual */}
           <div className="relative">
             <div className="pointer-events-none absolute -inset-4 rounded-3xl bg-gradient-to-tr from-[rgba(200,162,74,0.10)] via-transparent to-[rgba(169,121,29,0.05)] opacity-70 blur-2xl" />
             <div className="dark-panel group relative overflow-hidden p-3">
@@ -173,13 +158,11 @@ export default function Hero() {
               <div className="relative aspect-[16/11] overflow-hidden rounded-xl">
                 <TerrainVisualization />
 
-                {/* ETA badge */}
                 <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-[rgba(200,162,74,0.20)] bg-[rgba(25,24,23,0.82)] px-3 py-1.5 backdrop-blur-md">
                   <Truck size={14} className="text-[var(--accent)]" />
                   <span className="text-xs font-bold text-[var(--text-on-dark)]">2.4d ETA</span>
                 </div>
 
-                {/* Live shipment overlay */}
                 <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3 rounded-xl border border-[rgba(200,162,74,0.15)] bg-[rgba(25,24,23,0.86)] p-3.5 shadow-[0_15px_35px_rgba(0,0,0,0.35)] backdrop-blur-lg">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(200,162,74,0.20)] bg-[var(--accent-soft)] text-[var(--accent)]">

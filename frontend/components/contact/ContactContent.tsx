@@ -58,9 +58,7 @@ function OfficeMap() {
     <svg viewBox="0 0 600 260" className="h-full w-full" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
       <rect width="600" height="260" fill="#EFEAE0" />
 
-      {/* Park block */}
       <rect x="34" y="24" width="120" height="78" rx="8" fill="rgba(95,127,53,0.16)" />
-      {/* City blocks */}
       <g fill="#F4EFE4" stroke="#E2DACB" strokeWidth="1.5">
         <rect x="200" y="24" width="120" height="70" rx="6" />
         <rect x="360" y="30" width="110" height="60" rx="6" />
@@ -70,20 +68,16 @@ function OfficeMap() {
         <rect x="520" y="150" width="70" height="86" rx="6" />
       </g>
 
-      {/* Roads */}
       <g stroke="#DCD2BE" strokeWidth="8" strokeLinecap="round">
         <line x1="0" y1="120" x2="600" y2="120" />
         <line x1="190" y1="0" x2="190" y2="260" />
         <line x1="350" y1="0" x2="350" y2="260" />
         <line x1="490" y1="0" x2="490" y2="260" />
       </g>
-      {/* Main avenue */}
       <line x1="0" y1="120" x2="600" y2="120" stroke="var(--accent)" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
 
-      {/* River */}
       <path d="M-20 60 C 140 110, 250 60, 360 140 S 540 220, 620 190" fill="none" stroke="var(--teal)" strokeWidth="16" opacity="0.30" strokeLinecap="round" />
 
-      {/* Pin */}
       <g transform="translate(300,110)">
         <circle r="30" fill="rgba(200,162,74,0.18)">
           <animate attributeName="r" values="24;34;24" dur="2.6s" repeatCount="indefinite" />
@@ -134,7 +128,6 @@ export default function ContactContent() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,162,74,0.05)_0%,transparent_55%)]" />
 
       <div className="relative mx-auto w-full max-w-[1200px] px-5 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-10 sm:mb-12">
           <div className="section-tag"><span className="section-tag-dot" />Contact Us</div>
           <h1 className="heading-lg mt-1">Get in Touch</h1>
@@ -145,9 +138,7 @@ export default function ContactContent() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Left column */}
           <div className="space-y-6">
-            {/* Info card */}
             <div className="card p-6 sm:p-8">
               <div className="space-y-6">
                 {contactInfo.map(({ icon: Icon, title, lines }) => (
@@ -196,7 +187,6 @@ export default function ContactContent() {
               </div>
             </div>
 
-            {/* Map card */}
             <div className="card overflow-hidden">
               <div className="flex items-center gap-1.5 border-b border-[var(--border)] px-5 py-3 text-sm">
                 <span className="font-bold tracking-tight">
@@ -215,7 +205,6 @@ export default function ContactContent() {
             </div>
           </div>
 
-          {/* Right column - form */}
           <div className="card p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="form-wrapper">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -280,7 +269,6 @@ export default function ContactContent() {
           </div>
         </div>
 
-        {/* FAQ */}
         <div className="mt-16 sm:mt-20">
           <h2 className="heading-md text-center">Frequently Asked Questions</h2>
           <div className="mx-auto mt-8 max-w-[760px] space-y-3">

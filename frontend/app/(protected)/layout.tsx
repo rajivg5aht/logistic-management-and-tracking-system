@@ -8,14 +8,12 @@ import { AuthProvider } from "@/context/AuthContext";
 function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Initialize collapsed state from localStorage
   useEffect(() => {
     const savedState = localStorage.getItem("sidebar-collapsed");
     if (savedState !== null) {
       setIsCollapsed(JSON.parse(savedState));
     }
 
-    // Listen for sidebar toggle events
     const handleToggle = () => {
       const newState = localStorage.getItem("sidebar-collapsed");
       if (newState !== null) {
@@ -29,10 +27,8 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--app-bg)]">
-      {/* Sidebar Panel */}
       <Sidebar />
 
-      {/* Main Content */}
       <div
         className="transition-all duration-280 ease-in-out"
         style={{
@@ -40,10 +36,6 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
           transitionDuration: '280ms'
         }}
       >
-        {/* Page Content.
-            Full width with responsive side padding (matching the admin layout)
-            so content fills the space evenly and the left/right gaps stay
-            consistent whether the sidebar is expanded or collapsed. */}
         <main className="px-8 py-8 lg:px-12 xl:px-16">
           <PageBreadcrumb />
           {children}

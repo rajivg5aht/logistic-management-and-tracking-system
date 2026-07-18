@@ -7,13 +7,11 @@ import { DriverStage, ShipmentStatus } from "../types/shipment.type";
 const shipmentRepository = new ShipmentMongoRepository();
 const driverLocationRepository = new DriverLocationMongoRepository();
 
-// The requesting principal, derived from the authenticated JWT (socket or REST).
 export interface TrackingUser {
   id: string;
   role: string;
 }
 
-// Raw payload a driver client emits with each GPS fix.
 export interface DriverLocationPayload {
   shipmentId: string;
   latitude: number;
@@ -24,7 +22,6 @@ export interface DriverLocationPayload {
   updatedAt?: string | number | Date;
 }
 
-// Shape broadcast to viewers and returned by the REST endpoint.
 export interface SafeDriverLocation {
   shipmentId: string;
   driverId: string;
@@ -46,9 +43,14 @@ export interface DriverTrackingStatus {
   updatedAt: Date;
 }
 
-// Shipment states where the delivery is finished and must not accept new fixes.
 const TERMINAL_STATUSES: ShipmentStatus[] = ["delivered", "cancelled"];
 const TERMINAL_STAGES: DriverStage[] = ["delivered", "failed", "returned"];
+// Live GPS may only be shared once the driver has confirmed pickup.
+const PICKUP_CONFIRMED_STAGES: DriverStage[] = [
+  "picked-up",
+  "in-transit",
+  "out-for-delivery",
+];
 
 export class TrackingService {
   private sanitize(location: IDriverLocation): SafeDriverLocation {
@@ -71,8 +73,6 @@ export class TrackingService {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
   }
 
-  // Authorizes a viewer to read a shipment's live location. Admin sees any;
-  // a customer only their own shipment; a driver only their assignment.
   async assertCanRead(user: TrackingUser, shipmentId: string): Promise<void> {
     const shipment = await shipmentRepository.getById(shipmentId);
     if (!shipment) {
@@ -98,8 +98,6 @@ export class TrackingService {
     throw new HttpException(403, "You cannot track this shipment");
   }
 
-  // Validates and persists a driver's location ping, mirroring the latest
-  // position onto the shipment. Returns the broadcast-safe location.
   async saveDriverLocation(
     user: TrackingUser,
     payload: DriverLocationPayload,
@@ -137,6 +135,15 @@ export class TrackingService {
     ) {
       throw new HttpException(409, "This delivery is already completed");
     }
+    if (
+      !shipment.driverStage ||
+      !PICKUP_CONFIRMED_STAGES.includes(shipment.driverStage as DriverStage)
+    ) {
+      throw new HttpException(
+        409,
+        "Confirm pickup before sharing live GPS",
+      );
+    }
 
     const updatedAt = new Date();
     const location = await driverLocationRepository.upsert(payload.shipmentId, {
@@ -152,7 +159,6 @@ export class TrackingService {
       updatedAt,
     });
 
-    // Mirror the latest live position onto the shipment document.
     await shipmentRepository.update(payload.shipmentId, {
       currentLocation: { latitude, longitude, updatedAt },
     });
@@ -193,7 +199,6 @@ export class TrackingService {
     };
   }
 
-  // Returns the last saved live location for a shipment, or null if none yet.
   async getLatestLocation(
     shipmentId: string,
   ): Promise<SafeDriverLocation | null> {

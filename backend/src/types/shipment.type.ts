@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Sub-schemas ---------------------------------------------------------------
 export const PickupSchema = z.object({
   fullName: z.string().min(1, "Pickup full name is required"),
   phoneNumber: z.string().min(1, "Pickup phone number is required"),
@@ -39,9 +38,6 @@ export const SHIPMENT_STATUSES = [
 
 export const CUSTOMER_HISTORY_STATUSES = ["delivered", "cancelled"] as const;
 
-// Granular delivery step owned by the driver. Layered on top of the canonical
-// 4-state status (which the KPIs/chart/customer badges depend on) so it can be
-// as detailed as the operational flow needs without rippling through the app.
 export const DRIVER_STAGES = [
   "assigned",
   "picked-up",
@@ -55,9 +51,6 @@ export const DRIVER_STAGES = [
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
 export type DriverStage = (typeof DRIVER_STAGES)[number];
 
-// Driver stages are intentionally more detailed than the four statuses used by
-// admin lists, customer badges, filters, and statistics. This is the single
-// contract used whenever a driver milestone changes a shipment.
 export const DRIVER_STAGE_TO_SHIPMENT_STATUS: Record<
   DriverStage,
   ShipmentStatus
@@ -71,8 +64,6 @@ export const DRIVER_STAGE_TO_SHIPMENT_STATUS: Record<
   returned: "cancelled",
 };
 
-// When an admin changes the four-state status, keep the driver's operational
-// stage compatible with it as well.
 export const SHIPMENT_STATUS_TO_DRIVER_STAGE: Record<
   ShipmentStatus,
   DriverStage
@@ -85,7 +76,6 @@ export const SHIPMENT_STATUS_TO_DRIVER_STAGE: Record<
 
 export const PAYMENT_METHODS = ["esewa", "khalti", "cod"] as const;
 
-// One entry per stage transition — powers the customer tracking timeline.
 export const TimelineEntrySchema = z.object({
   stage: z.enum(DRIVER_STAGES),
   at: z.coerce.date(),
@@ -101,7 +91,6 @@ export const ProofOfDeliverySchema = z.object({
   updatedAt: z.coerce.date().nullable().default(null),
 });
 
-// Full shipment schema ------------------------------------------------------
 export const ShipmentSchema = z.object({
   pickup: PickupSchema,
   delivery: DeliverySchema,

@@ -2,7 +2,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Ensure uploads directories exist
 const uploadDir = path.join(__dirname, "../../uploads/profiles");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -18,24 +17,26 @@ if (!fs.existsSync(proofUploadDir)) {
   fs.mkdirSync(proofUploadDir, { recursive: true });
 }
 
-// Configure storage
+const fuelReceiptUploadDir = path.join(__dirname, "../../uploads/fuel-receipts");
+if (!fs.existsSync(fuelReceiptUploadDir)) {
+  fs.mkdirSync(fuelReceiptUploadDir, { recursive: true });
+}
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `profile-${uniqueSuffix}${ext}`);
   },
 });
 
-// Separate storage for vehicle photos, kept under /uploads/vehicles.
 const vehicleStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, vehicleUploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `vehicle-${uniqueSuffix}${ext}`);
@@ -43,19 +44,29 @@ const vehicleStorage = multer.diskStorage({
 });
 
 const proofStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, proofUploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `proof-${uniqueSuffix}${ext}`);
   },
 });
 
-// File filter to accept only images
+const fuelReceiptStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, fuelReceiptUploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `fuel-receipt-${uniqueSuffix}${ext}`);
+  },
+});
+
 const fileFilter = (
-  req: Express.Request,
+  _req: Express.Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
@@ -72,28 +83,34 @@ const fileFilter = (
   }
 };
 
-// Create multer upload instance
 export const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
-// Upload instance for vehicle photos.
 export const vehicleUpload = multer({
   storage: vehicleStorage,
-  fileFilter: fileFilter,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
 export const proofUpload = multer({
   storage: proofStorage,
-  fileFilter: fileFilter,
+  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+export const fuelReceiptUpload = multer({
+  storage: fuelReceiptStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
   },
 });

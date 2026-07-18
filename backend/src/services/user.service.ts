@@ -1,15 +1,23 @@
 import mongoose from "mongoose";
 import { UserMongoRepository } from "../repositories/user.repository";
-import { CreateUserDTO, LoginUserDTO, UpdateUserDTO } from "../dtos/user.dto";
+import {
+  ChangePasswordDTO,
+  CreateUserDTO,
+  LoginUserDTO,
+  UpdateUserDTO,
+} from "../dtos/user.dto";
 import type { AdminCreateUserDTO, AdminUpdateUserDTO } from "../dtos/admin.dto";
 import type {
   AdminCreateDriverDTO,
   AdminUpdateDriverDTO,
   DriverFleetIncidentDTO,
+  DriverFleetIncidentUpdateDTO,
   DriverFuelExpenseDTO,
+  DriverFuelExpenseUpdateDTO,
 } from "../dtos/driver.dto";
 import { IUser, UserModel } from "../models/user.model";
 import { HttpException } from "../exceptions/http-exception";
+import { emitFleetIssueReported } from "../socket";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../configs/constant";
@@ -23,7 +31,6 @@ import {
   VehicleFuelExpenseModel,
   type IVehicleFuelExpense,
 } from "../models/vehicleFuelExpense.model";
-
 const userRepository = new UserMongoRepository();
 
 export type SafeUser = {
@@ -35,7 +42,6 @@ export type SafeUser = {
   role: IUser["role"];
   status?: string;
   createdAt?: Date;
-  // Driver profile (only meaningful when role === "driver")
   licenseNumber?: string;
   vehicleType?: IUser["vehicleType"];
   vehicleNumber?: string;
@@ -46,7 +52,6 @@ export type SafeUser = {
   deliveriesCount?: number;
 };
 
-// Compact view of a driver's assigned vehicle, surfaced in the driver console.
 export type DriverVehicleSummary = {
   id: string;
   registrationNumber: string;
@@ -91,10 +96,12 @@ export type DriverFleetIncident = {
   description: string;
   location: string;
   status: string;
+  adminNote: string;
+  reviewedAt: Date | null;
+  resolvedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
-
 export type DriverFuelExpense = {
   id: string;
   fuelType: string;
@@ -103,7 +110,13 @@ export type DriverFuelExpense = {
   odometerKm: number;
   stationName: string;
   notes: string;
+  receiptUrl: string;
   status: string;
+  adminNote: string;
+  rejectionReason: string;
+  approvedAt: Date | null;
+  reimbursedAt: Date | null;
+  paymentReference: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -183,11 +196,13 @@ export class UserService {
       description: incident.description,
       location: incident.location,
       status: incident.status,
+      adminNote: incident.adminNote ?? "",
+      reviewedAt: incident.reviewedAt ?? null,
+      resolvedAt: incident.resolvedAt ?? null,
       createdAt: incident.createdAt,
       updatedAt: incident.updatedAt,
     };
   }
-
   private sanitizeFuelExpense(
     expense: IVehicleFuelExpense,
   ): DriverFuelExpense {
@@ -199,7 +214,13 @@ export class UserService {
       odometerKm: expense.odometerKm,
       stationName: expense.stationName,
       notes: expense.notes,
+      receiptUrl: expense.receiptUrl ?? "",
       status: expense.status,
+      adminNote: expense.adminNote ?? "",
+      rejectionReason: expense.rejectionReason ?? "",
+      approvedAt: expense.approvedAt ?? null,
+      reimbursedAt: expense.reimbursedAt ?? null,
+      paymentReference: expense.paymentReference ?? "",
       createdAt: expense.createdAt,
       updatedAt: expense.updatedAt,
     };
@@ -292,18 +313,19 @@ export class UserService {
       throw new HttpException(404, "User not found");
     }
 
-    // If email is being updated, check if it's already taken
-    if (updateData.email && updateData.email !== user.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== user.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
 
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+        if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
-    // Hash password if it's being updated
     if (updateData.password) {
       updateData.password = await this.hashPassword(updateData.password);
     }
@@ -315,6 +337,34 @@ export class UserService {
     }
 
     return this.sanitizeUser(updatedUser);
+  }
+
+  async changePassword(
+    userId: string,
+    passwordData: ChangePasswordDTO,
+  ): Promise<void> {
+    const user = await userRepository.getUserById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    const isPasswordValid = await bcryptjs.compare(
+      passwordData.currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new HttpException(400, "Current password is incorrect");
+    }
+
+    const updatedUser = await userRepository.update(userId, {
+      password: await this.hashPassword(passwordData.newPassword),
+    });
+
+    if (!updatedUser) {
+      throw new HttpException(500, "Failed to update password");
+    }
   }
 
   async adminGetUsers(
@@ -336,9 +386,6 @@ export class UserService {
     };
   }
 
-  // Registration insight for the User Management KPI cards: customer signups in
-  // the last 24h and month-over-month growth. Scoped to customers because that
-  // is the public sign-up flow (drivers/admins are created internally).
   async adminGetUserStats(): Promise<{
     total: number;
     newSignups24h: number;
@@ -349,7 +396,6 @@ export class UserService {
     const now = new Date();
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Nepal-local month boundaries (UTC+05:45) converted back to UTC for querying.
     const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
     const nowInNepal = new Date(now.getTime() + nepalOffsetMs);
     const startOfThisMonth = new Date(
@@ -361,8 +407,6 @@ export class UserService {
         nepalOffsetMs,
     );
 
-    // Start of the 7-day trend window: midnight (Nepal-local) six days ago,
-    // stored as the equivalent UTC instant for querying.
     const startOfTodayNepal = new Date(
       Date.UTC(
         nowInNepal.getUTCFullYear(),
@@ -393,7 +437,6 @@ export class UserService {
         role: "customer",
         createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth },
       }),
-      // Daily customer signups over the trend window, bucketed by Nepal-local day.
       UserModel.aggregate<{ _id: string; count: number }>([
         { $match: { role: "customer", createdAt: { $gte: trendStart } } },
         {
@@ -411,7 +454,6 @@ export class UserService {
       ]),
     ]);
 
-    // Grew-from-zero baseline reads as +100%; a flat/empty prior month is 0%.
     const growthPct =
       signupsLastMonth === 0
         ? signupsThisMonth > 0
@@ -421,8 +463,6 @@ export class UserService {
             ((signupsThisMonth - signupsLastMonth) / signupsLastMonth) * 100,
           );
 
-    // Fill every day in the window (including zero-signup days) so the chart
-    // always renders exactly 7 ordered bars, oldest → newest.
     const countByDay = new Map(trendRaw.map((r) => [r._id, r.count]));
     const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const registrationTrend = Array.from({ length: 7 }, (_, i) => {
@@ -451,7 +491,7 @@ export class UserService {
     if (userData.role && userData.role !== "customer") {
       throw new HttpException(
         400,
-        "Drivers must be created in Driver Management",
+        "Only customer accounts can be created here. Drivers must be created in Driver Management",
       );
     }
 
@@ -467,7 +507,7 @@ export class UserService {
       email: userData.email,
       password: hashedPassword,
       phoneNumber: userData.phoneNumber || "",
-      role: "customer",
+      role: userData.role,
       status: userData.status ?? "active",
     });
 
@@ -490,12 +530,15 @@ export class UserService {
       );
     }
 
-    if (updateData.email && updateData.email !== user.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== user.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
+        if (existingEmail && existingEmail._id.toString() !== user._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
@@ -537,7 +580,6 @@ export class UserService {
     return userRepository.delete(userId);
   }
 
-  // Driver management (admin-controlled internal staff)
   async adminGetDrivers(
     page: number,
     limit: number,
@@ -556,8 +598,6 @@ export class UserService {
       filter,
     );
 
-    // Count each driver's completed deliveries in one grouped query so the
-    // admin list can show lifetime delivery totals without N extra requests.
     const driverIds = users.map((u) => u._id);
     const deliveryCounts = await ShipmentModel.aggregate<{
       _id: mongoose.Types.ObjectId;
@@ -579,7 +619,6 @@ export class UserService {
     };
   }
 
-  // Aggregate counts for the driver-management KPI cards.
   async adminGetDriverStats(): Promise<{
     total: number;
     onDelivery: number;
@@ -657,12 +696,15 @@ export class UserService {
       throw new HttpException(404, "Driver not found");
     }
 
-    if (updateData.email && updateData.email !== driver.email) {
-      const existingEmail = await userRepository.getUserByEmail(
-        updateData.email,
-      );
-      if (existingEmail) {
-        throw new HttpException(400, "Email already exists");
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      if (updateData.email !== driver.email) {
+        const existingEmail = await userRepository.getUserByEmail(
+          updateData.email,
+        );
+        if (existingEmail && existingEmail._id.toString() !== driver._id.toString()) {
+          throw new HttpException(400, "Email already exists");
+        }
       }
     }
 
@@ -748,7 +790,6 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
-  // Permanently removes a driver account only when it has no operational history.
   async adminDeleteDriver(driverId: string): Promise<boolean> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {
@@ -789,7 +830,6 @@ export class UserService {
     return userRepository.delete(driverId);
   }
 
-  // A driver toggles their own availability from the driver console.
   async updateAvailability(
     driverId: string,
     availabilityStatus: string,
@@ -849,35 +889,67 @@ export class UserService {
             odometerKm: historyVehicle.odometerKm,
           })),
       )
-      .sort(
-        (a, b) => b.assignedAt.getTime() - a.assignedAt.getTime(),
-      );
+      .sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
 
-    const [incidents, fuelExpenses] = vehicle
-      ? await Promise.all([
-          VehicleIncidentModel.find({
-            vehicleId: vehicle._id,
-            driverId: driver._id,
-          })
-            .sort({ createdAt: -1 })
-            .limit(25),
-          VehicleFuelExpenseModel.find({
-            vehicleId: vehicle._id,
-            driverId: driver._id,
-          })
-            .sort({ createdAt: -1 })
-            .limit(25),
-        ])
-      : [[], []];
-
+    const incidentsPromise = VehicleIncidentModel.find({
+      driverId: driver._id,
+    })
+      .sort({ createdAt: -1 })
+      .limit(25);
+    const fuelExpensesPromise = vehicle
+      ? VehicleFuelExpenseModel.find({
+          vehicleId: vehicle._id,
+          driverId: driver._id,
+        })
+          .sort({ createdAt: -1 })
+          .limit(25)
+      : Promise.resolve([]);
+    const [incidents, fuelExpenses] = await Promise.all([
+      incidentsPromise,
+      fuelExpensesPromise,
+    ]);
     return {
       vehicle: vehicle
         ? this.sanitizeDriverFleetVehicle(vehicle, driver._id.toString())
         : null,
       assignmentHistory,
-      incidents: incidents.map((incident) => this.sanitizeFleetIncident(incident)),
-      fuelExpenses: fuelExpenses.map((expense) => this.sanitizeFuelExpense(expense)),
+      incidents: incidents.map((incident) =>
+        this.sanitizeFleetIncident(incident),
+      ),
+
+      fuelExpenses: fuelExpenses.map((expense) =>
+        this.sanitizeFuelExpense(expense),
+      ),
     };
+  }
+  private async getOwnedFleetIncident(
+    driverId: string,
+    incidentId: string,
+  ): Promise<IVehicleIncident> {
+    if (!mongoose.isValidObjectId(incidentId)) {
+      throw new HttpException(404, "Incident not found");
+    }
+
+    const incident = await VehicleIncidentModel.findById(incidentId);
+    if (!incident || incident.driverId.toString() !== driverId) {
+      throw new HttpException(404, "Incident not found");
+    }
+    return incident;
+  }
+
+  private async getOwnedFuelExpense(
+    driverId: string,
+    expenseId: string,
+  ): Promise<IVehicleFuelExpense> {
+    if (!mongoose.isValidObjectId(expenseId)) {
+      throw new HttpException(404, "Fuel expense not found");
+    }
+
+    const expense = await VehicleFuelExpenseModel.findById(expenseId);
+    if (!expense || expense.driverId.toString() !== driverId) {
+      throw new HttpException(404, "Fuel expense not found");
+    }
+    return expense;
   }
 
   async createDriverFleetIncident(
@@ -898,12 +970,52 @@ export class UserService {
       location: input.location,
     });
 
+    emitFleetIssueReported({
+      incidentId: incident._id.toString(),
+      vehicleRegistration: vehicle.registrationNumber,
+      driverName: driver.fullName,
+      createdAt: incident.createdAt.toISOString(),
+    });
+
     return this.sanitizeFleetIncident(incident);
+  }
+
+  async updateDriverFleetIncident(
+    driverId: string,
+    incidentId: string,
+    input: DriverFleetIncidentUpdateDTO,
+  ): Promise<DriverFleetIncident> {
+    const incident = await this.getOwnedFleetIncident(driverId, incidentId);
+    if (incident.status !== "pending_review") {
+      throw new HttpException(400, "Incident is already under admin review");
+    }
+
+    if (input.category !== undefined) incident.category = input.category;
+    if (input.severity !== undefined) incident.severity = input.severity;
+    if (input.description !== undefined) incident.description = input.description;
+    if (input.location !== undefined) incident.location = input.location;
+
+    await incident.save();
+    return this.sanitizeFleetIncident(incident);
+  }
+
+  async deleteDriverFleetIncident(
+    driverId: string,
+    incidentId: string,
+  ): Promise<boolean> {
+    const incident = await this.getOwnedFleetIncident(driverId, incidentId);
+    if (incident.status !== "pending_review") {
+      throw new HttpException(400, "Incident is already under admin review");
+    }
+
+    await incident.deleteOne();
+    return true;
   }
 
   async createDriverFuelExpense(
     driverId: string,
     input: DriverFuelExpenseDTO,
+    receiptUrl = "",
   ): Promise<DriverFuelExpense> {
     const { driver, vehicle } = await this.getDriverWithAssignedVehicle(driverId);
     if (!vehicle) {
@@ -919,6 +1031,7 @@ export class UserService {
       odometerKm: input.odometerKm,
       stationName: input.stationName,
       notes: input.notes,
+      receiptUrl,
     });
 
     if (input.odometerKm > vehicle.odometerKm) {
@@ -929,8 +1042,50 @@ export class UserService {
     return this.sanitizeFuelExpense(expense);
   }
 
-  // The driver's own profile plus their currently assigned vehicle (if any),
-  // used by the driver console to show live availability + vehicle details.
+  async updateDriverFuelExpense(
+    driverId: string,
+    expenseId: string,
+    input: DriverFuelExpenseUpdateDTO,
+    receiptUrl?: string,
+  ): Promise<DriverFuelExpense> {
+    const expense = await this.getOwnedFuelExpense(driverId, expenseId);
+    if (expense.status !== "submitted") {
+      throw new HttpException(400, "Fuel expense is already under admin review");
+    }
+
+    if (input.fuelType !== undefined) expense.fuelType = input.fuelType;
+    if (input.liters !== undefined) expense.liters = input.liters;
+    if (input.amount !== undefined) expense.amount = input.amount;
+    if (input.odometerKm !== undefined) expense.odometerKm = input.odometerKm;
+    if (input.stationName !== undefined) expense.stationName = input.stationName;
+    if (input.notes !== undefined) expense.notes = input.notes;
+    if (receiptUrl !== undefined) expense.receiptUrl = receiptUrl;
+
+    await expense.save();
+
+    if (input.odometerKm !== undefined) {
+      const vehicle = await VehicleModel.findById(expense.vehicleId);
+      if (vehicle && input.odometerKm > vehicle.odometerKm) {
+        vehicle.odometerKm = input.odometerKm;
+        await vehicle.save();
+      }
+    }
+
+    return this.sanitizeFuelExpense(expense);
+  }
+
+  async deleteDriverFuelExpense(
+    driverId: string,
+    expenseId: string,
+  ): Promise<boolean> {
+    const expense = await this.getOwnedFuelExpense(driverId, expenseId);
+    if (expense.status !== "submitted") {
+      throw new HttpException(400, "Fuel expense is already under admin review");
+    }
+
+    await expense.deleteOne();
+    return true;
+  }
   async getDriverMe(driverId: string): Promise<DriverMe> {
     const driver = await userRepository.getUserById(driverId);
     if (!driver || driver.role !== "driver") {

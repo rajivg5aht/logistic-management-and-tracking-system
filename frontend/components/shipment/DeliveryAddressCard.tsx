@@ -7,7 +7,6 @@ export function DeliveryAddressCard() {
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FEF6E4]">
           <svg
@@ -30,9 +29,7 @@ export function DeliveryAddressCard() {
         </h2>
       </div>
 
-      {/* Form Fields */}
       <div className="space-y-4">
-        {/* Recipient Name */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             RECIPIENT NAME <span className="text-red-500">*</span>
@@ -42,12 +39,11 @@ export function DeliveryAddressCard() {
             placeholder="e.g. Jane Smith"
             value={deliveryAddress.recipientName}
             onChange={(e) => updateDeliveryField("recipientName", e.target.value)}
-            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
             suppressHydrationWarning
           />
         </div>
 
-        {/* Phone Number */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             PHONE NUMBER <span className="text-red-500">*</span>
@@ -63,13 +59,12 @@ export function DeliveryAddressCard() {
               value={deliveryAddress.phoneNumber}
               onChange={(e) => updateDeliveryField("phoneNumber", e.target.value.replace(/[^0-9]/g, ""))}
               maxLength={10}
-              className="w-full h-11 border border-[#E2E8F0] rounded-r-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+              className="w-full h-11 border border-[#E2E8F0] rounded-r-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
               suppressHydrationWarning
             />
           </div>
         </div>
 
-        {/* Street Address */}
         <div>
           <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
             DELIVERY ADDRESS <span className="text-red-500">*</span>
@@ -79,12 +74,11 @@ export function DeliveryAddressCard() {
             placeholder="Street name, Building No, Tole"
             value={deliveryAddress.streetAddress}
             onChange={(e) => updateDeliveryField("streetAddress", e.target.value)}
-            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+            className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
             suppressHydrationWarning
           />
         </div>
 
-        {/* District and City / Municipality */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[10px] font-bold tracking-wider text-slate-500 mb-1.5 uppercase">
@@ -94,7 +88,7 @@ export function DeliveryAddressCard() {
               <select
                 value={deliveryAddress.district}
                 onChange={(e) => updateDeliveryField("district", e.target.value)}
-                className={`w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all appearance-none pr-10 ${
+                className={`w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all appearance-none pr-10 ${
                   deliveryAddress.district ? "text-slate-800" : "text-slate-400"
                 }`}
                 suppressHydrationWarning
@@ -115,19 +109,18 @@ export function DeliveryAddressCard() {
               placeholder="e.g. Lalitpur"
               value={deliveryAddress.city}
               onChange={(e) => updateDeliveryField("city", e.target.value)}
-              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#6C63FF] focus:ring-1 focus:ring-[#6C63FF] transition-all"
+              className="w-full h-11 border border-[#E2E8F0] rounded-lg px-3.5 text-[13px] bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[var(--step-active)] focus:ring-1 focus:ring-[var(--step-active)] transition-all"
               suppressHydrationWarning
             />
           </div>
         </div>
 
-        {/* Checkbox */}
         <label className="flex items-center gap-2.5 text-xs text-slate-500 font-medium cursor-pointer mt-4 select-none">
           <input
             type="checkbox"
             checked={deliveryAddress.residentialAddress}
             onChange={(e) => updateDeliveryField("residentialAddress", e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF] cursor-pointer"
+            className="w-4 h-4 rounded border-slate-300 text-[var(--step-active)] focus:ring-[var(--step-active)] accent-[var(--step-active)] cursor-pointer"
             suppressHydrationWarning
           />
           Residential address

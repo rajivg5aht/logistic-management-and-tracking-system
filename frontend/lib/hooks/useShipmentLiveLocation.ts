@@ -14,15 +14,6 @@ interface Result {
   error: string | null;
 }
 
-/**
- * Subscribes a viewer (customer or admin) to a shipment's live driver location.
- *
- * It seeds the active position from REST, then joins the shipment socket room
- * and applies every `shipment-location-updated` broadcast. When the driver
- * stops sharing GPS, the marker is cleared instead of showing the stale last
- * coordinate. Server authorization (`assertCanRead`) still gates the join, so
- * a customer can only watch their own shipment.
- */
 export function useShipmentLiveLocation(
   token: string | undefined,
   shipmentId: string | undefined,
@@ -35,17 +26,14 @@ export function useShipmentLiveLocation(
     if (!enabled || !token || !shipmentId) return;
 
     let active = true;
-    // Clear any marker carried over from a previously watched shipment.
     setLocation(null);
     setError(null);
 
-    // Seed from REST so the map has a position before the first live update.
     getShipmentLocation(token, shipmentId)
       .then((loc) => {
         if (active && loc?.isLive) setLocation(loc);
       })
       .catch(() => {
-        /* Seed is best-effort; live socket updates may still arrive. */
       });
 
     const socket = getSocket(token);

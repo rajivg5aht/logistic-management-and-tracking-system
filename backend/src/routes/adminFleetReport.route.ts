@@ -10,11 +10,11 @@ adminFleetReportRouter.use(adminMiddleware);
 
 adminFleetReportRouter.get("/stats", controller.getStats);
 adminFleetReportRouter.get("/incidents", controller.getIncidents);
-adminFleetReportRouter.patch("/incidents/:id", controller.updateIncidentStatus);
+adminFleetReportRouter.patch("/incidents/:id", controller.updateIncident);
 adminFleetReportRouter.get("/fuel-expenses", controller.getFuelExpenses);
 adminFleetReportRouter.patch(
   "/fuel-expenses/:id",
-  controller.updateFuelExpenseStatus,
+  controller.updateFuelExpense,
 );
 
 export default adminFleetReportRouter;

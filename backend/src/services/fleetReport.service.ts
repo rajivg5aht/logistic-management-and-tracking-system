@@ -9,8 +9,14 @@ import {
 import {
   VehicleFuelExpenseModel,
   type IVehicleFuelExpense,
+  type VehicleFuelExpenseStatus,
 } from "../models/vehicleFuelExpense.model";
-import type { IncidentStatusDTO, FuelExpenseStatusDTO } from "../dtos/fleetReport.dto";
+import type {
+  AdminIncidentUpdateDTO,
+  AdminFuelExpenseUpdateDTO,
+} from "../dtos/fleetReport.dto";
+import { VehicleService } from "./vehicle.service";
+import { emitFleetReportUpdated } from "../socket";
 
 export type AdminIncident = {
   id: string;
@@ -23,6 +29,10 @@ export type AdminIncident = {
   description: string;
   location: string;
   status: string;
+  adminNote: string;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+  resolvedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -39,7 +49,15 @@ export type AdminFuelExpense = {
   odometerKm: number;
   stationName: string;
   notes: string;
+  receiptUrl: string;
   status: string;
+  adminNote: string;
+  rejectionReason: string;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  reimbursedBy: string | null;
+  reimbursedAt: Date | null;
+  paymentReference: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -51,9 +69,18 @@ type ListParams = {
   limit: number;
 };
 
+function trimmed(value?: string): string | undefined {
+  const next = value?.trim();
+  return next ? next : undefined;
+}
+
+function objectId(value: string): mongoose.Types.ObjectId {
+  return new mongoose.Types.ObjectId(value);
+}
+
 export class FleetReportService {
-  // Resolve driver names and vehicle registrations for a batch of records in
-  // two queries, mirroring VehicleService.withDriverNames.
+  private readonly vehicleService = new VehicleService();
+
   private async buildLookups(
     driverIds: mongoose.Types.ObjectId[],
     vehicleIds: mongoose.Types.ObjectId[],
@@ -65,9 +92,12 @@ export class FleetReportService {
       ),
     ]);
     return {
-      names: new Map(drivers.map((d) => [d._id.toString(), d.fullName])),
+      names: new Map(drivers.map((driver) => [driver._id.toString(), driver.fullName])),
       regs: new Map(
-        vehicles.map((v) => [v._id.toString(), v.registrationNumber]),
+        vehicles.map((vehicle) => [
+          vehicle._id.toString(),
+          vehicle.registrationNumber,
+        ]),
       ),
     };
   }
@@ -88,6 +118,10 @@ export class FleetReportService {
       description: incident.description,
       location: incident.location,
       status: incident.status,
+      adminNote: incident.adminNote ?? "",
+      reviewedBy: incident.reviewedBy?.toString() ?? null,
+      reviewedAt: incident.reviewedAt ?? null,
+      resolvedAt: incident.resolvedAt ?? null,
       createdAt: incident.createdAt,
       updatedAt: incident.updatedAt,
     };
@@ -110,7 +144,15 @@ export class FleetReportService {
       odometerKm: expense.odometerKm,
       stationName: expense.stationName,
       notes: expense.notes,
+      receiptUrl: expense.receiptUrl ?? "",
       status: expense.status,
+      adminNote: expense.adminNote ?? "",
+      rejectionReason: expense.rejectionReason ?? "",
+      approvedBy: expense.approvedBy?.toString() ?? null,
+      approvedAt: expense.approvedAt ?? null,
+      reimbursedBy: expense.reimbursedBy?.toString() ?? null,
+      reimbursedAt: expense.reimbursedAt ?? null,
+      paymentReference: expense.paymentReference ?? "",
       createdAt: expense.createdAt,
       updatedAt: expense.updatedAt,
     };
@@ -141,14 +183,60 @@ export class FleetReportService {
     ]);
 
     const { names, regs } = await this.buildLookups(
-      incidents.map((i) => i.driverId),
-      incidents.map((i) => i.vehicleId),
+      incidents.map((incident) => incident.driverId),
+      incidents.map((incident) => incident.vehicleId),
     );
 
     return {
-      items: incidents.map((i) => this.sanitizeIncident(i, names, regs)),
+      items: incidents.map((incident) =>
+        this.sanitizeIncident(incident, names, regs),
+      ),
       total,
     };
+  }
+
+  async updateIncident(
+    id: string,
+    input: AdminIncidentUpdateDTO,
+    adminId: string,
+  ): Promise<AdminIncident> {
+    if (!mongoose.isValidObjectId(id)) {
+      throw new HttpException(404, "Incident not found");
+    }
+
+    const incident = await VehicleIncidentModel.findById(id);
+    if (!incident) throw new HttpException(404, "Incident not found");
+    if (incident.status !== "pending_review") {
+      throw new HttpException(409, "This issue report has already been reviewed");
+    }
+
+    if (input.decision === "maintenance_required") {
+      await this.vehicleService.markMaintenanceRequired(
+        incident.vehicleId.toString(),
+      );
+      incident.status = "maintenance_required";
+      incident.resolvedAt = null;
+    } else {
+      incident.status = "resolved";
+      incident.resolvedAt = new Date();
+    }
+
+    incident.adminNote = input.adminNote?.trim() ?? "";
+    incident.reviewedBy = objectId(adminId);
+    incident.reviewedAt = new Date();
+    await incident.save();
+
+    const { names, regs } = await this.buildLookups(
+      [incident.driverId],
+      [incident.vehicleId],
+    );
+    const result = this.sanitizeIncident(incident, names, regs);
+    emitFleetReportUpdated(result.driverId, {
+      type: "incident",
+      id: result.id,
+      status: result.status,
+    });
+    return result;
   }
 
   async listFuelExpenses({
@@ -167,63 +255,107 @@ export class FleetReportService {
     ]);
 
     const { names, regs } = await this.buildLookups(
-      expenses.map((e) => e.driverId),
-      expenses.map((e) => e.vehicleId),
+      expenses.map((expense) => expense.driverId),
+      expenses.map((expense) => expense.vehicleId),
     );
 
     return {
-      items: expenses.map((e) => this.sanitizeFuelExpense(e, names, regs)),
+      items: expenses.map((expense) =>
+        this.sanitizeFuelExpense(expense, names, regs),
+      ),
       total,
     };
   }
 
-  async updateIncidentStatus(
+  async updateFuelExpense(
     id: string,
-    input: IncidentStatusDTO,
-  ): Promise<AdminIncident> {
-    if (!mongoose.isValidObjectId(id)) {
-      throw new HttpException(404, "Incident not found");
-    }
-    const incident = await VehicleIncidentModel.findByIdAndUpdate(
-      id,
-      { status: input.status },
-      { new: true },
-    );
-    if (!incident) throw new HttpException(404, "Incident not found");
-
-    const { names, regs } = await this.buildLookups(
-      [incident.driverId],
-      [incident.vehicleId],
-    );
-    return this.sanitizeIncident(incident, names, regs);
-  }
-
-  async updateFuelExpenseStatus(
-    id: string,
-    input: FuelExpenseStatusDTO,
+    input: AdminFuelExpenseUpdateDTO,
+    adminId: string,
   ): Promise<AdminFuelExpense> {
     if (!mongoose.isValidObjectId(id)) {
       throw new HttpException(404, "Fuel expense not found");
     }
-    const expense = await VehicleFuelExpenseModel.findByIdAndUpdate(
-      id,
-      { status: input.status },
-      { new: true },
-    );
+
+    const expense = await VehicleFuelExpenseModel.findById(id);
     if (!expense) throw new HttpException(404, "Fuel expense not found");
+
+    const nextStatus = input.status as VehicleFuelExpenseStatus | undefined;
+    const rejectionReason =
+      trimmed(input.rejectionReason) ?? expense.rejectionReason;
+    const paymentReference =
+      trimmed(input.paymentReference) ?? expense.paymentReference;
+
+    if (nextStatus === "rejected" && !rejectionReason?.trim()) {
+      throw new HttpException(400, "Rejection reason is required");
+    }
+    if (nextStatus === "reimbursed") {
+      if (expense.status !== "approved" && expense.status !== "reimbursed") {
+        throw new HttpException(
+          400,
+          "Approve the fuel expense before reimbursement",
+        );
+      }
+      if (!paymentReference?.trim()) {
+        throw new HttpException(400, "Payment reference is required");
+      }
+    }
+
+    if (input.adminNote !== undefined) expense.adminNote = input.adminNote;
+    if (input.rejectionReason !== undefined) {
+      expense.rejectionReason = input.rejectionReason;
+    }
+    if (input.paymentReference !== undefined) {
+      expense.paymentReference = input.paymentReference;
+    }
+
+    if (nextStatus) {
+      const now = new Date();
+      expense.status = nextStatus;
+
+      if (nextStatus === "approved") {
+        expense.approvedBy = objectId(adminId);
+        expense.approvedAt = expense.approvedAt ?? now;
+        expense.reimbursedBy = null;
+        expense.reimbursedAt = null;
+      } else if (nextStatus === "reimbursed") {
+        expense.reimbursedBy = objectId(adminId);
+        expense.reimbursedAt = expense.reimbursedAt ?? now;
+      } else if (nextStatus === "rejected") {
+        expense.approvedBy = null;
+        expense.approvedAt = null;
+        expense.reimbursedBy = null;
+        expense.reimbursedAt = null;
+      }
+    }
+
+    await expense.save();
 
     const { names, regs } = await this.buildLookups(
       [expense.driverId],
       [expense.vehicleId],
     );
-    return this.sanitizeFuelExpense(expense, names, regs);
+    const result = this.sanitizeFuelExpense(expense, names, regs);
+    emitFleetReportUpdated(result.driverId, {
+      type: "fuel-expense",
+      id: result.id,
+      status: result.status,
+    });
+    return result;
   }
 
-  async getStats(): Promise<{ openIncidents: number; pendingFuelExpenses: number }> {
-    const [openIncidents, pendingFuelExpenses] = await Promise.all([
-      VehicleIncidentModel.countDocuments({ status: "open" }),
-      VehicleFuelExpenseModel.countDocuments({ status: "submitted" }),
-    ]);
-    return { openIncidents, pendingFuelExpenses };
+  async getStats(): Promise<{
+    pendingIncidents: number;
+    pendingFuelExpenses: number;
+    approvedFuelExpenses: number;
+  }> {
+    const [pendingIncidents, pendingFuelExpenses, approvedFuelExpenses] =
+      await Promise.all([
+        VehicleIncidentModel.countDocuments({ status: "pending_review" }),
+        VehicleFuelExpenseModel.countDocuments({
+          status: { $in: ["submitted", "under_review"] },
+        }),
+        VehicleFuelExpenseModel.countDocuments({ status: "approved" }),
+      ]);
+    return { pendingIncidents, pendingFuelExpenses, approvedFuelExpenses };
   }
 }

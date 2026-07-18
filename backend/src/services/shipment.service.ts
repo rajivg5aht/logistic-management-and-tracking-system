@@ -23,6 +23,7 @@ import {
 } from "../types/shipment.type";
 import { HttpException } from "../exceptions/http-exception";
 import { PaymentService } from "./payment.service";
+import { emitShipmentUpdated } from "../socket";
 
 const shipmentRepository = new ShipmentMongoRepository();
 const paymentService = new PaymentService();
@@ -64,7 +65,6 @@ export type SafeShipment = {
   updatedAt: Date;
 };
 
-// Allowed forward transitions for a driver-driven delivery.
 const STAGE_TRANSITIONS: Record<DriverStage, DriverStage[]> = {
   assigned: ["picked-up", "failed"],
   "picked-up": ["in-transit", "failed"],
@@ -120,14 +120,12 @@ export class ShipmentService {
     };
   }
 
-  // Generates a unique, human-friendly tracking id like "LN-482913".
   private async generateTrackingId(): Promise<string> {
     for (let attempt = 0; attempt < 6; attempt++) {
       const candidate = `LN-${Math.floor(100000 + Math.random() * 900000)}`;
       const existing = await shipmentRepository.getPaginated(1, 1, candidate);
       if (existing.total === 0) return candidate;
     }
-    // Fallback that is effectively collision-proof.
     return `LN-${Date.now().toString().slice(-6)}`;
   }
 
@@ -137,7 +135,6 @@ export class ShipmentService {
   ): Promise<SafeShipment> {
     const trackingId = await this.generateTrackingId();
 
-    // Wallet payments are captured up front; COD is settled on delivery.
     const paymentStatus = data.paymentMethod === "cod" ? "pending" : "paid";
 
     const shipment = await shipmentRepository.create({
@@ -150,7 +147,6 @@ export class ShipmentService {
       assignedVehicle: null,
     });
 
-    // Record the transaction in the payments ledger (source of truth for money).
     await paymentService.createChargeForShipment(shipment);
 
     return this.sanitize(shipment);
@@ -161,8 +157,6 @@ export class ShipmentService {
     return shipments.map((s) => this.sanitize(s));
   }
 
-  // Fetches a shipment and guarantees it belongs to the requesting customer.
-  // Prevents one customer from reading or mutating another's shipment.
   private async getOwnedShipment(
     customerId: string,
     id: string,
@@ -180,8 +174,6 @@ export class ShipmentService {
     return shipment;
   }
 
-  // Customer edits are only permitted while a shipment is still pending
-  // (i.e. it has not been picked up or dispatched yet).
   async customerUpdateShipment(
     customerId: string,
     id: string,
@@ -206,8 +198,6 @@ export class ShipmentService {
     return this.sanitize(updated);
   }
 
-  // Cancellation is allowed while pending; once in transit or delivered the
-  // customer must go through support so the operational record stays intact.
   async customerCancelShipment(
     customerId: string,
     id: string,
@@ -227,6 +217,7 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to cancel shipment");
     }
+    await paymentService.cancelPendingCharge(id);
     if (shipment.assignedDriverId) {
       await UserModel.findByIdAndUpdate(shipment.assignedDriverId, {
         availabilityStatus: "available",
@@ -235,8 +226,6 @@ export class ShipmentService {
     return this.sanitize(updated);
   }
 
-  // Customers may remove completed history, but never pending/in-progress
-  // shipments that are still part of an active delivery operation.
   async customerDeleteShipment(
     customerId: string,
     id: string,
@@ -328,8 +317,6 @@ export class ShipmentService {
       updateData.deliveredAt = null;
     }
 
-    // Driver assignment: link the real account, denormalize the name, and start
-    // the delivery timeline at "assigned".
     if (assignedDriverId !== undefined) {
       const previousDriverId = shipment.assignedDriverId?.toString() ?? null;
 
@@ -375,7 +362,7 @@ export class ShipmentService {
           if (
             !vehicle ||
             vehicle.assignedDriverId?.toString() !== driver._id.toString() ||
-            vehicle.status !== "assigned"
+            vehicle.status !== "active"
           ) {
             throw new HttpException(
               400,
@@ -389,7 +376,6 @@ export class ShipmentService {
           updateData.assignedVehicle = null;
         }
 
-        // Only (re)initialise the stage when the driver actually changes.
         if (previousDriverId !== assignedDriverId) {
           updateData.driverStage = "assigned";
           updateData.timeline = [
@@ -406,7 +392,6 @@ export class ShipmentService {
           }
         }
       } else {
-        // Clearing the assignment.
         updateData.assignedDriverId = null;
         updateData.assignedDriver = null;
         updateData.assignedVehicleId = null;
@@ -420,9 +405,6 @@ export class ShipmentService {
       }
     }
 
-    // Admin updates and driver updates must never leave two contradictory
-    // states behind. Preserve an existing granular stage when it already maps
-    // to the selected status (for example "picked-up" -> "in-transit").
     const effectiveDriverId =
       assignedDriverId === undefined
         ? shipment.assignedDriverId?.toString() ?? null
@@ -488,7 +470,13 @@ export class ShipmentService {
       throw new HttpException(500, "Failed to update shipment");
     }
 
-    return this.sanitize(updated);
+    if (updateData.status === "cancelled" && shipment.status !== "cancelled") {
+      await paymentService.cancelPendingCharge(id);
+    }
+
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async adminDeleteShipment(id: string): Promise<boolean> {
@@ -515,7 +503,6 @@ export class ShipmentService {
     return shipmentRepository.getAnalytics();
   }
 
-  // ── Driver console ─────────────────────────────────────────────────────────
   async getMyAssignments(
     driverId: string,
     scope?: "active" | "history",
@@ -524,7 +511,6 @@ export class ShipmentService {
     return shipments.map((s) => this.sanitize(s));
   }
 
-  // Fetches an assignment and guarantees it belongs to the requesting driver.
   private async getOwnedAssignment(
     driverId: string,
     id: string,
@@ -550,8 +536,6 @@ export class ShipmentService {
     return this.sanitize(shipment);
   }
 
-  // Driver advances the delivery stage. Validates the transition, appends a
-  // timeline entry, and syncs the canonical status + the driver's availability.
   async driverUpdateStage(
     driverId: string,
     id: string,
@@ -571,14 +555,10 @@ export class ShipmentService {
       }
     }
 
-    // Repeating the same request is idempotent. This prevents double-clicks or
-    // network retries from adding duplicate timeline entries.
     if (next === current) {
       return this.sanitize(shipment);
     }
 
-    // The driver is responsible for collecting COD cash, so a COD parcel cannot
-    // be closed out as delivered until that money has been recorded.
     if (
       next === "delivered" &&
       shipment.paymentMethod === "cod" &&
@@ -620,7 +600,6 @@ export class ShipmentService {
       throw new HttpException(500, "Failed to update delivery stage");
     }
 
-    // Keep the driver's availability in step with what they're doing.
     let availability: string | null = null;
     if (["picked-up", "in-transit", "out-for-delivery"].includes(next)) {
       availability = "on-delivery";
@@ -633,7 +612,9 @@ export class ShipmentService {
       });
     }
 
-    return this.sanitize(updated);
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async driverUpsertProof(
@@ -678,7 +659,9 @@ export class ShipmentService {
     if (!updated) {
       throw new HttpException(500, "Failed to save proof of delivery");
     }
-    return this.sanitize(updated);
+    const safe = this.sanitize(updated);
+    emitShipmentUpdated(safe);
+    return safe;
   }
 
   async driverDeleteProof(driverId: string, id: string): Promise<SafeShipment> {
@@ -699,9 +682,6 @@ export class ShipmentService {
     return this.sanitize(updated);
   }
 
-  // Driver records the COD cash collection for one of their assignments. Only
-  // COD shipments can be settled here; the flip drives the admin Paid/Pending
-  // badge and the outstanding-COD stats.
   async driverCollectCod(
     driverId: string,
     id: string,
@@ -724,7 +704,6 @@ export class ShipmentService {
       throw new HttpException(500, "Failed to update payment status");
     }
 
-    // Mirror the cash collection into the payments ledger.
     await paymentService.recordCodCollection(id, driverId, collected);
 
     return this.sanitize(updated);

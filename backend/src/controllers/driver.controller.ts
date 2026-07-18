@@ -9,7 +9,9 @@ import {
   DriverCodUpdateDTO,
   DriverProofUpdateDTO,
   DriverFleetIncidentDTO,
+  DriverFleetIncidentUpdateDTO,
   DriverFuelExpenseDTO,
+  DriverFuelExpenseUpdateDTO,
 } from "../dtos/driver.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
@@ -18,7 +20,6 @@ const shipmentService = new ShipmentService();
 const userService = new UserService();
 
 export class DriverController {
-  // -- Driver: my profile + assigned vehicle --------------------------------
   async getMe(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -40,7 +41,6 @@ export class DriverController {
     }
   }
 
-  // -- Driver: assigned fleet details --------------------------------------
   async getFleet(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -92,6 +92,60 @@ export class DriverController {
     }
   }
 
+  async updateFleetIncident(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = DriverFleetIncidentUpdateDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const incident = await userService.updateDriverFleetIncident(
+        req.user.id,
+        req.params.id as string,
+        parsed.data,
+      );
+      return ApiResponseHelper.success(
+        res,
+        incident,
+        "Vehicle issue updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async deleteFleetIncident(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      await userService.deleteDriverFleetIncident(
+        req.user.id,
+        req.params.id as string,
+      );
+      return ApiResponseHelper.success(
+        res,
+        null,
+        "Vehicle issue cancelled successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   async logFuelExpense(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -103,9 +157,13 @@ export class DriverController {
         return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
       }
 
+      const receiptUrl = req.file
+        ? `/uploads/fuel-receipts/${req.file.filename}`
+        : "";
       const expense = await userService.createDriverFuelExpense(
         req.user.id,
         parsed.data,
+        receiptUrl,
       );
       return ApiResponseHelper.success(
         res,
@@ -122,7 +180,63 @@ export class DriverController {
     }
   }
 
-  // -- Driver: list shipments assigned to me --------------------------------
+  async updateFuelExpense(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      const parsed = DriverFuelExpenseUpdateDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
+      }
+
+      const receiptUrl = req.file
+        ? `/uploads/fuel-receipts/${req.file.filename}`
+        : undefined;
+      const expense = await userService.updateDriverFuelExpense(
+        req.user.id,
+        req.params.id as string,
+        parsed.data,
+        receiptUrl,
+      );
+      return ApiResponseHelper.success(
+        res,
+        expense,
+        "Fuel expense updated successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
+  async deleteFuelExpense(req: AuthRequest, res: Response) {
+    try {
+      if (!req.user) {
+        return ApiResponseHelper.error(res, "Unauthorized", 401);
+      }
+
+      await userService.deleteDriverFuelExpense(
+        req.user.id,
+        req.params.id as string,
+      );
+      return ApiResponseHelper.success(
+        res,
+        null,
+        "Fuel expense cancelled successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
   async getMyAssignments(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -153,7 +267,6 @@ export class DriverController {
     }
   }
 
-  // -- Driver: get one of my assignments ------------------------------------
   async getAssignmentById(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -183,7 +296,6 @@ export class DriverController {
     }
   }
 
-  // -- Driver: advance the delivery stage -----------------------------------
   async updateStage(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -219,7 +331,6 @@ export class DriverController {
     }
   }
 
-  // Driver: create/update proof of delivery
   async upsertProof(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -236,7 +347,6 @@ export class DriverController {
         return ApiResponseHelper.error(res, z.prettifyError(parsed.error), 400);
       }
 
-      // Proof photo and recipient signature arrive as two separate file fields.
       const files = req.files as
         | { [field: string]: Express.Multer.File[] }
         | undefined;
@@ -293,7 +403,6 @@ export class DriverController {
     }
   }
 
-  // Driver: record COD cash collection
   async collectCod(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -329,7 +438,6 @@ export class DriverController {
     }
   }
 
-  // -- Driver: my dashboard stats -------------------------------------------
   async getStats(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {
@@ -351,7 +459,6 @@ export class DriverController {
     }
   }
 
-  // -- Driver: toggle my own availability -----------------------------------
   async updateAvailability(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {

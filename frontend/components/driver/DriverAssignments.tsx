@@ -26,10 +26,9 @@ import type { Shipment } from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const NAVY = "#0C3B67";
-const WEEKLY_GOAL = 20; // Deliveries that unlock the weekly bonus.
+const WEEKLY_GOAL = 20;
 const PAGE_SIZE = 6;
 
-/* -- Trip bucketing (maps a shipment to a display status) --------------------- */
 type TripBucket = "delivered" | "failed" | "in-transit" | "pending";
 
 function bucketOf(s: Shipment): TripBucket {
@@ -46,9 +45,9 @@ function bucketOf(s: Shipment): TripBucket {
 }
 
 const BUCKET_META: Record<TripBucket, { label: string; dot: string; text: string; bg: string }> = {
-  delivered: { label: "Delivered", dot: "bg-[#1E9E4C]", text: "text-[#1E9E4C]", bg: "bg-[#DEF3E6]" },
-  failed: { label: "Failed", dot: "bg-[#D0453A]", text: "text-[#D0453A]", bg: "bg-[#FBE4E1]" },
-  "in-transit": { label: "In Transit", dot: "bg-[#2E6FD6]", text: "text-[#2E6FD6]", bg: "bg-[#E4EEFB]" },
+  delivered: { label: "Delivered", dot: "bg-[var(--success)]", text: "text-[var(--success)]", bg: "bg-[var(--success-soft)]" },
+  failed: { label: "Failed", dot: "bg-[var(--danger)]", text: "text-[var(--danger)]", bg: "bg-[var(--danger-soft)]" },
+  "in-transit": { label: "In Transit", dot: "bg-[var(--info)]", text: "text-[var(--info)]", bg: "bg-[#E4EEFB]" },
   pending: { label: "Pending", dot: "bg-[#C77718]", text: "text-[#C77718]", bg: "bg-[#FDECD8]" },
 };
 
@@ -65,14 +64,12 @@ const RANGE_OPTIONS = [
   { label: "All Time", days: 0 },
 ];
 
-// Tinted icon chips for the stat cards (Earnings, Completed, In Transit).
 const STAT_TINTS = [
-  "bg-[#DEF3E6] text-[#1E9E4C]",
-  "bg-[#E8F0FB] text-[#2E6FD6]",
+  "bg-[var(--success-soft)] text-[var(--success)]",
+  "bg-[var(--info-soft)] text-[var(--info)]",
   "bg-[#FDECD8] text-[#C77718]",
 ];
 
-/* -- Formatting helpers ------------------------------------------------------- */
 function money(n: number): string {
   return `NPR ${Math.round(n).toLocaleString("en-IN")}`;
 }
@@ -95,14 +92,12 @@ function destinationLines(s: Shipment): { primary: string; secondary: string } {
   return { primary, secondary };
 }
 
-/* -- Component ----------------------------------------------------------------- */
 export default function DriverAssignments({ token }: { token: string }) {
   const [stats, setStats] = useState<DriverStats | null>(null);
   const [trips, setTrips] = useState<Shipment[]>([]);
   const [active, setActive] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Captured at load time so date math stays pure across renders.
   const [nowTs, setNowTs] = useState(0);
 
   const [tab, setTab] = useState(0);
@@ -122,7 +117,6 @@ export default function DriverAssignments({ token }: { token: string }) {
         ]);
         setStats(statsRes);
         setActive(activeRes);
-        // Newest first across both scopes.
         setTrips(
           [...activeRes, ...historyRes].sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -145,7 +139,6 @@ export default function DriverAssignments({ token }: { token: string }) {
 
   useAutoRefresh(() => load(true), { intervalMs: 15_000 });
 
-  // Filter changes always jump back to the first page.
   const selectTab = (i: number) => {
     setTab(i);
     setPage(1);
@@ -159,7 +152,6 @@ export default function DriverAssignments({ token }: { token: string }) {
     setPage(1);
   };
 
-  /* -- Derived metrics (all from real data) ----------------------------------- */
   const derived = useMemo(() => {
     const now = nowTs;
     const DAY = 86_400_000;
@@ -167,7 +159,6 @@ export default function DriverAssignments({ token }: { token: string }) {
 
     const totalEarnings = delivered.reduce((sum, t) => sum + t.amount, 0);
 
-    // Month-over-month earnings from deliveredAt timestamps.
     const monthStart = new Date(nowTs);
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
@@ -195,7 +186,6 @@ export default function DriverAssignments({ token }: { token: string }) {
     return { totalEarnings, trendPct, successRate, efficiency, deliveredThisWeek };
   }, [trips, stats, nowTs]);
 
-  /* -- Filtered + paginated trips --------------------------------------------- */
   const filtered = useMemo(() => {
     const bucket = TABS[tab].bucket;
     const cutoff = rangeDays > 0 && nowTs > 0 ? nowTs - rangeDays * 86_400_000 : 0;
@@ -224,7 +214,7 @@ export default function DriverAssignments({ token }: { token: string }) {
       value: money(derived.totalEarnings),
       foot:
         derived.trendPct != null ? (
-          <span className="inline-flex items-center gap-1 text-[#1E9E4C]">
+          <span className="inline-flex items-center gap-1 text-[var(--success)]">
             <ArrowUpRight size={13} className="stroke-[2.6]" />
             {derived.trendPct >= 0 ? "+" : ""}
             {derived.trendPct}% from last month
@@ -249,7 +239,6 @@ export default function DriverAssignments({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           My Assignments
@@ -263,12 +252,11 @@ export default function DriverAssignments({ token }: { token: string }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {error}
         </div>
       )}
 
-      {/* -- Stat cards ------------------------------------------------------- */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((c, idx) => {
           const Icon = c.Icon;
@@ -296,14 +284,13 @@ export default function DriverAssignments({ token }: { token: string }) {
           );
         })}
 
-        {/* Efficiency score with progress bar */}
         <div
           className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
           <div className="flex items-start justify-between">
             <p className="text-[12px] font-bold text-[var(--text-muted)]">Efficiency Score</p>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[#6C63FF]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[var(--step-active)]">
               <Gauge size={17} />
             </span>
           </div>
@@ -319,7 +306,6 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* -- Today's assignments (priority work) ---------------------------- */}
       <div className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -393,7 +379,7 @@ export default function DriverAssignments({ token }: { token: string }) {
 
                 <div className="mt-3 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#1E9E4C]" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--success)]" />
                     <p className="truncate text-sm font-semibold text-[var(--text)]">
                       {s.pickup.city || s.pickup.streetAddress || "Pickup"}
                     </p>
@@ -423,7 +409,6 @@ export default function DriverAssignments({ token }: { token: string }) {
             );
           })}
 
-          {/* Weekly incentive (derived from real weekly deliveries) */}
           <div
             className="flex flex-col justify-between overflow-hidden rounded-[var(--radius-lg)] p-5 text-white"
             style={{
@@ -462,7 +447,6 @@ export default function DriverAssignments({ token }: { token: string }) {
         </div>
       </div>
 
-      {/* -- Trip history --------------------------------------------------- */}
       <div className="space-y-3">
         <div>
           <h2
@@ -481,7 +465,6 @@ export default function DriverAssignments({ token }: { token: string }) {
           className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
-        {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
           <div className="inline-flex gap-1 rounded-xl bg-[var(--surface-soft)] p-1">
             {TABS.map((t, i) => (
@@ -535,7 +518,6 @@ export default function DriverAssignments({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Search (toggled by More Filters) */}
         {showSearch && (
           <div className="border-b border-[var(--border)] px-5 py-3">
             <div className="relative max-w-sm">
@@ -550,7 +532,6 @@ export default function DriverAssignments({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left">
             <thead>
@@ -650,7 +631,6 @@ export default function DriverAssignments({ token }: { token: string }) {
           </table>
         </div>
 
-        {/* Footer / pagination */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] px-5 py-4">
           <p className="text-xs font-medium text-[var(--text-muted)]">
             Showing {firstRow}-{lastRow} of {filtered.length} trips

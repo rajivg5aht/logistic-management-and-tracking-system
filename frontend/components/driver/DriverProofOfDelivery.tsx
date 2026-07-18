@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -37,7 +38,6 @@ import type { Shipment } from "@/lib/api/shipment.api";
 import { formatNPR } from "@/lib/pricing";
 import { fmtAddress, shortLoc } from "@/components/driver/shared";
 
-/* ── Signature pad (canvas) ─────────────────────────────────────────────────── */
 type SignaturePadHandle = {
   clear: () => void;
   isEmpty: () => boolean;
@@ -53,8 +53,6 @@ const SignaturePad = forwardRef<
   const dirty = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  // Size the canvas to its container (DPR-aware) and paint a white ground so the
-  // exported PNG is a clean, printable signature rather than a transparent one.
   const setup = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -146,7 +144,6 @@ const SignaturePad = forwardRef<
   );
 });
 
-/* ── Helpers ────────────────────────────────────────────────────────────────── */
 function serviceLabel(service: string): string {
   return service
     .replace(/[-_]/g, " ")
@@ -160,7 +157,6 @@ function dimensionLine(s: Shipment): string {
   return [weight, dims && `${dims} cm`].filter(Boolean).join(" · ") || "—";
 }
 
-/* ── Page component ─────────────────────────────────────────────────────────── */
 export default function DriverProofOfDelivery({
   token,
   shipmentId,
@@ -283,7 +279,6 @@ export default function DriverProofOfDelivery({
     }
   };
 
-  /* ── Loading / error / delivered states ─────────────────────────────────── */
   if (loading) {
     return (
       <div className="h-[32rem] animate-pulse rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]" />
@@ -294,7 +289,7 @@ export default function DriverProofOfDelivery({
     return (
       <div className="space-y-4">
         <BackLink />
-        <div className="rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+        <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
           {loadError ?? "Shipment not found."}
         </div>
       </div>
@@ -309,7 +304,7 @@ export default function DriverProofOfDelivery({
           className="flex flex-col items-center rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-10 text-center"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DEF3E6] text-[#1E9E4C]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--success-soft)] text-[var(--success)]">
             <CheckCircle2 size={28} />
           </div>
           <h2 className="mt-4 text-xl font-black text-[var(--text)]">
@@ -330,10 +325,8 @@ export default function DriverProofOfDelivery({
     );
   }
 
-  /* ── Main POD form ──────────────────────────────────────────────────────── */
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <BackLink />
@@ -361,9 +354,7 @@ export default function DriverProofOfDelivery({
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* ── Left column ─────────────────────────────────────────────── */}
         <div className="space-y-5 lg:col-span-2">
-          {/* Package verification */}
           <section
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -384,11 +375,13 @@ export default function DriverProofOfDelivery({
               />
               <div className="flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] p-6 text-center transition-colors hover:border-[var(--accent)]">
                 {photoPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={photoPreview}
                     alt="Delivery proof"
+                    width={960}
+                    height={560}
                     className="max-h-56 w-full rounded-lg object-contain"
+                    unoptimized
                   />
                 ) : (
                   <>
@@ -406,14 +399,13 @@ export default function DriverProofOfDelivery({
               </div>
             </label>
             {photoPreview && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--success)]">
                 <CheckCircle2 size={13} /> Photo attached — tap the image to
                 replace it.
               </p>
             )}
           </section>
 
-          {/* Recipient signature */}
           <section
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -443,7 +435,7 @@ export default function DriverProofOfDelivery({
               )}
             </div>
             {existingSignature && !sigDirty && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#1E9E4C]">
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--success)]">
                 <CheckCircle2 size={13} /> A signature is already on file —
                 re-sign above to replace it.
               </p>
@@ -476,12 +468,11 @@ export default function DriverProofOfDelivery({
           </section>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-[#F3C6BF] bg-[#FBE4E1] px-4 py-3 text-sm font-semibold text-[#D0453A]">
+            <div className="flex items-center gap-2 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">
               <AlertTriangle size={16} /> {error}
             </div>
           )}
 
-          {/* Confirm */}
           <button
             type="button"
             onClick={confirmDelivery}
@@ -504,9 +495,7 @@ export default function DriverProofOfDelivery({
           )}
         </div>
 
-        {/* ── Right column ────────────────────────────────────────────── */}
         <div className="space-y-4">
-          {/* Proximity / route */}
           <div
             className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -543,7 +532,6 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* Shipment details */}
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -577,7 +565,6 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* Handling instructions */}
           <div
             className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5"
             style={{ boxShadow: "var(--shadow-sm)" }}
@@ -587,12 +574,12 @@ export default function DriverProofOfDelivery({
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {shipment.package.parcelType === "fragile" && (
-                <HandlingBadge className="bg-[#FBE4E1] text-[#D0453A]">
+                <HandlingBadge className="bg-[var(--danger-soft)] text-[var(--danger)]">
                   Fragile
                 </HandlingBadge>
               )}
               {shipment.insurance && (
-                <HandlingBadge className="bg-[#DEF3E6] text-[#1E9E4C]">
+                <HandlingBadge className="bg-[var(--success-soft)] text-[var(--success)]">
                   Insured
                 </HandlingBadge>
               )}
@@ -612,12 +599,11 @@ export default function DriverProofOfDelivery({
             </div>
           </div>
 
-          {/* COD panel */}
           {isCod && (
             <div
               className={`rounded-[var(--radius-lg)] border p-5 ${
                 codCollected
-                  ? "border-[#BFE6CD] bg-[#DEF3E6]"
+                  ? "border-[#BFE6CD] bg-[var(--success-soft)]"
                   : "border-[#F3D9A0] bg-[#FDF3E0]"
               }`}
             >
@@ -626,7 +612,7 @@ export default function DriverProofOfDelivery({
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-lg ${
                       codCollected
-                        ? "bg-[#1E9E4C] text-white"
+                        ? "bg-[var(--success)] text-white"
                         : "bg-[#E9B44C]/25 text-[#B8791B]"
                     }`}
                   >
@@ -646,7 +632,7 @@ export default function DriverProofOfDelivery({
                   </div>
                 </div>
                 {codCollected ? (
-                  <span className="text-xs font-black text-[#1E9E4C]">
+                  <span className="text-xs font-black text-[var(--success)]">
                     Collected
                   </span>
                 ) : (
@@ -654,7 +640,7 @@ export default function DriverProofOfDelivery({
                     type="button"
                     onClick={collectCod}
                     disabled={codBusy}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#1E9E4C] px-3.5 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                    className="flex items-center gap-1.5 rounded-lg bg-[var(--success)] px-3.5 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {codBusy ? (
                       <Loader2 size={13} className="animate-spin" />
@@ -668,7 +654,6 @@ export default function DriverProofOfDelivery({
             </div>
           )}
 
-          {/* Contact */}
           <div
             className="rounded-[var(--radius-lg)] p-5 text-white"
             style={{
@@ -704,7 +689,6 @@ export default function DriverProofOfDelivery({
   );
 }
 
-/* ── Small building blocks ──────────────────────────────────────────────────── */
 function BackLink() {
   return (
     <Link

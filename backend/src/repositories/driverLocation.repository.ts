@@ -37,7 +37,6 @@ export class DriverLocationMongoRepository
     return DriverLocationModel.findOne({ shipmentId });
   }
 
-  // Keeps a single latest-location document per shipment.
   async upsert(
     shipmentId: string,
     data: DriverLocationInput,

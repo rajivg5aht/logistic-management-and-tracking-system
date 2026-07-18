@@ -132,6 +132,9 @@ export type DriverFleetIncident = {
   description: string;
   location: string;
   status: string;
+  adminNote: string;
+  reviewedAt: string | null;
+  resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -144,7 +147,13 @@ export type DriverFuelExpense = {
   odometerKm: number;
   stationName: string;
   notes: string;
+  receiptUrl: string;
   status: string;
+  adminNote: string;
+  rejectionReason: string;
+  approvedAt: string | null;
+  reimbursedAt: string | null;
+  paymentReference: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -170,7 +179,28 @@ export type DriverFuelExpensePayload = {
   odometerKm: number;
   stationName?: string;
   notes?: string;
+  receipt?: File | null;
 };
+
+function fuelExpenseBody(payload: Partial<DriverFuelExpensePayload>): BodyInit {
+  if (!payload.receipt) {
+    const jsonPayload = { ...payload };
+    delete jsonPayload.receipt;
+    return JSON.stringify(jsonPayload);
+  }
+
+  const formData = new FormData();
+  if (payload.fuelType !== undefined) formData.append("fuelType", payload.fuelType);
+  if (payload.amount !== undefined) formData.append("amount", String(payload.amount));
+  if (payload.odometerKm !== undefined) {
+    formData.append("odometerKm", String(payload.odometerKm));
+  }
+  if (payload.liters !== undefined) formData.append("liters", String(payload.liters));
+  if (payload.stationName !== undefined) formData.append("stationName", payload.stationName);
+  if (payload.notes !== undefined) formData.append("notes", payload.notes);
+  formData.append("receipt", payload.receipt);
+  return formData;
+}
 
 export async function adminGetDrivers(
   token: string,
@@ -269,6 +299,27 @@ export async function driverReportFleetIncident(
   );
 }
 
+export async function driverUpdateFleetIncident(
+  token: string,
+  id: string,
+  payload: Partial<DriverFleetIncidentPayload>,
+): Promise<DriverFleetIncident> {
+  return authenticatedRequest<DriverFleetIncident>(
+    `/api/v1/driver/fleet/incidents/${id}`,
+    token,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
+export async function driverDeleteFleetIncident(
+  token: string,
+  id: string,
+): Promise<void> {
+  await authenticatedRequest<null>(`/api/v1/driver/fleet/incidents/${id}`, token, {
+    method: "DELETE",
+  });
+}
+
 export async function driverLogFuelExpense(
   token: string,
   payload: DriverFuelExpensePayload,
@@ -276,8 +327,29 @@ export async function driverLogFuelExpense(
   return authenticatedRequest<DriverFuelExpense>(
     "/api/v1/driver/fleet/fuel-expenses",
     token,
-    { method: "POST", body: JSON.stringify(payload) },
+    { method: "POST", body: fuelExpenseBody(payload) },
   );
+}
+
+export async function driverUpdateFuelExpense(
+  token: string,
+  id: string,
+  payload: Partial<DriverFuelExpensePayload>,
+): Promise<DriverFuelExpense> {
+  return authenticatedRequest<DriverFuelExpense>(
+    `/api/v1/driver/fleet/fuel-expenses/${id}`,
+    token,
+    { method: "PATCH", body: fuelExpenseBody(payload) },
+  );
+}
+
+export async function driverDeleteFuelExpense(
+  token: string,
+  id: string,
+): Promise<void> {
+  await authenticatedRequest<null>(`/api/v1/driver/fleet/fuel-expenses/${id}`, token, {
+    method: "DELETE",
+  });
 }
 
 export async function driverGetAssignments(

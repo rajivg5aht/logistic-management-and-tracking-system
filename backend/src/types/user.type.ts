@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Driver-only profile fields. Optional on the base user because they are only
-// meaningful when role === "driver"; admins/customers leave them unset.
 export const VEHICLE_TYPES = [
   "bike",
   "scooter",
@@ -46,7 +44,6 @@ export const UserSchema = z.object({
 
   role: z.enum(["admin", "customer", "driver"]).default("customer"),
 
-  // ── Driver profile (optional) ──
   licenseNumber: z.string().optional(),
   vehicleType: z.enum(VEHICLE_TYPES).optional(),
   vehicleNumber: z.string().optional(),
