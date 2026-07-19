@@ -108,12 +108,12 @@ export function LoginForm({ role = "Admin" }: { role?: string }) {
             <label className="form-label" htmlFor="password">
               Password
             </label>
-            <a
-              href="#"
+            <Link
+              href="/forgot-password"
               className="text-[var(--accent)] text-xs font-medium no-underline hover:underline transition-all duration-200"
             >
               Forgot Password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <LockIcon focused={passwordFocused} />
