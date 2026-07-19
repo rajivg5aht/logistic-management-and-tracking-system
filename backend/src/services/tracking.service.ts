@@ -3,6 +3,7 @@ import { DriverLocationMongoRepository } from "../repositories/driverLocation.re
 import { IDriverLocation } from "../models/driverLocation.model";
 import { HttpException } from "../exceptions/http-exception";
 import { DriverStage, ShipmentStatus } from "../types/shipment.type";
+import { isWithinNepalCoordinates } from "../utils/nepalGeo.util";
 
 const shipmentRepository = new ShipmentMongoRepository();
 const driverLocationRepository = new DriverLocationMongoRepository();
@@ -118,6 +119,12 @@ export class TrackingService {
     ) {
       throw new HttpException(400, "Invalid coordinates");
     }
+    if (!isWithinNepalCoordinates(latitude, longitude)) {
+      throw new HttpException(
+        400,
+        "Driver location must be within Nepal",
+      );
+    }
 
     const shipment = await shipmentRepository.getById(payload.shipmentId);
     if (!shipment) {
@@ -203,7 +210,13 @@ export class TrackingService {
     shipmentId: string,
   ): Promise<SafeDriverLocation | null> {
     const location = await driverLocationRepository.getByShipment(shipmentId);
-    if (!location || !location.isLive) return null;
+    if (
+      !location ||
+      !location.isLive ||
+      !isWithinNepalCoordinates(location.latitude, location.longitude)
+    ) {
+      return null;
+    }
     return this.sanitize(location);
   }
 }

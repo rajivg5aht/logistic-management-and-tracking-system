@@ -41,3 +41,12 @@ export const CORS_ORIGINS: string[] =
       : localOrigins;
 
 export const FRONTEND_ORIGIN: string = CORS_ORIGINS[0];
+
+// Email (used for password reset emails via nodemailer)
+export const EMAIL_USER: string =
+  process.env.EMAIL_USER || "example@gmail.com";
+
+export const EMAIL_PASS: string = process.env.EMAIL_PASS || "password123";
+
+// Base URL of the frontend, used to build the password reset link
+export const CLIENT_URL: string = process.env.CLIENT_URL || FRONTEND_ORIGIN;

@@ -20,7 +20,8 @@ import { HttpException } from "../exceptions/http-exception";
 import { emitFleetIssueReported } from "../socket";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { SECRET_KEY } from "../configs/constant";
+import { CLIENT_URL, SECRET_KEY } from "../configs/constant";
+import { sendEmail } from "../configs/email";
 import { ShipmentModel } from "../models/shipment.model";
 import { VehicleModel, type IVehicle } from "../models/vehicle.model";
 import {
@@ -364,6 +365,56 @@ export class UserService {
 
     if (!updatedUser) {
       throw new HttpException(500, "Failed to update password");
+    }
+  }
+
+  async sendResetPasswordEmail(email: string): Promise<void> {
+    const user = await userRepository.getUserByEmail(email);
+
+    if (!user) {
+      throw new HttpException(404, "No account found with this email");
+    }
+
+    if (user.status === "inactive") {
+      throw new HttpException(403, "This account is inactive");
+    }
+
+    // Short-lived token that carries the user id; only the email owner receives it
+    const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: "1h" });
+
+    const resetLink = `${CLIENT_URL}/reset-password?token=${token}`;
+    const html = `
+      <p>Hello ${user.fullName},</p>
+      <p>We received a request to reset your CargoNep password.</p>
+      <p>Click <a href="${resetLink}">here</a> to choose a new password. This link will expire in 1 hour.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+    `;
+
+    await sendEmail(user.email, "Reset your CargoNep password", html);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    let userId: string;
+
+    try {
+      const decoded = jwt.verify(token, SECRET_KEY) as { id: string };
+      userId = decoded.id;
+    } catch {
+      throw new HttpException(400, "Invalid or expired reset link");
+    }
+
+    const user = await userRepository.getUserById(userId);
+
+    if (!user) {
+      throw new HttpException(404, "User not found");
+    }
+
+    const updatedUser = await userRepository.update(userId, {
+      password: await this.hashPassword(newPassword),
+    });
+
+    if (!updatedUser) {
+      throw new HttpException(500, "Failed to reset password");
     }
   }
 
