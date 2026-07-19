@@ -347,6 +347,14 @@ select {
   color: transparent;
 }
 
+/* Gold gradient tuned for dark backgrounds (e.g. photo hero) */
+.text-gradient-on-dark {
+  background: linear-gradient(135deg, var(--accent) 0%, #f6e0a4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .app-card,
 .card {
   border: 1px solid var(--border);
