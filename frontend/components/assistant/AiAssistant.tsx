@@ -3,14 +3,21 @@
 import { useState } from "react";
 import { Bot, Sparkles, X, Send } from "lucide-react";
 
-export function AiAssistant() {
+type AiAssistantProps = {
+  placement?: "floating" | "navbar";
+};
+
+export function AiAssistant({ placement = "floating" }: AiAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const isNavbarPlacement = placement === "navbar";
 
   return (
     <>
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-md)]"
+          className={`fixed z-50 flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-md)] ${
+            isNavbarPlacement ? "right-4 top-20 sm:right-8 lg:right-12 xl:right-16" : "bottom-24 right-6"
+          }`}
           role="dialog"
           aria-label="AI Assistant"
         >
@@ -74,14 +81,22 @@ export function AiAssistant() {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[var(--teal)] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#15656e]"
+        className={
+          isNavbarPlacement
+            ? "flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--teal)] px-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#15656e]"
+            : "fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-[var(--teal)] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#15656e]"
+        }
         style={{ boxShadow: "var(--shadow-md)" }}
         aria-label="Open AI Assistant"
         aria-expanded={isOpen}
         suppressHydrationWarning
       >
         {isOpen ? <X size={18} /> : <Bot size={18} />}
-        <span className="hidden sm:inline">AI Assistant</span>
+        <span
+          className={isNavbarPlacement ? "hidden xl:inline" : "hidden sm:inline"}
+        >
+          AI Assistant
+        </span>
       </button>
     </>
   );

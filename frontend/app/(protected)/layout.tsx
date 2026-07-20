@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { CustomerHeader } from "@/components/dashboard/CustomerHeader";
 import { PageBreadcrumb } from "@/components/dashboard/PageBreadcrumb";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -30,13 +31,13 @@ function ProtectedLayoutContent({ children }: { children: React.ReactNode }) {
       <Sidebar />
 
       <div
-        className="transition-all duration-280 ease-in-out"
+        className={`ml-0 flex min-h-screen flex-col transition-all duration-280 ease-in-out ${isCollapsed ? "lg:ml-[76px]" : "lg:ml-[260px]"}`}
         style={{
-          marginLeft: isCollapsed ? '76px' : '260px',
           transitionDuration: '280ms'
         }}
       >
-        <main className="px-8 py-8 lg:px-12 xl:px-16">
+        <CustomerHeader />
+        <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
           <PageBreadcrumb />
           {children}
         </main>

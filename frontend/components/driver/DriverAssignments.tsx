@@ -92,7 +92,12 @@ function destinationLines(s: Shipment): { primary: string; secondary: string } {
   return { primary, secondary };
 }
 
-export default function DriverAssignments({ token }: { token: string }) {
+interface DriverAssignmentsProps {
+  token: string;
+  initialSearch?: string;
+}
+
+export default function DriverAssignments({ token, initialSearch = "" }: DriverAssignmentsProps) {
   const [stats, setStats] = useState<DriverStats | null>(null);
   const [trips, setTrips] = useState<Shipment[]>([]);
   const [active, setActive] = useState<Shipment[]>([]);
@@ -102,8 +107,8 @@ export default function DriverAssignments({ token }: { token: string }) {
 
   const [tab, setTab] = useState(0);
   const [rangeDays, setRangeDays] = useState(30);
-  const [showSearch, setShowSearch] = useState(false);
-  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(Boolean(initialSearch));
+  const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(1);
 
   const load = useCallback(
@@ -138,6 +143,12 @@ export default function DriverAssignments({ token }: { token: string }) {
   }, [load]);
 
   useAutoRefresh(() => load(true), { intervalMs: 15_000 });
+
+  useEffect(() => {
+    setSearch(initialSearch);
+    setShowSearch(Boolean(initialSearch));
+    setPage(1);
+  }, [initialSearch]);
 
   const selectTab = (i: number) => {
     setTab(i);

@@ -16,6 +16,7 @@ import {
   Wallet,
   LogOut,
   Menu,
+  Search,
   Bell,
   ChevronRight,
   MessageSquareText,
@@ -263,7 +264,26 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-end gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
+          <div
+            role="search"
+            className="relative hidden min-w-0 flex-1 md:block md:max-w-[560px]"
+          >
+            <Search
+              size={19}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-soft)]"
+            />
+            <input
+              type="search"
+              aria-label="Search shipments, customers, drivers, or vehicles"
+              placeholder="Search shipments, customers, drivers, vehicles..."
+              autoComplete="off"
+              className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-12 pr-4 text-sm font-medium text-[var(--text)] shadow-sm outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+              suppressHydrationWarning
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Link
               href="/admin/fleet/reports"

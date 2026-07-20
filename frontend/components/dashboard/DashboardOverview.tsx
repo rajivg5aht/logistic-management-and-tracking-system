@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Plus, Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
+import { Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   getMyShipments,
@@ -11,7 +11,6 @@ import {
   type Shipment as CustomerShipment,
 } from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
-import { AiAssistant } from "@/components/assistant/AiAssistant";
 
 const RECENT_STATUS_STYLES: Record<CustomerShipment["status"], string> = {
   pending: "bg-[#FFF3DD] text-[#A96512]",
@@ -80,32 +79,13 @@ export default function DashboardOverview({
 
   return (
     <div className="space-y-6 font-sans">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-[var(--success)] mb-1">
-            Good morning, {user?.fullName?.split(" ")[0] || "Alexander"}
-          </p>
-          <h1 className="text-3xl font-extrabold text-[var(--text)] tracking-tight">
-            Your Logistics Overview
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            suppressHydrationWarning
-            className="p-2.5 rounded-xl bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#92400E] transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell size={20} />
-          </button>
-          <Link
-            href="/shipments"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--teal)] hover:bg-[#15656e] text-white text-sm font-bold transition-colors no-underline"
-          >
-            <Plus size={16} />
-            New Shipment
-          </Link>
-        </div>
+      <div>
+        <p className="text-sm font-semibold text-[var(--success)] mb-1">
+          Good morning, {user?.fullName?.split(" ")[0] || "Alexander"}
+        </p>
+        <h1 className="text-3xl font-extrabold text-[var(--text)] tracking-tight">
+          Your Logistics Overview
+        </h1>
       </div>
 
       <nav
@@ -462,8 +442,6 @@ export default function DashboardOverview({
           </div>
         </div>
       </div>
-
-      <AiAssistant />
     </div>
   );
 }

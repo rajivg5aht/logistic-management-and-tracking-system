@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -16,11 +16,17 @@ import {
   ChevronRight,
   ChevronDown,
   UserRoundCog,
+  Search,
+  MapPin,
+  Package,
+  Bell,
+  CircleHelp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
 import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import {
+  driverGetAssignments,
   driverGetMe,
   driverUpdateAvailability,
   type AvailabilityStatus,
@@ -68,6 +74,8 @@ export default function DriverLayoutClient({
   const [availability, setAvailability] = useState<AvailabilityStatus | null>(null);
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [activeDeliveryCount, setActiveDeliveryCount] = useState(0);
+  const [driverSearch, setDriverSearch] = useState("");
 
   useEffect(() => {
     setProfileImageFailed(false);
@@ -86,6 +94,20 @@ export default function DriverLayoutClient({
   }, [loadMe]);
 
   useAutoRefresh(loadMe, { intervalMs: 15_000 });
+
+  const loadActiveDeliveryCount = useCallback(async () => {
+    try {
+      const assignments = await driverGetAssignments(token, "active");
+      setActiveDeliveryCount(assignments.length);
+    } catch {
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadActiveDeliveryCount();
+  }, [loadActiveDeliveryCount]);
+
+  useAutoRefresh(loadActiveDeliveryCount, { intervalMs: 15_000 });
 
   useEffect(() => {
     setIsOpen(false);
@@ -130,6 +152,13 @@ export default function DriverLayoutClient({
     } finally {
       setToggling(false);
     }
+  };
+
+  const handleDriverSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = driverSearch.trim();
+    if (!query) return;
+    router.push(`/driver/assignments?search=${encodeURIComponent(query)}`);
   };
 
   const meta = availability ? AVAILABILITY_META[availability] : null;
@@ -328,17 +357,91 @@ export default function DriverLayoutClient({
             <Menu size={20} />
           </button>
 
-          <div className="hidden items-center gap-2 text-sm font-semibold text-[var(--text-soft)] sm:flex">
-            <Truck size={16} className="text-[var(--accent)]" />
-            Driver Console
-          </div>
+          <form
+            onSubmit={handleDriverSearch}
+            className="relative hidden min-w-0 max-w-[290px] flex-1 lg:block"
+            role="search"
+          >
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={driverSearch}
+              onChange={(event) => setDriverSearch(event.target.value)}
+              placeholder="Search shipment or route..."
+              aria-label="Search shipment or route"
+              className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-xs font-medium text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
+            />
+          </form>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {toggleError && (
               <span className="hidden max-w-[220px] truncate text-xs font-medium text-[var(--danger)] sm:inline">
                 {toggleError}
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={handleToggle}
+              disabled={!canToggle || toggling}
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-[#EAF7EC] px-2.5 text-xs font-bold text-[#258A43] transition-colors hover:bg-[#DEF2E2] disabled:cursor-default disabled:opacity-70 sm:h-10 sm:px-3"
+              aria-label={canToggle ? `Availability: ${meta?.label ?? "Loading"}. Click to change.` : `Availability: ${meta?.label ?? "Loading"}`}
+              title={canToggle ? "Change availability" : "Availability changes automatically during a delivery"}
+            >
+              {toggling ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <span className={`h-2 w-2 rounded-full ${meta?.dot ?? "bg-[var(--text-muted)]"}`} />
+              )}
+              <span className="hidden whitespace-nowrap xl:inline">
+                {availability === "available" ? "On Duty" : meta?.label ?? "Loading"}
+              </span>
+            </button>
+
+            <Link
+              href="/driver/route"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173F72] px-2.5 text-xs font-bold shadow-sm transition-colors hover:bg-[#10345F] sm:h-10 sm:px-3"
+              style={{ color: "#FFFFFF" }}
+              aria-label="Start GPS tracking"
+            >
+              <MapPin size={15} aria-hidden="true" />
+              <span className="hidden whitespace-nowrap xl:inline">Start GPS</span>
+            </Link>
+
+            <Link
+              href="/driver/assignments"
+              className="hidden h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] sm:inline-flex"
+            >
+              <Package size={15} aria-hidden="true" />
+              <span className="hidden whitespace-nowrap xl:inline">My Deliveries</span>
+            </Link>
+
+            <Link
+              href="/driver/assignments"
+              className="relative hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:inline-flex sm:h-10 sm:w-10"
+              aria-label={`${activeDeliveryCount} active ${activeDeliveryCount === 1 ? "delivery" : "deliveries"}`}
+              title="Active deliveries"
+            >
+              <Bell size={18} aria-hidden="true" />
+              {activeDeliveryCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--danger)] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                  {activeDeliveryCount > 9 ? "9+" : activeDeliveryCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/contact"
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:inline-flex sm:h-10 sm:w-10"
+              aria-label="Driver help"
+              title="Help"
+            >
+              <CircleHelp size={18} aria-hidden="true" />
+            </Link>
 
             <div className="relative">
               <div className="flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--surface-soft)]">

@@ -271,10 +271,6 @@ export default function OverviewDashboard({ token }: { token: string }) {
                     : "Seven-day shipment volume is unavailable"}
               </p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--info-soft)] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#123E6B]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#123E6B]" aria-hidden="true" />
-              Auto-refresh · 15s
-            </span>
           </div>
 
           {shipmentStatsError && shipmentStats && (

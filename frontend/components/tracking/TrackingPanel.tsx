@@ -22,6 +22,12 @@ export default function TrackingPanel({
   const [loading, setLoading] = useState(Boolean(initialTrackingId));
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const normalized = initialTrackingId.trim().toUpperCase();
+    setTrackingId(normalized);
+    setActiveTrackingId(normalized);
+  }, [initialTrackingId]);
+
   const loadShipment = useCallback(
     async (silent = false) => {
       const normalized = activeTrackingId.trim().toUpperCase();
