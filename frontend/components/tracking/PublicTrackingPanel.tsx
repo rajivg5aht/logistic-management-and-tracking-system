@@ -3,16 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Package, Search } from "lucide-react";
-import { getMyShipments, type Shipment } from "@/lib/api/shipment.api";
+import { trackByCode, type Shipment } from "@/lib/api/shipment.api";
+import { ApiError } from "@/lib/api/api-client";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
-import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import ShipmentTrackingView from "@/components/tracking/ShipmentTrackingView";
 
-export default function TrackingPanel({
-  token,
+export default function PublicTrackingPanel({
   initialTrackingId = "",
 }: {
-  token: string;
   initialTrackingId?: string;
 }) {
   const router = useRouter();
@@ -34,31 +32,25 @@ export default function TrackingPanel({
 
       try {
         if (!silent) setLoading(true);
-        const shipments = await getMyShipments(token);
-        const match =
-          shipments.find(
-            (item) => item.trackingId.trim().toUpperCase() === normalized,
-          ) ?? null;
-        setShipment(match);
-        setError(
-          match
-            ? null
-            : "No shipment with this tracking ID was found in your account.",
-        );
+        const found = await trackByCode(normalized);
+        setShipment(found);
+        setError(null);
       } catch (loadError) {
         if (!silent) {
           setShipment(null);
           setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Unable to load tracking details.",
+            loadError instanceof ApiError && loadError.status === 404
+              ? "No shipment found with this tracking ID."
+              : loadError instanceof Error
+                ? loadError.message
+                : "Unable to load tracking details.",
           );
         }
       } finally {
         if (!silent) setLoading(false);
       }
     },
-    [activeTrackingId, token],
+    [activeTrackingId],
   );
 
   useEffect(() => {
@@ -78,17 +70,13 @@ export default function TrackingPanel({
       return;
     }
     setActiveTrackingId(normalized);
-    router.replace(`/tracking?trackingId=${encodeURIComponent(normalized)}`);
+    router.replace(`/track?trackingId=${encodeURIComponent(normalized)}`);
     if (normalized === activeTrackingId.trim().toUpperCase()) {
       void loadShipment();
     }
   };
 
-  const { location: liveLocation } = useShipmentLiveLocation(
-    token,
-    shipment?.id,
-    Boolean(shipment && shipment.status !== "cancelled"),
-  );
+  const liveLocation = shipment?.currentLocation ?? null;
 
   return (
     <div className="space-y-6">
@@ -131,7 +119,7 @@ export default function TrackingPanel({
             Track your shipment
           </h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Enter one of your tracking IDs to see its latest driver update.
+            Enter a tracking ID to see its latest status and location.
           </p>
         </div>
       ) : (

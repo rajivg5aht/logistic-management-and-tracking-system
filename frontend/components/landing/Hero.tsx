@@ -11,10 +11,12 @@ export default function Hero() {
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
     const normalized = trackingId.trim().toUpperCase();
+    // No code entered: send visitors to login. With a code: open the public
+    // track-by-code page (no login required).
     router.push(
       normalized
-        ? `/tracking?trackingId=${encodeURIComponent(normalized)}`
-        : "/tracking",
+        ? `/track?trackingId=${encodeURIComponent(normalized)}`
+        : "/login",
     );
   };
 

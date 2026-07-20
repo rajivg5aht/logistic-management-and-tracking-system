@@ -1,4 +1,5 @@
 import {
+  apiRequest,
   authenticatedRequest,
   authenticatedRequestWithMeta,
   buildQueryString,
@@ -205,6 +206,15 @@ export async function getMyShipments(token: string): Promise<Shipment[]> {
   return authenticatedRequest<Shipment[]>("/api/v1/shipments/my", token, {
     method: "GET",
   });
+}
+
+// Public track-by-code: no auth token. Anyone with a valid tracking ID can
+// resolve that shipment's details.
+export async function trackByCode(trackingId: string): Promise<Shipment> {
+  return apiRequest<Shipment>(
+    `/api/v1/track/${encodeURIComponent(trackingId)}`,
+    { method: "GET" },
+  );
 }
 
 export async function updateMyShipment(
