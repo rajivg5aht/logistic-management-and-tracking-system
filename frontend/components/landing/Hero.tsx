@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, ShieldCheck } from "lucide-react";
 
 export default function Hero() {
   const router = useRouter();
@@ -19,58 +19,73 @@ export default function Hero() {
   };
 
   return (
-    <section id="hero" className="relative overflow-hidden bg-[var(--app-bg)] pb-16 pt-28 sm:pb-20 lg:pt-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,162,74,0.05)_0%,transparent_60%)]" />
-      <div className="pointer-events-none absolute left-1/2 -top-64 h-[720px] w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(200,162,74,0.05)_0%,transparent_70%)] blur-[130px]" />
+    <section id="hero" className="relative overflow-hidden bg-[#0f0e0d]">
+      {/* Full-bleed sunset photo */}
+      <img
+        src="/himal.jpg"
+        alt="Freight truck on a Himalayan highway at dusk, snow-capped peaks in the distance"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-[70%_center]"
+      />
 
+      {/* Dark left-to-right scrim: darkens the left for text, lets the sunset + peaks show on the right */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(12,11,10,0.88)_0%,rgba(12,11,10,0.72)_38%,rgba(12,11,10,0.35)_62%,rgba(12,11,10,0.05)_100%)]" />
+      {/* Gentle top + bottom darkening for depth and to blend into the next section */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(12,11,10,0.35)_0%,transparent_28%,transparent_60%,rgba(12,11,10,0.55)_100%)]" />
+
+      {/* Content */}
       <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[760px] text-center">
-          <div className="section-tag"><span className="section-tag-dot" />Simple &amp; Fast · Trusted Network</div>
-
-          <h1 className="heading-xl">
-            Logistics Reimagined for
-            <br />
-            <span className="text-gradient">Modern Nepal.</span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-[520px] body-text">
-            Seamless end-to-end delivery solutions tailored for the Himalayan terrain. Whether it&apos;s the
-            heart of Kathmandu or a remote mountain trail, we bridge the gap.
-          </p>
-
-          <form
-            onSubmit={handleTrack}
-            className="mx-auto mt-9 flex w-full max-w-[520px] flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)] sm:flex-row sm:items-center"
-          >
-            <div className="flex flex-1 items-center gap-2.5 px-3">
-              <MapPin size={18} className="shrink-0 text-[var(--accent)]" />
-              <input
-                value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-                placeholder="Enter tracking ID (e.g. LN-482913)"
-                className="h-11 w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
-                aria-label="Tracking ID"
-                suppressHydrationWarning
-              />
+        <div className="flex min-h-[600px] flex-col justify-center pb-16 pt-28 sm:min-h-[640px] sm:pb-20 lg:min-h-[720px] lg:pt-36">
+          <div className="max-w-[600px]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(233,196,106,0.28)] bg-[rgba(25,24,23,0.55)] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-on-dark)] backdrop-blur-md">
+              <ShieldCheck size={14} className="text-[var(--accent)]" />
+              Trusted across 77 districts
             </div>
-            <button type="submit" className="btn-primary sm:w-auto" suppressHydrationWarning>
-              Track Now <ArrowRight size={16} />
-            </button>
-          </form>
 
-          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
-            <div className="flex -space-x-2.5">
-              {["#C99A3D", "#E9C46A", "#3A2E12", "#1D7A8C"].map((c) => (
-                <span
-                  key={c}
-                  className="h-8 w-8 rounded-full border-2 border-[var(--app-bg)]"
-                  style={{ background: c }}
-                />
-              ))}
-            </div>
-            <p className="text-sm text-[var(--text-muted)]">
-              Trusted by <span className="font-bold text-[var(--text)]">60,000+</span> daily active users across Nepal
+            <h1 className="heading-xl mt-5 text-[var(--text-on-dark)]">
+              Logistics Reimagined
+              <br />
+              for <span className="text-gradient-on-dark">Modern Nepal</span>
+            </h1>
+
+            <p className="mt-6 max-w-[500px] text-base leading-relaxed text-[var(--text-on-dark-muted)] sm:text-lg">
+              Seamless delivery solutions from the bustling streets of Kathmandu to the
+              remote trails of the Himalayas. Experience speed, safety, and reliability.
             </p>
+
+            <form
+              onSubmit={handleTrack}
+              className="mt-9 flex w-full max-w-[520px] flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center"
+            >
+              <div className="flex flex-1 items-center gap-2.5 px-3">
+                <MapPin size={18} className="shrink-0 text-[var(--accent)]" />
+                <input
+                  value={trackingId}
+                  onChange={(e) => setTrackingId(e.target.value)}
+                  placeholder="Enter Tracking ID (e.g. LN-98742)"
+                  className="h-11 w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
+                  aria-label="Tracking ID"
+                  suppressHydrationWarning
+                />
+              </div>
+              <button type="submit" className="btn-primary sm:w-auto" suppressHydrationWarning>
+                Track Now <ArrowRight size={16} />
+              </button>
+            </form>
+
+            <div className="mt-8 flex items-center gap-4">
+              <div className="flex -space-x-2.5">
+                {["#E9C46A", "#C99A3D", "#8A6A2A"].map((c) => (
+                  <span
+                    key={c}
+                    className="h-8 w-8 rounded-full border-2 border-[rgba(12,11,10,0.6)] shadow-sm"
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-[var(--text-on-dark-muted)]">
+                <span className="font-bold text-[var(--text-on-dark)]">1.2M+</span> successful deliveries this year
+              </p>
+            </div>
           </div>
         </div>
       </div>
