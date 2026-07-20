@@ -157,6 +157,15 @@ export class ShipmentService {
     return shipments.map((s) => this.sanitize(s));
   }
 
+  async getByTrackingId(trackingId: string): Promise<SafeShipment> {
+    const normalized = trackingId.trim().toUpperCase();
+    const shipment = await shipmentRepository.getByTrackingId(normalized);
+    if (!shipment) {
+      throw new HttpException(404, "No shipment found with this tracking ID");
+    }
+    return this.sanitize(shipment);
+  }
+
   private async getOwnedShipment(
     customerId: string,
     id: string,
