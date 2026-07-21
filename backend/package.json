@@ -8,7 +8,8 @@
     "build": "tsc",
     "migrate:fleet": "tsx src/database/migrateFleet.ts",
     "migrate:payments": "tsx src/database/migratePayments.ts",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [
     "logistics",
