@@ -60,3 +60,27 @@ test("customer can open payment history", async ({ page }) => {
   await page.goto("/payments");
   await expect(page.getByRole("heading", { name: "Payments", exact: true })).toBeVisible();
 });
+test("customer can send a support inquiry", async ({ page }) => {
+  await useRole(page, "customer");
+  await mockApi(page);
+  await page.goto("/inquiries");
+  await page.getByRole("button", { name: "New Inquiry" }).click();
+  await page.getByPlaceholder("How can our support team help?").fill(
+    "Please help me update the delivery instructions.",
+  );
+  await page.getByRole("button", { name: "Send Inquiry" }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "Your inquiry was sent to CargoNep Support.",
+  );
+});
+
+test("customer can review profile and security settings", async ({ page }) => {
+  await useRole(page, "customer");
+  await mockApi(page);
+  await page.goto("/profile");
+  await expect(page.getByRole("heading", { name: "Account Settings" })).toBeVisible();
+  await expect(page.getByText("Personal Profile")).toBeVisible();
+  await page.getByRole("button", { name: "Security", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Update Password" })).toBeVisible();
+  await expect(page.getByLabel("New Password", { exact: true })).toBeVisible();
+});

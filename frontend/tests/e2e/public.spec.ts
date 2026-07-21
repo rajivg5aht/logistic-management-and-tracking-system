@@ -16,3 +16,12 @@ test("visitor can start public parcel tracking", async ({ page }) => {
   await expect(page).toHaveURL(/\/track\?trackingId=LN-98742$/);
   await expect(page.getByRole("heading", { name: /Track Your Shipment/i })).toBeVisible();
 });
+test("visitor can navigate the password recovery flow", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "Forgot Password?" }).click();
+  await expect(page).toHaveURL(/\/forgot-password$/);
+  await expect(page.getByText("Reset your password", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Email Address")).toBeVisible();
+  await page.getByRole("link", { name: "Back to Sign In" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+});

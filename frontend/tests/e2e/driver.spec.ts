@@ -29,3 +29,9 @@ test("driver can open assigned vehicle records", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Assigned Vehicle" })).toBeVisible();
   await expect(page.getByText(/vehicle details, assignment history/i)).toBeVisible();
 });
+test("driver can review official announcements", async ({ page }) => {
+  await page.goto("/driver/announcements");
+  await expect(page.getByRole("heading", { name: "Announcements" })).toBeVisible();
+  await expect(page.getByText("No announcements yet")).toBeVisible();
+  await expect(page.getByText(/Only CargoNep administrators can publish/i)).toBeVisible();
+});

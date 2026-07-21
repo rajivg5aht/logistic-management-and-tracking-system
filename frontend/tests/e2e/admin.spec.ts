@@ -41,3 +41,20 @@ test("admin can open payment management", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Payments" })).toBeVisible();
   await expect(page.getByText("Outstanding COD")).toBeVisible();
 });
+test("admin can publish an announcement and review fleet reports", async ({ page }) => {
+  await page.goto("/admin/inquiries");
+  await page.getByRole("tab", { name: "Announcements" }).click();
+  await page.getByPlaceholder("Important service update").fill("Monsoon service update");
+  await page.getByPlaceholder("Write the announcement recipients will see...").fill(
+    "Delivery times may be longer in areas affected by heavy rain.",
+  );
+  await page.getByRole("button", { name: "Publish announcement" }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "Announcement published to Customers & Drivers.",
+  );
+
+  await page.goto("/admin/fleet/reports");
+  await expect(page.getByRole("heading", { name: "Fleet Reports" })).toBeVisible();
+  await page.getByRole("button", { name: "Fuel Expenses" }).click();
+  await expect(page.getByText("No fuel expenses.")).toBeVisible();
+});
