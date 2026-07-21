@@ -292,7 +292,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
             >
               <Bell size={19} />
               {pendingIncidentCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#D0533F] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--danger)] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
                   {pendingIncidentCount > 9 ? "9+" : pendingIncidentCount}
                 </span>
               )}
@@ -318,8 +318,8 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
                 <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
               </div>
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
-                style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-[var(--text-on-accent)]"
+                style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-hover))" }}
               >
                 {profileImageSrc && !profileImageFailed ? (
                   <Image

@@ -56,10 +56,10 @@ const faqs = [
 function OfficeMap() {
   return (
     <svg viewBox="0 0 600 260" className="h-full w-full" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <rect width="600" height="260" fill="#EFEAE0" />
+      <rect width="600" height="260" fill="var(--surface-muted)" />
 
       <rect x="34" y="24" width="120" height="78" rx="8" fill="rgba(95,127,53,0.16)" />
-      <g fill="#F4EFE4" stroke="#E2DACB" strokeWidth="1.5">
+      <g fill="var(--surface-soft)" stroke="var(--border)" strokeWidth="1.5">
         <rect x="200" y="24" width="120" height="70" rx="6" />
         <rect x="360" y="30" width="110" height="60" rx="6" />
         <rect x="500" y="24" width="90" height="80" rx="6" />
@@ -68,7 +68,7 @@ function OfficeMap() {
         <rect x="520" y="150" width="70" height="86" rx="6" />
       </g>
 
-      <g stroke="#DCD2BE" strokeWidth="8" strokeLinecap="round">
+      <g stroke="var(--border-strong)" strokeWidth="8" strokeLinecap="round">
         <line x1="0" y1="120" x2="600" y2="120" />
         <line x1="190" y1="0" x2="190" y2="260" />
         <line x1="350" y1="0" x2="350" y2="260" />
@@ -76,7 +76,7 @@ function OfficeMap() {
       </g>
       <line x1="0" y1="120" x2="600" y2="120" stroke="var(--accent)" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
 
-      <path d="M-20 60 C 140 110, 250 60, 360 140 S 540 220, 620 190" fill="none" stroke="var(--teal)" strokeWidth="16" opacity="0.30" strokeLinecap="round" />
+      <path d="M-20 60 C 140 110, 250 60, 360 140 S 540 220, 620 190" fill="none" stroke="var(--accent)" strokeWidth="16" opacity="0.30" strokeLinecap="round" />
 
       <g transform="translate(300,110)">
         <circle r="30" fill="rgba(200,162,74,0.18)">
@@ -249,7 +249,7 @@ export default function ContactContent() {
                 </p>
               )}
               {submitError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
+                <p className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger)]" role="alert">
                   {submitError}
                 </p>
               )}

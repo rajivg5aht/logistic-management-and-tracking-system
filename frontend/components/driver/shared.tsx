@@ -62,9 +62,9 @@ const ACTION_CONFIG: Record<DriverStage, { label: string; tone: Tone }> = {
 };
 
 const TONE_CLASS: Record<Tone, string> = {
-  primary: "bg-[var(--accent)] text-white hover:opacity-90",
+  primary: "bg-[var(--accent)] text-[var(--text-on-accent)] hover:opacity-90",
   success: "bg-[var(--success)] text-white hover:opacity-90",
-  danger: "border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[#f7d6d1]",
+  danger: "border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger-border)]",
   muted: "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]",
 };
 
@@ -256,7 +256,7 @@ export function ActiveAssignmentCard({
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--teal-tint)] text-[var(--teal)]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-strong)]">
               <Navigation size={17} />
             </div>
             <div>
@@ -283,7 +283,7 @@ export function ActiveAssignmentCard({
               <button
                 type="button"
                 onClick={tracking.stop}
-                className="flex items-center gap-1.5 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs font-bold text-[var(--danger)] transition-colors hover:bg-[#f7d6d1]"
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs font-bold text-[var(--danger)] transition-colors hover:bg-[var(--danger-border)]"
               >
                 <Square size={13} />
                 Stop Sharing
@@ -298,7 +298,7 @@ export function ActiveAssignmentCard({
                     ? "Confirm pickup before sharing live GPS"
                     : undefined
                 }
-                className="flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[var(--text-on-accent)] transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 <Navigation size={13} />
                 Start Live GPS
@@ -311,7 +311,7 @@ export function ActiveAssignmentCard({
             location={driverLocation}
             delivery={getDistrictCoords(shipment.delivery.district ?? "")}
             height={withMap ? 360 : 200}
-            accent="#1D7A8C"
+            accent="#E9C46A"
             waitingLabel={
               tracking.isTracking
                 ? "Finding your GPS signal..."
@@ -361,7 +361,7 @@ export function ActiveAssignmentCard({
             ),
           )}
           {nextStages.includes("delivered") && codPending && (
-            <p className="w-full text-xs font-semibold text-[#B8791B]">
+            <p className="w-full text-xs font-semibold text-[var(--warning)]">
               Collect COD and capture proof on the delivery page.
             </p>
           )}

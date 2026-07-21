@@ -64,7 +64,7 @@ export function CustomerHeader() {
           onSubmit={handleTrack}
           role="search"
           aria-label="Track a shipment"
-          className="flex h-11 w-full max-w-[340px] min-w-0 items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-3 shadow-sm transition-colors focus-within:border-[#123E6B]"
+          className="flex h-11 w-full max-w-[340px] min-w-0 items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-3 shadow-sm transition-colors focus-within:border-[var(--accent)]"
         >
           <PackageSearch
             size={19}
@@ -85,7 +85,7 @@ export function CustomerHeader() {
           <button
             type="submit"
             aria-label="Track shipment"
-            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[#123E6B] text-white shadow-sm transition-colors hover:bg-[#0C3158]"
+            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--text-on-accent)] shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
             suppressHydrationWarning
           >
             <ArrowRight size={20} aria-hidden="true" />
@@ -95,8 +95,8 @@ export function CustomerHeader() {
         <Link
           href="/shipments"
           aria-label="Book a shipment"
-          className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#123E6B] px-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#0C3158]"
-          style={{ color: "#FFFFFF" }}
+          className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-bold text-[var(--text-on-accent)] shadow-sm transition-colors hover:bg-[var(--accent-hover)]"
+          style={{ color: "var(--text-on-accent)" }}
         >
           <PackagePlus size={19} aria-hidden="true" />
           <span className="hidden xl:inline">Book a Shipment</span>
@@ -106,16 +106,16 @@ export function CustomerHeader() {
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <Link
           href="/tracking"
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-[#123E6B] transition-colors hover:bg-[var(--surface-soft)] lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--accent-strong)] transition-colors hover:bg-[var(--surface-soft)] lg:hidden"
           aria-label="Track a shipment"
         >
           <PackageSearch size={19} aria-hidden="true" />
         </Link>
         <Link
           href="/shipments"
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#123E6B] text-white shadow-sm transition-colors hover:bg-[#0C3158] lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--text-on-accent)] shadow-sm transition-colors hover:bg-[var(--accent-hover)] lg:hidden"
           aria-label="Book a shipment"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: "var(--text-on-accent)" }}
         >
           <PackagePlus size={19} aria-hidden="true" />
         </Link>
@@ -150,8 +150,8 @@ export function CustomerHeader() {
             </p>
           </div>
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
-            style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-[var(--text-on-accent)]"
+            style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-hover))" }}
           >
             {profileImageSrc && !profileImageFailed ? (
               <Image

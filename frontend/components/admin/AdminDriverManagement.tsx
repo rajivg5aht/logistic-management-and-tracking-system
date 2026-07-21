@@ -44,16 +44,16 @@ import {
 
 const AVATAR_STYLES = [
   "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
-  "bg-[var(--teal-tint)] text-[var(--teal)]",
-  "bg-[rgba(108,99,255,0.12)] text-[var(--step-active)]",
+  "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+  "bg-[rgba(233,196,106,0.12)] text-[var(--accent-strong)]",
   "bg-[rgba(95,127,53,0.12)] text-[var(--success)]",
 ];
 
 const AVAILABILITY_CONFIG: Record<AvailabilityStatus, { label: string; cls: string }> = {
   available: { label: "Available", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
-  assigned: { label: "Assigned", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
-  "on-delivery": { label: "On Delivery", cls: "bg-[#FDECD8] text-[#C77718]" },
-  "off-duty": { label: "Off Duty", cls: "bg-[#E9ECF1] text-[#5A6B82]" },
+  assigned: { label: "Assigned", cls: "bg-[var(--gold-tint)] text-[var(--accent-hover)]" },
+  "on-delivery": { label: "On Delivery", cls: "bg-[var(--warning-soft)] text-[var(--warning)]" },
+  "off-duty": { label: "Off Duty", cls: "bg-[var(--border)] text-[var(--inactive)]" },
   inactive: { label: "Inactive", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
 };
 
@@ -340,7 +340,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     <div className="space-y-6 font-sans">
       <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
+          <h1 className="text-2xl font-black tracking-tight text-[var(--accent-strong)]">
             Driver Management
           </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
@@ -364,7 +364,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
             <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Total Drivers
             </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-muted)] text-[var(--teal)]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-muted)] text-[var(--accent-strong)]">
               <Users size={16} />
             </span>
           </div>
@@ -577,14 +577,14 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                         <div className="space-y-1">
                           <a
                             href={`tel:${driver.phoneNumber}`}
-                            className="flex items-center gap-1.5 text-[var(--text-soft)] hover:text-[var(--teal)]"
+                            className="flex items-center gap-1.5 text-[var(--text-soft)] hover:text-[var(--accent-strong)]"
                           >
                             <Phone size={13} className="text-[var(--text-muted)]" />
                             {driver.phoneNumber || "-"}
                           </a>
                           <a
                             href={`mailto:${driver.email}`}
-                            className="flex items-center gap-1.5 truncate text-xs text-[var(--text-muted)] hover:text-[var(--teal)]"
+                            className="flex items-center gap-1.5 truncate text-xs text-[var(--text-muted)] hover:text-[var(--accent-strong)]"
                           >
                             <Mail size={13} />
                             {driver.email}
@@ -596,7 +596,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                           <button
                             type="button"
                             onClick={() => handleEditOpen(driver)}
-                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--teal)] cursor-pointer"
+                            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
                             aria-label="Edit driver"
                             suppressHydrationWarning
                           >
@@ -657,7 +657,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
                     onClick={() => handlePageChange(p)}
                     className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-bold transition-colors cursor-pointer ${
                       p === page
-                        ? "bg-[var(--teal)] text-white"
+                        ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                         : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
                     }`}
                   >
@@ -732,7 +732,7 @@ export default function AdminDriverManagement({ token }: { token: string }) {
               type="button"
               onClick={handleDeleteConfirm}
               disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#b93b31] disabled:opacity-60 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--danger)] disabled:opacity-60 cursor-pointer"
             >
               {actionLoading && <Loader2 size={15} className="animate-spin" />}
               Delete Permanently

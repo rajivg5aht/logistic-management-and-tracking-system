@@ -75,7 +75,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--teal)]">
+        <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           Fleet
         </p>
         <h1 className="mt-1 text-2xl font-black tracking-tight text-[var(--text)] sm:text-3xl">
@@ -101,7 +101,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
               className={[
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold",
                 active
-                  ? "bg-[var(--teal)] text-white"
+                  ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                   : "border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-soft)]",
               ].join(" ")}
             >
@@ -135,7 +135,7 @@ export default function AdminFleetReports({ token }: { token: string }) {
             className={[
               "rounded-full px-3.5 py-1.5 text-xs font-bold",
               status === value
-                ? "bg-[var(--teal)] text-white"
+                ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                 : "border border-[var(--border)] text-[var(--text-muted)]",
             ].join(" ")}
           >

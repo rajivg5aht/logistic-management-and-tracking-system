@@ -27,9 +27,9 @@ type Props = {
 
 function MapMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--surface-soft,#F3F1E9)] text-center">
-      <span className="text-[var(--text-muted,#6b7280)]">{icon}</span>
-      <p className="text-xs font-semibold text-[var(--text-muted,#6b7280)]">{text}</p>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-[var(--surface-soft,var(--surface-soft))] text-center">
+      <span className="text-[var(--text-muted,var(--text-muted))]">{icon}</span>
+      <p className="text-xs font-semibold text-[var(--text-muted,var(--text-muted))]">{text}</p>
     </div>
   );
 }
@@ -47,7 +47,7 @@ export default function LiveMap({
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl border border-[var(--border,#e5e7eb)]"
+      className="relative w-full overflow-hidden rounded-xl border border-[var(--border,var(--border))]"
       style={{ height: resolvedHeight }}
     >
       {hasMapContext ? (
@@ -69,13 +69,13 @@ export default function LiveMap({
       {location && route.remainingDistanceKm !== null && (
         <div
           aria-live="polite"
-          className="pointer-events-none absolute bottom-3 right-3 z-[500] grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#0C3B67]/12 bg-white/95 shadow-lg backdrop-blur"
+          className="pointer-events-none absolute bottom-3 right-3 z-[500] grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[var(--border-strong)] bg-white/95 shadow-lg backdrop-blur"
         >
           <div className="min-w-24 px-3 py-2">
             <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
               <Route size={11} /> Remaining
             </p>
-            <p className="mt-0.5 text-sm font-black text-[#0C3B67]">
+            <p className="mt-0.5 text-sm font-black text-[var(--accent-strong)]">
               {route.remainingDistanceLabel}
             </p>
           </div>
@@ -83,7 +83,7 @@ export default function LiveMap({
             <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
               <Clock3 size={11} /> ETA
             </p>
-            <p className="mt-0.5 text-sm font-black text-[#0C3B67]">
+            <p className="mt-0.5 text-sm font-black text-[var(--accent-strong)]">
               {route.etaLabel}
             </p>
             {route.arrivalLabel && route.etaMinutes !== 0 && (

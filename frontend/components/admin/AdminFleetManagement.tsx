@@ -70,25 +70,25 @@ const CARD_STATUS: Record<
   active: {
     label: "Active",
     badge: "bg-[var(--success-soft)] text-[var(--success)]",
-    hero: "from-[#E9F6EE] to-[#CFE9D9]",
+    hero: "from-[var(--success-soft)] to-[var(--success-border)]",
     iconColor: "text-[var(--success)]",
   },
   maintenance_required: {
     label: "Maintenance Required",
-    badge: "bg-[#FBF1DC] text-[var(--accent-hover)]",
-    hero: "from-[#FBF2DE] to-[#F3E2BC]",
+    badge: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
+    hero: "from-[var(--gold-tint)] to-[var(--accent-soft)]",
     iconColor: "text-[var(--accent-hover)]",
   },
   available: {
     label: "Available",
-    badge: "bg-[#EDF1F6] text-[#5A6B82]",
-    hero: "from-[#EFF2F7] to-[#DBE2EC]",
-    iconColor: "text-[#5A6B82]",
+    badge: "bg-[var(--surface-muted)] text-[var(--inactive)]",
+    hero: "from-[var(--surface-muted)] to-[var(--border)]",
+    iconColor: "text-[var(--inactive)]",
   },
   inactive: {
     label: "Inactive",
     badge: "bg-[var(--danger-soft)] text-[var(--danger)]",
-    hero: "from-[#FBE7E3] to-[#F3CEC8]",
+    hero: "from-[var(--danger-soft)] to-[var(--danger-border)]",
     iconColor: "text-[var(--danger)]",
   },
 };
@@ -395,7 +395,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">
+          <h1 className="text-2xl font-black tracking-tight text-[var(--accent-strong)]">
             Fleet Management
           </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
@@ -437,7 +437,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
           </p>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
-              className="h-full rounded-full bg-[var(--teal)] transition-all"
+              className="h-full rounded-full bg-[var(--accent)] transition-all"
               style={{
                 width: `${
                   stats && stats.total > 0
@@ -500,7 +500,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
             }}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${
               filter === item.id
-                ? "bg-[var(--teal)] text-white"
+                ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                 : "bg-[var(--surface-muted)] text-[var(--text-soft)]"
             }`}
           >
@@ -704,7 +704,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                           type="button"
                           suppressHydrationWarning
                           onClick={() => openAssignment(vehicle)}
-                          className="flex-1 rounded-lg bg-[var(--info-soft)] px-3 py-2 text-sm font-bold text-[var(--info)] transition-colors hover:bg-[#d8e6fa]"
+                          className="flex-1 rounded-lg bg-[var(--info-soft)] px-3 py-2 text-sm font-bold text-[var(--info)] transition-colors hover:bg-[var(--info-soft)]"
                         >
                           {vehicle.status === "available" ? "Assign Driver" : "Reassign"}
                         </button>
@@ -838,7 +838,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
         {confirmAction && (
           <div className="space-y-4">
             {confirmAction.vehicle.assignedDriverId ? (
-              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+              <div className="rounded-xl border border-[var(--accent-soft)] bg-[var(--gold-tint)] p-4 text-sm">
                 <p className="flex items-center gap-2 font-bold text-[var(--accent-hover)]">
                   <AlertTriangle size={16} /> Action blocked
                 </p>
@@ -868,7 +868,7 @@ export default function AdminFleetManagement({ token }: { token: string }) {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-[#F3E2BC] bg-[#FBF2DE] p-4 text-sm">
+              <div className="rounded-xl border border-[var(--accent-soft)] bg-[var(--gold-tint)] p-4 text-sm">
                 <p className="font-bold text-[var(--accent-hover)]">
                   This marks the vehicle as inactive.
                 </p>

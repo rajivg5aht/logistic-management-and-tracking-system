@@ -1,16 +1,34 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { StepProgressBar } from "@/components/shipment/StepProgressBar";
 import { PickupAddressCard } from "@/components/shipment/PickupAddressCard";
 import { DeliveryAddressCard } from "@/components/shipment/DeliveryAddressCard";
-import { ParcelDetailsCard } from "@/components/shipment/ParcelDetailsCard";
-import { SelectServiceCard } from "@/components/shipment/SelectServiceCard";
-import { DetailedSummaryCard } from "@/components/shipment/DetailedSummaryCard";
 import { BookingRouteMap } from "@/components/shipment/BookingRouteMap";
 import { ShipmentSummaryCard } from "@/components/shipment/ShipmentSummaryCard";
 import { ShipmentProvider, useShipment } from "@/context/ShipmentContext";
-import { ReviewAndPayCard } from "@/components/shipment/ReviewAndPayCard";
+
+const deferredCardLoading = () => (
+  <div className="h-72 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface)]" />
+);
+
+const ParcelDetailsCard = dynamic(
+  () => import("@/components/shipment/ParcelDetailsCard").then((mod) => mod.ParcelDetailsCard),
+  { loading: deferredCardLoading },
+);
+const SelectServiceCard = dynamic(
+  () => import("@/components/shipment/SelectServiceCard").then((mod) => mod.SelectServiceCard),
+  { loading: deferredCardLoading },
+);
+const DetailedSummaryCard = dynamic(
+  () => import("@/components/shipment/DetailedSummaryCard").then((mod) => mod.DetailedSummaryCard),
+  { loading: deferredCardLoading },
+);
+const ReviewAndPayCard = dynamic(
+  () => import("@/components/shipment/ReviewAndPayCard").then((mod) => mod.ReviewAndPayCard),
+  { loading: deferredCardLoading },
+);
 
 function ShipmentPageContent() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -79,10 +97,10 @@ function ShipmentPageContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#1E3A5F]">
+        <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[var(--accent-strong)]">
           Book a Shipment
         </h1>
-        <p className="mt-1 text-sm font-medium text-slate-500">
+        <p className="mt-1 text-sm font-medium text-[var(--text-muted)]">
           Fill in the details below to dispatch your package across Nepal.
         </p>
       </div>
@@ -92,19 +110,19 @@ function ShipmentPageContent() {
       </div>
 
       {validationErrors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-[var(--danger-soft)] border border-[var(--danger-border)] rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-start gap-3">
-            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 mt-0.5">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--danger-soft)] text-[var(--danger)] mt-0.5">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-[13px] font-bold text-red-800 mb-1.5">Please fix the following errors:</p>
+              <p className="text-[13px] font-bold text-[var(--danger)] mb-1.5">Please fix the following errors:</p>
               <ul className="space-y-1">
                 {validationErrors.map((error, index) => (
-                  <li key={index} className="text-[12px] text-red-700 font-medium flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-red-400 shrink-0" />
+                  <li key={index} className="text-[12px] text-[var(--danger)] font-medium flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-[var(--danger)] shrink-0" />
                     {error}
                   </li>
                 ))}
@@ -112,7 +130,7 @@ function ShipmentPageContent() {
             </div>
             <button
               onClick={clearErrors}
-              className="text-red-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+              className="text-[var(--danger)] hover:text-[var(--danger)] transition-colors p-1 cursor-pointer"
               suppressHydrationWarning
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -133,10 +151,10 @@ function ShipmentPageContent() {
                 <DeliveryAddressCard />
               </div>
 
-              <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
+              <div className="bg-white border border-[var(--border)] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
-                  className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                  className="text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
                   suppressHydrationWarning
                 >
                   Cancel
@@ -158,11 +176,11 @@ function ShipmentPageContent() {
             <>
               <ParcelDetailsCard />
 
-              <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
+              <div className="bg-white border border-[var(--border)] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
                   onClick={() => { clearErrors(); setCurrentStep(1); }}
-                  className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+                  className="flex items-center gap-2 border border-[var(--border)] hover:bg-[var(--surface-soft)] text-[var(--text)] text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
                   suppressHydrationWarning
                 >
                   ← Back to Origin
@@ -184,11 +202,11 @@ function ShipmentPageContent() {
             <>
               <SelectServiceCard />
 
-              <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 flex items-center justify-between shadow-sm">
+              <div className="bg-white border border-[var(--border)] rounded-xl p-5 flex items-center justify-between shadow-sm">
                 <button
                   type="button"
                   onClick={() => { clearErrors(); setCurrentStep(2); }}
-                  className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+                  className="flex items-center gap-2 border border-[var(--border)] hover:bg-[var(--surface-soft)] text-[var(--text)] text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
                   suppressHydrationWarning
                 >
                   ← Back to Package
@@ -229,7 +247,7 @@ function ShipmentPageContent() {
           <button
             type="button"
             onClick={() => setCurrentStep(3)}
-            className="flex items-center gap-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-2 border border-[var(--border)] hover:bg-[var(--surface-soft)] text-[var(--text)] text-sm font-semibold px-5 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
             suppressHydrationWarning
           >
             ← Back to Service Type

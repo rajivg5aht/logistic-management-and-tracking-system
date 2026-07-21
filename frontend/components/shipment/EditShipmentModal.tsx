@@ -105,7 +105,7 @@ function validate(form: EditForm): string[] {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none transition-all focus:border-[var(--teal)]/50";
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none transition-all focus:border-[var(--accent)]/50";
 
 export default function EditShipmentModal({
   isOpen,

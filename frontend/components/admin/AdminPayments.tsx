@@ -24,10 +24,10 @@ import { formatNPR } from "@/lib/pricing";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Pending", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  pending: { label: "Pending", cls: "bg-[var(--gold-tint)] text-[var(--accent-hover)]" },
   paid: { label: "Paid", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
   collected: { label: "Collected", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
-  settled: { label: "Settled", cls: "bg-[#DCF1EE] text-[var(--teal)]" },
+  settled: { label: "Settled", cls: "bg-[var(--success-soft)] text-[var(--accent-strong)]" },
   refunded: { label: "Refunded", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
   failed: { label: "Failed", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
 };
@@ -117,7 +117,7 @@ export default function AdminPayments({ token }: { token: string }) {
       label: "Outstanding COD",
       value: stats ? formatNPR(stats.outstandingCod) : "-",
       Icon: Clock,
-      tint: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+      tint: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
     },
     {
       label: "COD Held by Drivers",
@@ -136,7 +136,7 @@ export default function AdminPayments({ token }: { token: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--teal)]">
+        <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent-strong)]">
           Finance
         </p>
         <h1 className="mt-1 text-2xl font-black tracking-tight text-[var(--text)] sm:text-3xl">
@@ -177,7 +177,7 @@ export default function AdminPayments({ token }: { token: string }) {
               onClick={() => setMethod(m)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
                 method === m
-                  ? "bg-[var(--teal)] text-white"
+                  ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                   : "border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-soft)]"
               }`}
             >
@@ -304,7 +304,7 @@ export default function AdminPayments({ token }: { token: string }) {
                               type="button"
                               onClick={() => settle(p.id)}
                               disabled={settlingId === p.id}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--teal)] px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
                             >
                               {settlingId === p.id && (
                                 <Loader2 size={12} className="animate-spin" />
@@ -458,7 +458,7 @@ function RefundModal({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
             >
               {pending && <Loader2 size={15} className="animate-spin" />}
               Record Refund

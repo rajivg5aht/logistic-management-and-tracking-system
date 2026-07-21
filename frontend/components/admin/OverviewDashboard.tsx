@@ -33,8 +33,8 @@ import {
 } from "@/lib/api/fleet.api";
 import { getInitials } from "@/lib/ui-helpers";
 
-const NAVY = "#0C3B67";
-const BAR_IDLE = "#DCE5EE";
+const NAVY = "var(--accent-strong)";
+const BAR_IDLE = "var(--border)";
 const MAX_BAR_HEIGHT = 84;
 
 type ChartBar = {
@@ -57,17 +57,17 @@ function buildBars(dailyVolume: DailyVolume[]): ChartBar[] {
 }
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
-  "in-transit": "bg-[#FDECD8] text-[#C77718]",
+  "in-transit": "bg-[var(--warning-soft)] text-[var(--warning)]",
   delivered: "bg-[var(--success-soft)] text-[var(--success)]",
-  pending: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  pending: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
   cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 const AVATAR_STYLES = [
   "bg-[var(--info-soft)] text-[var(--info)]",
-  "bg-[var(--teal-tint)] text-[var(--teal)]",
-  "bg-[#FBF1DC] text-[var(--accent-hover)]",
-  "bg-[#F0ECFB] text-[var(--step-active)]",
+  "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+  "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
+  "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
 ];
 
 function getDestination(shipment: Shipment): string {
@@ -138,7 +138,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
     void loadDashboard();
   }, [loadDashboard]);
 
-  useAutoRefresh(loadDashboard, { intervalMs: 15_000 });
+  useAutoRefresh(loadDashboard, { intervalMs: 60_000 });
 
   const kpis = [
     {
@@ -151,19 +151,19 @@ export default function OverviewDashboard({ token }: { token: string }) {
       label: "Active Now",
       value: shipmentStats?.inTransit.toLocaleString("en-IN") ?? "-",
       Icon: Radio,
-      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+      tint: "bg-[var(--success-soft)] text-[var(--success)]",
     },
     {
       label: "Delivered Today",
       value: shipmentStats?.deliveredToday.toLocaleString("en-IN") ?? "-",
       Icon: CircleCheckBig,
-      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
+      tint: "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
     },
     {
       label: "Pending COD",
       value: shipmentStats ? formatNPR(shipmentStats.pendingCodAmount) : "-",
       Icon: Wallet,
-      tint: "bg-[#FBE9E5] text-[#D0533F]",
+      tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
 
@@ -189,21 +189,21 @@ export default function OverviewDashboard({ token }: { token: string }) {
       label: "Ready to Dispatch",
       sub: `${fleetStats?.available ?? 0} Vehicles`,
       Icon: CheckCircle2,
-      accent: "#1F9D57",
-      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+      accent: "var(--success)",
+      tint: "bg-[var(--success-soft)] text-[var(--success)]",
     },
     {
       label: "Maintenance",
       sub: `${fleetStats?.maintenanceRequired ?? 0} Vehicles`,
       Icon: Wrench,
       accent: "#C99A3D",
-      tint: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+      tint: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
     },
     {
       label: "Inactive",
       sub: `${fleetStats?.inactive ?? 0} Vehicles`,
       Icon: AlertTriangle,
-      accent: "#D0453A",
+      accent: "var(--danger)",
       tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
@@ -242,7 +242,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${kpi.tint}`}>
                 <Icon size={19} className="stroke-[2.4]" />
               </div>
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[#5A6B82]">
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[var(--inactive)]">
                 {kpi.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
@@ -274,7 +274,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
           </div>
 
           {shipmentStatsError && shipmentStats && (
-            <p className="mt-2 text-xs font-semibold text-[#B5473C]" role="status">
+            <p className="mt-2 text-xs font-semibold text-[var(--danger)]" role="status">
               Could not refresh the chart. Showing the latest available data.
             </p>
           )}
@@ -326,8 +326,8 @@ export default function OverviewDashboard({ token }: { token: string }) {
                   <div
                     className={`w-full rounded-lg transition-all duration-500 ${
                       bar.count > 0
-                        ? "bg-[#123E6B] hover:bg-[#0C2E4E]"
-                        : "bg-[#DCE5EE]"
+                        ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)]"
+                        : "bg-[var(--border)]"
                     }`}
                     style={{
                       height:
@@ -348,7 +348,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                   title={bar?.date}
                   className={`flex-1 text-center text-xs ${
                     bar && bar.count > 0
-                      ? "font-extrabold text-[#123E6B]"
+                      ? "font-extrabold text-[var(--accent-strong)]"
                       : "font-semibold text-[var(--text-muted)]"
                   }`}
                 >
@@ -392,7 +392,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
 
           <div
             className="mt-4 rounded-[var(--radius-md)] p-4"
-            style={{ background: "linear-gradient(150deg, #0C2E4E, #123A5E)" }}
+            style={{ background: "linear-gradient(150deg, var(--accent-hover), var(--accent-strong))" }}
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -410,7 +410,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
             </p>
             <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
               <div
-                className="h-full rounded-full bg-[#6FA8DC] transition-all duration-500"
+                className="h-full rounded-full bg-[var(--accent-hover)] transition-all duration-500"
                 style={{ width: `${fleetHealthPct}%` }}
               />
             </div>
@@ -428,7 +428,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
           </h3>
           <Link
             href="/admin/shipments"
-            className="text-xs font-bold text-[#123E6B] hover:underline"
+            className="text-xs font-bold text-[var(--accent-strong)] hover:underline"
           >
             View All
           </Link>
@@ -471,7 +471,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                 ))
               ) : recentShipmentsError ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-red-600">
+                  <td colSpan={6} className="py-10 text-center text-sm font-medium text-[var(--danger)]">
                     {recentShipmentsError}
                   </td>
                 </tr>
@@ -532,7 +532,7 @@ export default function OverviewDashboard({ token }: { token: string }) {
                       <td className="py-4 text-right">
                         <Link
                           href="/admin/shipments"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B]"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)]"
                           aria-label={`View ${shipment.trackingId}`}
                         >
                           <Eye size={16} />

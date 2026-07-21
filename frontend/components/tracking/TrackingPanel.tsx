@@ -126,7 +126,7 @@ export default function TrackingPanel({
           <Loader2 size={28} className="animate-spin text-[var(--accent)]" />
         </div>
       ) : error ? (
-        <div className="mx-auto flex max-w-2xl items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
+        <div className="mx-auto flex max-w-2xl items-start gap-3 rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-soft)] p-5 text-sm font-semibold text-[var(--danger)]">
           <AlertCircle size={19} className="mt-0.5 shrink-0" />
           {error}
         </div>

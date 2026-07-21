@@ -31,10 +31,10 @@ export type MapLocation = {
 } | null;
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
-  pending: "bg-[#FFF3DD] text-[#A96512]",
-  "in-transit": "bg-[#EAF1FC] text-[var(--info)]",
-  delivered: "bg-[#E2F5EA] text-[#18864B]",
-  cancelled: "bg-[#FDE8E5] text-[#C43D32]",
+  pending: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  "in-transit": "bg-[var(--info-soft)] text-[var(--info)]",
+  delivered: "bg-[var(--success-soft)] text-[var(--success)]",
+  cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 const STAGE_PROGRESS: Record<DriverStage, number> = {
@@ -149,14 +149,14 @@ export default function ShipmentTrackingView({
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2.5 text-xs">
               <span className="flex items-center gap-1.5 font-bold text-[var(--text-soft)]">
-                <MapPin size={14} className="text-[var(--teal)]" />
+                <MapPin size={14} className="text-[var(--accent-strong)]" />
                 Live location
                 <span className="rounded-md bg-[var(--surface-soft)] px-2 py-0.5 text-[10px] font-black uppercase text-[var(--text)]">
                   #{shipment.trackingId}
                 </span>
               </span>
               {liveLocation ? (
-                <span className="flex items-center gap-1.5 rounded-full bg-[var(--teal)] px-2.5 py-1 font-bold text-white">
+                <span className="flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-2.5 py-1 font-bold text-[var(--text-on-accent)]">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -174,10 +174,10 @@ export default function ShipmentTrackingView({
                 location={liveLocation}
                 delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                 height={240}
-                accent="#1D7A8C"
+                accent="#E9C46A"
                 waitingLabel={mapWaitingLabel}
               />
-              <span className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[#18864B] shadow">
+              <span className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-[var(--success)] shadow">
                 <MapPin size={13} className="mr-1 inline" />
                 {shipment.pickup.city || "Pickup"}
               </span>
@@ -299,7 +299,7 @@ export default function ShipmentTrackingView({
                     <span
                       className={`flex h-7 w-7 items-center justify-center rounded-full ${
                         isLatest
-                          ? "bg-[var(--accent)] text-white ring-4 ring-[var(--accent-soft)]"
+                          ? "bg-[var(--accent)] text-[var(--text-on-accent)] ring-4 ring-[var(--accent-soft)]"
                           : "bg-[var(--success)] text-white"
                       }`}
                     >

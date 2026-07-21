@@ -52,8 +52,8 @@ const AVAILABILITY_META: Record<
 > = {
   available: { label: "Available", dot: "bg-[var(--success)]", cls: "text-[var(--success)]" },
   assigned: { label: "Assigned", dot: "bg-[var(--accent-hover)]", cls: "text-[var(--accent-hover)]" },
-  "on-delivery": { label: "On Delivery", dot: "bg-[#C77718]", cls: "text-[#C77718]" },
-  "off-duty": { label: "Off Duty", dot: "bg-[#5A6B82]", cls: "text-[#5A6B82]" },
+  "on-delivery": { label: "On Delivery", dot: "bg-[var(--warning)]", cls: "text-[var(--warning)]" },
+  "off-duty": { label: "Off Duty", dot: "bg-[var(--inactive)]", cls: "text-[var(--inactive)]" },
   inactive: { label: "Inactive", dot: "bg-[var(--danger)]", cls: "text-[var(--danger)]" },
 };
 export default function DriverLayoutClient({
@@ -388,7 +388,7 @@ export default function DriverLayoutClient({
               type="button"
               onClick={handleToggle}
               disabled={!canToggle || toggling}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-[#EAF7EC] px-2.5 text-xs font-bold text-[#258A43] transition-colors hover:bg-[#DEF2E2] disabled:cursor-default disabled:opacity-70 sm:h-10 sm:px-3"
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-[var(--success-soft)] px-2.5 text-xs font-bold text-[var(--success)] transition-colors hover:bg-[var(--success-soft)] disabled:cursor-default disabled:opacity-70 sm:h-10 sm:px-3"
               aria-label={canToggle ? `Availability: ${meta?.label ?? "Loading"}. Click to change.` : `Availability: ${meta?.label ?? "Loading"}`}
               title={canToggle ? "Change availability" : "Availability changes automatically during a delivery"}
             >
@@ -404,8 +404,8 @@ export default function DriverLayoutClient({
 
             <Link
               href="/driver/route"
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#173F72] px-2.5 text-xs font-bold shadow-sm transition-colors hover:bg-[#10345F] sm:h-10 sm:px-3"
-              style={{ color: "#FFFFFF" }}
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-2.5 text-xs font-bold shadow-sm transition-colors hover:bg-[var(--accent-hover)] sm:h-10 sm:px-3"
+              style={{ color: "var(--text-on-accent)" }}
               aria-label="Start GPS tracking"
             >
               <MapPin size={15} aria-hidden="true" />

@@ -78,19 +78,19 @@ export default function DriverDashboard({
       label: "Delivered Today",
       value: stats ? String(stats.deliveredToday) : "-",
       Icon: CircleCheckBig,
-      tint: "bg-[#E6F4EC] text-[#1F9D57]",
+      tint: "bg-[var(--success-soft)] text-[var(--success)]",
     },
     {
       label: "Total Completed",
       value: stats ? String(stats.completed) : "-",
       Icon: TrendingUp,
-      tint: "bg-[var(--teal-tint)] text-[var(--teal)]",
+      tint: "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
     },
     {
       label: "COD to Collect",
       value: stats ? formatNPR(stats.codToCollect) : "-",
       Icon: Wallet,
-      tint: "bg-[#FBE9E5] text-[#D0533F]",
+      tint: "bg-[var(--danger-soft)] text-[var(--danger)]",
     },
   ];
 

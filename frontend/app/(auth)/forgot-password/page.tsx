@@ -22,10 +22,10 @@ export default function ForgotPasswordPage() {
             priority
             className="h-24 w-24 object-contain"
           />
-          <span className="-mt-2 text-xl font-semibold tracking-tight text-[#1e293b]">
+          <span className="-mt-2 text-xl font-semibold tracking-tight text-[var(--text)]">
             CargoNep
           </span>
-          <p className="mt-1 text-sm font-medium text-[#475569]">
+          <p className="mt-1 text-sm font-medium text-[var(--text-soft)]">
             Reset your password
           </p>
         </div>

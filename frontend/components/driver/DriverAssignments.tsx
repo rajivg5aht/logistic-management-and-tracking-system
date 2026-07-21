@@ -25,7 +25,8 @@ import type { DriverStats } from "@/lib/api/driver.api";
 import type { Shipment } from "@/lib/api/shipment.api";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
-const NAVY = "#0C3B67";
+const NAVY = "var(--accent-strong)";
+const BRAND = "var(--accent)";
 const WEEKLY_GOAL = 20;
 const PAGE_SIZE = 6;
 
@@ -47,8 +48,8 @@ function bucketOf(s: Shipment): TripBucket {
 const BUCKET_META: Record<TripBucket, { label: string; dot: string; text: string; bg: string }> = {
   delivered: { label: "Delivered", dot: "bg-[var(--success)]", text: "text-[var(--success)]", bg: "bg-[var(--success-soft)]" },
   failed: { label: "Failed", dot: "bg-[var(--danger)]", text: "text-[var(--danger)]", bg: "bg-[var(--danger-soft)]" },
-  "in-transit": { label: "In Transit", dot: "bg-[var(--info)]", text: "text-[var(--info)]", bg: "bg-[#E4EEFB]" },
-  pending: { label: "Pending", dot: "bg-[#C77718]", text: "text-[#C77718]", bg: "bg-[#FDECD8]" },
+  "in-transit": { label: "In Transit", dot: "bg-[var(--info)]", text: "text-[var(--info)]", bg: "bg-[var(--info-soft)]" },
+  pending: { label: "Pending", dot: "bg-[var(--warning)]", text: "text-[var(--warning)]", bg: "bg-[var(--warning-soft)]" },
 };
 
 const TABS: { label: string; bucket?: TripBucket }[] = [
@@ -67,7 +68,7 @@ const RANGE_OPTIONS = [
 const STAT_TINTS = [
   "bg-[var(--success-soft)] text-[var(--success)]",
   "bg-[var(--info-soft)] text-[var(--info)]",
-  "bg-[#FDECD8] text-[#C77718]",
+  "bg-[var(--warning-soft)] text-[var(--warning)]",
 ];
 
 function money(n: number): string {
@@ -244,7 +245,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
       label: "In Transit",
       Icon: Truck,
       value: stats ? String(stats.active).padStart(2, "0") : "-",
-      foot: <span className="text-[#C77718]">Active deliveries now</span>,
+      foot: <span className="text-[var(--warning)]">Active deliveries now</span>,
     },
   ];
 
@@ -301,7 +302,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
         >
           <div className="flex items-start justify-between">
             <p className="text-[12px] font-bold text-[var(--text-muted)]">Efficiency Score</p>
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ECEBFB] text-[var(--step-active)]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
               <Gauge size={17} />
             </span>
           </div>
@@ -311,7 +312,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
             <div
               className="h-full rounded-full"
-              style={{ width: `${(derived.efficiency / 5) * 100}%`, backgroundColor: NAVY }}
+              style={{ width: `${(derived.efficiency / 5) * 100}%`, backgroundColor: BRAND }}
             />
           </div>
         </div>
@@ -367,7 +368,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
               >
                 <span
                   className="absolute inset-x-0 top-0 h-1"
-                  style={{ background: `linear-gradient(90deg, ${NAVY}, #16548C)` }}
+                  style={{ background: `linear-gradient(90deg, ${BRAND}, var(--accent-hover))` }}
                 />
                 <div className="flex items-center justify-between">
                   <span
@@ -411,7 +412,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
                 <Link
                   href="/driver/route"
                   className="mt-4 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: NAVY }}
+                  style={{ backgroundColor: BRAND }}
                 >
                   View Route
                   <ArrowRight size={15} />
@@ -423,7 +424,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
           <div
             className="flex flex-col justify-between overflow-hidden rounded-[var(--radius-lg)] p-5 text-white"
             style={{
-              background: `linear-gradient(135deg, ${NAVY} 0%, #16548C 100%)`,
+              background: `linear-gradient(135deg, ${NAVY} 0%, var(--surface-dark-2) 100%)`,
               boxShadow: "var(--shadow-md)",
             }}
           >
@@ -485,10 +486,10 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
                 onClick={() => selectTab(i)}
                 className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors ${
                   tab === i
-                    ? "text-white shadow-sm"
+                    ? "text-[var(--text-on-accent)] shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
-                style={tab === i ? { backgroundColor: NAVY } : undefined}
+                style={tab === i ? { backgroundColor: BRAND } : undefined}
               >
                 {t.label}
               </button>
@@ -518,10 +519,10 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
               onClick={() => setShowSearch((s) => !s)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
                 showSearch
-                  ? "border-transparent text-white"
+                  ? "border-transparent text-[var(--text-on-accent)]"
                   : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
               }`}
-              style={showSearch ? { backgroundColor: NAVY } : undefined}
+              style={showSearch ? { backgroundColor: BRAND } : undefined}
             >
               <SlidersHorizontal size={14} />
               More Filters
@@ -596,7 +597,7 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--teal)]">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--accent-strong)]">
                             <MapPin size={14} />
                           </span>
                           <div className="min-w-0">
@@ -665,10 +666,10 @@ export default function DriverAssignments({ token, initialSearch = "" }: DriverA
                   onClick={() => setPage(n)}
                   className={`h-8 w-8 rounded-lg text-xs font-bold transition-colors ${
                     n === safePage
-                      ? "text-white"
+                      ? "text-[var(--text-on-accent)]"
                       : "border border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
                   }`}
-                  style={n === safePage ? { backgroundColor: NAVY } : undefined}
+                  style={n === safePage ? { backgroundColor: BRAND } : undefined}
                 >
                   {n}
                 </button>

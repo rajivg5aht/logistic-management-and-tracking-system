@@ -189,7 +189,7 @@ function DeliveryMilestones({ shipment }: { shipment: Shipment }) {
       style={{ boxShadow: "var(--shadow-sm)" }}
     >
       <div className="flex items-center gap-2">
-        <RouteIcon size={17} className="text-[var(--teal)]" />
+        <RouteIcon size={17} className="text-[var(--accent-strong)]" />
         <h3 className="text-sm font-black text-[var(--text)]">Delivery Milestones</h3>
       </div>
 
@@ -321,7 +321,7 @@ function DeliveryDetails({ shipment }: { shipment: Shipment }) {
       style={{ boxShadow: "var(--shadow-sm)" }}
     >
       <div className="flex items-center gap-2">
-        <ClipboardList size={17} className="text-[var(--teal)]" />
+        <ClipboardList size={17} className="text-[var(--accent-strong)]" />
         <h3 className="text-sm font-black text-[var(--text)]">Delivery Details</h3>
       </div>
 
@@ -396,7 +396,7 @@ function DetailBlock({
 }) {
   return (
     <div className="flex gap-2.5">
-      <span className="mt-0.5 shrink-0 text-[var(--teal)]">{icon}</span>
+      <span className="mt-0.5 shrink-0 text-[var(--accent-strong)]">{icon}</span>
       <div>
         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
           {label}

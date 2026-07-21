@@ -13,10 +13,10 @@ import {
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const RECENT_STATUS_STYLES: Record<CustomerShipment["status"], string> = {
-  pending: "bg-[#FFF3DD] text-[#A96512]",
-  "in-transit": "bg-[#EAF1FC] text-[#3E80E5]",
-  delivered: "bg-[#E2F5EA] text-[#18864B]",
-  cancelled: "bg-[#FDE8E5] text-[#C43D32]",
+  pending: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  "in-transit": "bg-[var(--info-soft)] text-[var(--info)]",
+  delivered: "bg-[var(--success-soft)] text-[var(--success)]",
+  cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 export default function DashboardOverview({
@@ -57,7 +57,7 @@ export default function DashboardOverview({
     loadRecentShipments(true);
   }, [loadRecentShipments]);
 
-  useAutoRefresh(() => loadRecentShipments(), { intervalMs: 15_000 });
+  useAutoRefresh(() => loadRecentShipments(), { intervalMs: 60_000 });
 
   const handleTrackParcel = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,12 +94,12 @@ export default function DashboardOverview({
       >
         <button
           type="button"
-          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[var(--teal)]/40 hover:bg-[#F4FAFA] hover:shadow-[0_8px_20px_rgba(29,122,140,0.12)]"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)] hover:shadow-[0_8px_20px_rgba(121,83,18,0.12)]"
           suppressHydrationWarning
         >
           <Building2
             size={17}
-            className="text-[var(--teal)] transition-transform group-hover:scale-110"
+            className="text-[var(--accent-strong)] transition-transform group-hover:scale-110"
           />
           Delivery Network
         </button>
@@ -115,11 +115,11 @@ export default function DashboardOverview({
         </Link>
         <Link
           href="/inquiries"
-          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] no-underline shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#D36A62]/40 hover:bg-[#FFF7F5] hover:shadow-[0_8px_20px_rgba(211,106,98,0.12)]"
+          className="group inline-flex h-11 w-fit items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--text)] no-underline shadow-[0_4px_14px_rgba(32,50,74,0.06)] transition-all hover:-translate-y-0.5 hover:border-[var(--danger)]/40 hover:bg-[var(--danger-soft)] hover:shadow-[0_8px_20px_rgba(211,106,98,0.12)]"
         >
           <HelpCircle
             size={17}
-            className="text-[#D36A62] transition-transform group-hover:scale-110"
+            className="text-[var(--danger)] transition-transform group-hover:scale-110"
           />
           Get Help
         </Link>
@@ -163,14 +163,14 @@ export default function DashboardOverview({
             />
             <button
               type="submit"
-              className="h-11 shrink-0 rounded-xl bg-[var(--teal)] px-5 text-sm font-bold text-white transition-colors hover:bg-[#15656e]"
+              className="h-11 shrink-0 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-[var(--text-on-accent)] transition-colors hover:bg-[var(--accent-hover)]"
               suppressHydrationWarning
             >
               Track Now
             </button>
           </div>
           {trackingError && (
-            <p className="mt-2 text-xs font-semibold text-red-600" role="alert">
+            <p className="mt-2 text-xs font-semibold text-[var(--danger)]" role="alert">
               {trackingError}
             </p>
           )}
@@ -184,7 +184,7 @@ export default function DashboardOverview({
           </h2>
           <Link
             href="/shipments/history"
-            className="text-sm font-semibold text-[#3E80E5] no-underline hover:underline"
+            className="text-sm font-semibold text-[var(--info)] no-underline hover:underline"
           >
             See all active ({activeShipments.length})
           </Link>
@@ -204,7 +204,7 @@ export default function DashboardOverview({
             ))}
           </div>
         ) : recentError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-700">
+          <div className="rounded-2xl border border-[var(--danger-border)] bg-[var(--danger-soft)] p-5 text-sm font-semibold text-[var(--danger)]">
             {recentError}
           </div>
         ) : activeShipments.length === 0 ? (
@@ -250,8 +250,8 @@ export default function DashboardOverview({
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
                           shipment.status === "in-transit"
-                            ? "bg-[#3E80E5]"
-                            : "bg-[#A96512]"
+                            ? "bg-[var(--info)]"
+                            : "bg-[var(--warning)]"
                         }`}
                       />
                       {getShipmentDisplayStatus(shipment)}
@@ -305,50 +305,50 @@ export default function DashboardOverview({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-[#1a1f2e] rounded-2xl p-6 shadow-lg border border-[#2d3548] relative overflow-hidden">
+          <div className="bg-[var(--surface-dark-2)] rounded-2xl p-6 shadow-lg border border-[var(--border-dark)] relative overflow-hidden">
             <h2 className="text-lg font-extrabold text-white mb-4">
               Live Fleet Tracking
             </h2>
             
-            <div className="relative h-64 bg-[#0f1419] rounded-xl overflow-hidden">
+            <div className="relative h-64 bg-[var(--surface-dark)] rounded-xl overflow-hidden">
               <svg className="absolute inset-0 w-full h-full">
                 <path
                   d="M 150 120 Q 200 80 280 100"
-                  stroke="#3B82F6"
+                  stroke="var(--info)"
                   strokeWidth="2"
                   fill="none"
                   className="animate-pulse"
                 />
                 <path
                   d="M 450 180 Q 550 150 650 200"
-                  stroke="#10B981"
+                  stroke="var(--success)"
                   strokeWidth="2"
                   fill="none"
                   className="animate-pulse"
                 />
                 <path
                   d="M 200 140 Q 350 180 450 220"
-                  stroke="#F59E0B"
+                  stroke="var(--warning)"
                   strokeWidth="2"
                   fill="none"
                   className="animate-pulse"
                 />
                 
-                <circle cx="150" cy="120" r="4" fill="#3B82F6" />
-                <circle cx="280" cy="100" r="4" fill="#3B82F6" />
-                <circle cx="450" cy="180" r="4" fill="#10B981" />
-                <circle cx="650" cy="200" r="4" fill="#10B981" />
-                <circle cx="200" cy="140" r="4" fill="#F59E0B" />
-                <circle cx="450" cy="220" r="4" fill="#F59E0B" />
+                <circle cx="150" cy="120" r="4" fill="var(--info)" />
+                <circle cx="280" cy="100" r="4" fill="var(--info)" />
+                <circle cx="450" cy="180" r="4" fill="var(--success)" />
+                <circle cx="650" cy="200" r="4" fill="var(--success)" />
+                <circle cx="200" cy="140" r="4" fill="var(--warning)" />
+                <circle cx="450" cy="220" r="4" fill="var(--warning)" />
               </svg>
 
               <div className="absolute top-4 right-4 flex items-center gap-4 bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#10B981]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
                   <span className="text-xs font-semibold text-white">Active</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[#F59E0B]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--warning)]" />
                   <span className="text-xs font-semibold text-white">Alert</span>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function DashboardOverview({
                   </div>
                 ))
               ) : recentError ? (
-                <p className="p-5 text-sm font-medium text-red-600">
+                <p className="p-5 text-sm font-medium text-[var(--danger)]">
                   {recentError}
                 </p>
               ) : recentShipments.length === 0 ? (
@@ -431,10 +431,10 @@ export default function DashboardOverview({
               )}
             </div>
 
-            <div className="bg-[#F3EBF9] p-4">
+            <div className="bg-[var(--accent-soft)] p-4">
               <Link
                 href="/shipments/history"
-                className="block w-full rounded-lg py-2.5 text-center text-sm font-bold text-[var(--accent)] no-underline transition-colors hover:bg-[#E8D9F0]"
+                className="block w-full rounded-lg py-2.5 text-center text-sm font-bold text-[var(--accent)] no-underline transition-colors hover:bg-[var(--accent-soft)]"
               >
                 VIEW SHIPMENT HISTORY
               </Link>

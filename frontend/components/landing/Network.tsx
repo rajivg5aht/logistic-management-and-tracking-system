@@ -128,11 +128,11 @@ export default function Network() {
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${
                           route.status === "Active Now"
-                            ? "bg-[rgba(95,127,53,0.18)] text-[#9dbb6f]"
+                            ? "bg-[rgba(95,127,53,0.18)] text-[var(--accent)]"
                             : "bg-[var(--accent-soft)] text-[var(--accent)]"
                         }`}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${route.status === "Active Now" ? "bg-[#9dbb6f]" : "bg-[var(--accent)]"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full ${route.status === "Active Now" ? "bg-[var(--accent)]" : "bg-[var(--accent)]"}`} />
                         {route.status}
                       </span>
                     </div>

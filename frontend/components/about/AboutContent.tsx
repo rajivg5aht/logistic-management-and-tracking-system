@@ -91,7 +91,7 @@ const whyChooseUs = [
 function OverviewVisual() {
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute -inset-3 rounded-[1.75rem] bg-gradient-to-tr from-[var(--accent-soft)] via-transparent to-[rgba(29,122,140,0.06)] blur-2xl" />
+      <div className="pointer-events-none absolute -inset-3 rounded-[1.75rem] bg-gradient-to-tr from-[var(--accent-soft)] via-transparent to-[rgba(121,83,18,0.06)] blur-2xl" />
       <div className="relative overflow-hidden rounded-[1.4rem] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
         <img
           src="/story.png"
@@ -106,7 +106,7 @@ function OverviewVisual() {
 function TechnologyPreview() {
   return (
     <div className="relative">
-      <div className="pointer-events-none absolute -inset-3 rounded-[1.75rem] bg-[rgba(29,122,140,0.08)] blur-2xl" />
+      <div className="pointer-events-none absolute -inset-3 rounded-[1.75rem] bg-[rgba(121,83,18,0.08)] blur-2xl" />
       <div className="relative overflow-hidden rounded-[1.4rem] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_45px_rgba(45,45,45,0.14)]">
         <img
           src="/tech.png"
@@ -152,11 +152,11 @@ export default function AboutContent() {
           <div className="grid gap-5 md:grid-cols-2">
             <Card padding="p-7 sm:p-8" hover glow>
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(29,122,140,0.2)] bg-[var(--teal-tint)] text-[var(--teal)]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(121,83,18,0.2)] bg-[var(--accent-soft)] text-[var(--accent-strong)]">
                   <Send size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-extrabold text-[var(--teal)]">Our Mission</h3>
+                  <h3 className="text-xl font-extrabold text-[var(--accent-strong)]">Our Mission</h3>
                   <p className="mt-2 body-text-sm">
                     To empower Nepalese businesses and individuals by providing a seamless, transparent, and reliable
                     logistics infrastructure that connects every corner of the nation through technology.
@@ -167,11 +167,11 @@ export default function AboutContent() {
 
             <Card padding="p-7 sm:p-8" hover glow>
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(29,122,140,0.2)] bg-[var(--teal-tint)] text-[var(--teal)]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(121,83,18,0.2)] bg-[var(--accent-soft)] text-[var(--accent-strong)]">
                   <Eye size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-extrabold text-[var(--teal)]">Our Vision</h3>
+                  <h3 className="text-xl font-extrabold text-[var(--accent-strong)]">Our Vision</h3>
                   <p className="mt-2 body-text-sm">
                     To become the backbone of Nepal&apos;s digital economy, setting the gold standard for logistics
                     excellence and technological integration in South Asia&apos;s unique mountain terrains.
@@ -185,13 +185,13 @@ export default function AboutContent() {
 
       <section className="pb-14 sm:pb-16">
         <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-extrabold text-[var(--teal)] sm:text-3xl">Our Core Values</h2>
+          <h2 className="text-center text-2xl font-extrabold text-[var(--accent-strong)] sm:text-3xl">Our Core Values</h2>
 
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {coreValues.map(({ icon: Icon, title, text }) => (
               <Card key={title} padding="p-6" hover glow className="h-full">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(29,122,140,0.18)] bg-[var(--teal-tint)] text-[var(--teal)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(121,83,18,0.18)] bg-[var(--accent-soft)] text-[var(--accent-strong)]">
                     <Icon size={19} />
                   </div>
                   <div>
@@ -209,7 +209,7 @@ export default function AboutContent() {
           <TechnologyPreview />
 
           <div>
-            <h2 className="text-3xl font-extrabold leading-tight text-[var(--teal)] sm:text-4xl">
+            <h2 className="text-3xl font-extrabold leading-tight text-[var(--accent-strong)] sm:text-4xl">
               Advanced Logistics Technology
             </h2>
             <p className="mt-5 body-text">
@@ -253,7 +253,7 @@ export default function AboutContent() {
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               {whyChooseFeatures.map(({ icon: Icon, title, text }) => (
                 <Card key={title} padding="p-6" hover glow className="h-full">
-                  <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(29,122,140,0.18)] bg-[var(--teal-tint)] text-[var(--teal)]">
+                  <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(121,83,18,0.18)] bg-[var(--accent-soft)] text-[var(--accent-strong)]">
                     <Icon size={21} />
                   </div>
                   <h3 className="heading-sm">{title}</h3>

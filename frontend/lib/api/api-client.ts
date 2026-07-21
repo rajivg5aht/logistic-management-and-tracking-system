@@ -1,5 +1,7 @@
 import { API_BASE_URL as SERVER_API_BASE_URL } from "@/lib/config";
 
+const DEFAULT_API_TIMEOUT_MS = 12_000;
+
 export const API_BASE_URL =
   typeof window !== "undefined"
     ? ""
@@ -63,6 +65,31 @@ function buildHeaders(
   return headers;
 }
 
+async function apiFetch(
+  endpoint: string,
+  options: RequestInit,
+  token?: string,
+): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: buildHeaders(options, token),
+      credentials: "include",
+      signal:
+        options.signal ?? AbortSignal.timeout(DEFAULT_API_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new ApiError(
+        "The server took too long to respond. Please try again.",
+        408,
+      );
+    }
+
+    throw error;
+  }
+}
+
 async function readPayload<T, TMeta>(
   response: Response,
 ): Promise<ApiResponse<T, TMeta>> {
@@ -106,11 +133,7 @@ export async function apiResponse<T, TMeta = unknown>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T, TMeta>> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
+  const response = await apiFetch(endpoint, options);
 
   return readPayload<T, TMeta>(response);
 }
@@ -140,11 +163,7 @@ export async function authenticatedResponse<T, TMeta = unknown>(
   token: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T, TMeta>> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: buildHeaders(options, token),
-    credentials: "include",
-  });
+  const response = await apiFetch(endpoint, options, token);
 
   return readPayload<T, TMeta>(response);
 }

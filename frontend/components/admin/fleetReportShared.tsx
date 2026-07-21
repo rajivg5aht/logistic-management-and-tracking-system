@@ -21,23 +21,23 @@ import {
 import { formatNPR } from "@/lib/pricing";
 
 export const INCIDENT_STATUS_META: Record<string, { label: string; cls: string }> = {
-  pending_review: { label: "Pending review", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  pending_review: { label: "Pending review", cls: "bg-[var(--gold-tint)] text-[var(--accent-hover)]" },
   resolved: { label: "Resolved", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
-  maintenance_required: { label: "Maintenance required", cls: "bg-[#FCE8D8] text-[#C06A2D]" },
+  maintenance_required: { label: "Maintenance required", cls: "bg-[var(--warning-soft)] text-[var(--warning)]" },
 };
 
 export const FUEL_STATUS_META: Record<string, { label: string; cls: string }> = {
   submitted: { label: "Submitted", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
-  under_review: { label: "Under review", cls: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
+  under_review: { label: "Under review", cls: "bg-[var(--gold-tint)] text-[var(--accent-hover)]" },
   approved: { label: "Approved", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
   rejected: { label: "Rejected", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
-  reimbursed: { label: "Reimbursed", cls: "bg-[#E7F5F2] text-[var(--teal)]" },
+  reimbursed: { label: "Reimbursed", cls: "bg-[var(--success-soft)] text-[var(--accent-strong)]" },
 };
 
 const SEVERITY_META: Record<string, string> = {
   low: "bg-[var(--success-soft)] text-[var(--success)]",
   medium: "bg-[var(--info-soft)] text-[var(--info)]",
-  high: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+  high: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
   critical: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
@@ -86,7 +86,7 @@ function ActButton({
       disabled={pending}
       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-60 cursor-pointer ${
         primary
-          ? "bg-[var(--teal)] text-white hover:opacity-90"
+          ? "bg-[var(--accent)] text-[var(--text-on-accent)] hover:opacity-90"
           : "border border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
       }`}
     >
@@ -259,7 +259,7 @@ export function IncidentRow({
               rows={2}
               maxLength={800}
               placeholder="Optional review note visible to the driver"
-              className="min-h-16 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
+              className="min-h-16 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--accent)]"
             />
             <div className="flex flex-wrap gap-2">
               <ActButton
@@ -351,7 +351,7 @@ export function FuelExpenseRow({
           href={expense.receiptUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--teal)] hover:underline"
+          className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-strong)] hover:underline"
         >
           <ExternalLink size={12} /> View receipt
         </a>
@@ -377,7 +377,7 @@ export function FuelExpenseRow({
             onChange={(event) => setAdminNote(event.target.value)}
             rows={2}
             placeholder="Admin note visible to driver"
-            className="min-h-16 flex-1 resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--teal)]"
+            className="min-h-16 flex-1 resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] outline-none focus:border-[var(--accent)]"
           />
           <ActButton
             label="Save note"
