@@ -10,15 +10,7 @@ covering the API, reusable UI behavior, and complete browser journeys.
 | Browser journeys | Playwright (Chromium) | 18 |
 | **Total** |  | **248 / 250** |
 
-Run the count guard from the repository root:
-
-```bash
-node scripts/check-test-count.mjs
-```
-
-The guard fails if a suite drifts from the approved allocation or if the total
-exceeds 250. It counts declared tests; the commands below are the evidence that
-those declarations actually pass.
+The commands below provide the evidence that the declared tests actually pass.
 
 ## Backend
 
