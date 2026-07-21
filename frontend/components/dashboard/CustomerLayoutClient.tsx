@@ -7,8 +7,10 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 
 export default function CustomerLayoutClient({
   children,
+  token,
 }: {
   children: React.ReactNode;
+  token: string;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -35,7 +37,7 @@ export default function CustomerLayoutClient({
         }`}
         style={{ transitionDuration: "280ms" }}
       >
-        <CustomerHeader />
+        <CustomerHeader token={token} />
         <main className="flex-1 px-8 py-8 lg:px-12 xl:px-16">
           <PageBreadcrumb />
           {children}

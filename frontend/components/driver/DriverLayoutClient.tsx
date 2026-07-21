@@ -20,11 +20,16 @@ import {
   MapPin,
   Package,
   Bell,
+  Megaphone,
   CircleHelp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
 import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
+import {
+  getMyAnnouncements,
+  type Announcement,
+} from "@/lib/api/announcement.api";
 import {
   driverGetAssignments,
   driverGetMe,
@@ -44,6 +49,7 @@ const NAV_ITEMS = [
   { label: "My Assignments", href: "/driver/assignments", icon: ClipboardList },
   { label: "Fleet", href: "/driver/fleet", icon: Truck },
   { label: "Route", href: "/driver/route", icon: MapPinned },
+  { label: "Announcements", href: "/driver/announcements", icon: Megaphone },
 ];
 
 const AVAILABILITY_META: Record<
@@ -71,10 +77,12 @@ export default function DriverLayoutClient({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [availability, setAvailability] = useState<AvailabilityStatus | null>(null);
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [activeDeliveryCount, setActiveDeliveryCount] = useState(0);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [driverSearch, setDriverSearch] = useState("");
 
   useEffect(() => {
@@ -109,9 +117,24 @@ export default function DriverLayoutClient({
 
   useAutoRefresh(loadActiveDeliveryCount, { intervalMs: 15_000 });
 
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      setAnnouncements(await getMyAnnouncements(token));
+    } catch {
+      setAnnouncements([]);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadAnnouncements();
+  }, [loadAnnouncements]);
+
+  useAutoRefresh(loadAnnouncements, { intervalMs: 15_000 });
+
   useEffect(() => {
     setIsOpen(false);
     setProfileOpen(false);
+    setNotificationOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -418,21 +441,86 @@ export default function DriverLayoutClient({
             >
               <Package size={15} aria-hidden="true" />
               <span className="hidden whitespace-nowrap xl:inline">My Deliveries</span>
-            </Link>
-
-            <Link
-              href="/driver/assignments"
-              className="relative hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:inline-flex sm:h-10 sm:w-10"
-              aria-label={`${activeDeliveryCount} active ${activeDeliveryCount === 1 ? "delivery" : "deliveries"}`}
-              title="Active deliveries"
-            >
-              <Bell size={18} aria-hidden="true" />
               {activeDeliveryCount > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--danger)] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                <span className="flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-soft)] px-1 text-[9px] font-black text-[var(--accent-strong)]">
                   {activeDeliveryCount > 9 ? "9+" : activeDeliveryCount}
                 </span>
               )}
             </Link>
+
+            <div className="relative hidden sm:block">
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setNotificationOpen((open) => !open)}
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:h-10 sm:w-10"
+                aria-label={`${announcements.length} announcement notifications`}
+                aria-expanded={notificationOpen}
+                aria-haspopup="dialog"
+              >
+                <Bell size={18} aria-hidden="true" />
+                {announcements.length > 0 && (
+                  <span className="absolute right-0.5 top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--danger)] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                    {announcements.length > 9 ? "9+" : announcements.length}
+                  </span>
+                )}
+              </button>
+
+              {notificationOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close notifications"
+                    className="fixed inset-0 z-30 cursor-default"
+                    onClick={() => setNotificationOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 z-40 mt-2 w-80 overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-xl"
+                    role="dialog"
+                    aria-label="Announcement notifications"
+                  >
+                    <div className="border-b border-[var(--border)] px-4 py-3">
+                      <p className="text-sm font-extrabold text-[var(--text)]">
+                        Announcements
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                        Official updates from CargoNep
+                      </p>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {announcements.length === 0 ? (
+                        <p className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                          No announcements yet.
+                        </p>
+                      ) : (
+                        announcements.slice(0, 5).map((announcement) => (
+                          <Link
+                            key={announcement.id}
+                            href="/driver/announcements"
+                            onClick={() => setNotificationOpen(false)}
+                            className="block border-b border-[var(--border-light)] px-4 py-3 transition-colors last:border-0 hover:bg-[var(--surface-soft)]"
+                          >
+                            <p className="truncate text-sm font-bold text-[var(--text)]">
+                              {announcement.title}
+                            </p>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">
+                              {announcement.message}
+                            </p>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                    <Link
+                      href="/driver/announcements"
+                      onClick={() => setNotificationOpen(false)}
+                      className="block border-t border-[var(--border)] px-4 py-3 text-center text-xs font-extrabold text-[var(--accent-strong)] hover:bg-[var(--accent-soft)]"
+                    >
+                      View all announcements
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
 
             <Link
               href="/contact"

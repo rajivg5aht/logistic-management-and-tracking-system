@@ -34,7 +34,7 @@ export function PickupAddressCard() {
           </label>
           <input
             type="text"
-            placeholder="e.g. John Doe"
+            placeholder="e.g. Ram Hari"
             value={pickupAddress.fullName}
             onChange={(e) => updatePickupField("fullName", e.target.value)}
             className={`w-full h-11 border rounded-lg px-3.5 text-[13px] bg-white text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all ${

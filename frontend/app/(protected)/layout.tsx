@@ -28,7 +28,7 @@ export default async function ProtectedLayout({
 
   return (
     <AuthProvider initialUser={user} role="customer">
-      <CustomerLayoutClient>{children}</CustomerLayoutClient>
+      <CustomerLayoutClient token={token}>{children}</CustomerLayoutClient>
     </AuthProvider>
   );
 }

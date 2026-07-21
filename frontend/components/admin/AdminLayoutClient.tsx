@@ -19,7 +19,7 @@ import {
   Search,
   Bell,
   ChevronRight,
-  MessageSquareText,
+  Megaphone,
   UserRoundCog,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -39,7 +39,7 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/payments": "Payments",
   "/admin/analytics": "Analytics",
   "/admin/users": "User Management",
-  "/admin/inquiries": "Inquiries",
+  "/admin/inquiries": "Announcements / Inquiries",
 };
 
 interface AdminLayoutClientProps {
@@ -125,7 +125,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
     { label: "Payments", href: "/admin/payments", icon: Wallet, active: pathname.startsWith("/admin/payments") },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },
-    { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquareText, active: pathname.startsWith("/admin/inquiries") },
+    { label: "Announcements / Inquiries", href: "/admin/inquiries", icon: Megaphone, active: pathname.startsWith("/admin/inquiries") },
   ];
 
   return (

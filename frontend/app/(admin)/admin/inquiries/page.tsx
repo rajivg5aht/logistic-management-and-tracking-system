@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { AuthUser } from "@/lib/api/auth.api";
-import AdminInquiries from "@/components/admin/AdminInquiries";
+import AdminCommunications from "@/components/admin/AdminCommunications";
 
 export const metadata = {
-  title: "Contact Form Inquiries - CargoNep",
-  description: "Manage and respond to incoming customer messages.",
+  title: "Announcements and Inquiries - CargoNep",
+  description: "Publish announcements and manage incoming customer messages.",
 };
 
 export default async function AdminInquiriesPage() {
@@ -24,5 +24,5 @@ export default async function AdminInquiriesPage() {
 
   if (user.role !== "admin") redirect("/dashboard");
 
-  return <AdminInquiries token={token} />;
+  return <AdminCommunications token={token} />;
 }
