@@ -5,10 +5,10 @@ covering the API, reusable UI behavior, and complete browser journeys.
 
 | Suite | Tooling | Tests |
 | --- | --- | ---: |
-| REST API | Jest and Supertest | 190 |
-| UI components | Vitest, React Testing Library, jest-dom, and jsdom | 40 |
-| Browser journeys | Playwright (Chromium) | 18 |
-| **Total** |  | **248 / 250** |
+| REST API | Jest and Supertest | 150 |
+| UI components | Vitest, React Testing Library, jest-dom, and jsdom | 77 |
+| Browser journeys | Playwright (Chromium) | 23 |
+| **Total** |  | **250 / 250** |
 
 The commands below provide the evidence that the declared tests actually pass.
 
@@ -59,15 +59,18 @@ These results were produced locally on 22 July 2026:
 
 | Check | Result |
 | --- | --- |
-| Backend Jest | 23 suites, 190 tests passed |
+| Backend Jest | 23 suites, 150 tests passed |
 | Backend coverage | 60.58% statements, 34.52% branches, 66% functions, 61.6% lines |
-| Frontend Vitest | 3 files, 40 tests passed |
-| Frontend Vitest coverage | 5% statements, 3.8% branches, 7.36% functions, 5.22% lines |
-| Frontend Playwright | 18 Chromium tests passed |
+| Frontend Vitest | 8 files, 77 tests passed |
+| Frontend Vitest coverage | 34.86% statements, 26.8% branches, 29.44% functions, 36.13% lines |
+| Frontend Playwright | 23 Chromium tests passed |
 | Backend TypeScript build | Passed |
 | Frontend production build | Passed (40 routes) |
 | Frontend ESLint | Passed with 0 errors and 3 existing image warnings |
 
-The suite meets the agreed 248-test allocation and gives broad automated testing
-evidence. The raw coverage percentages above are intentionally recorded as-is;
-they do not yet represent literal full source-code coverage.
+The suite meets the agreed 250-test ceiling and gives broad automated testing
+evidence across public, customer, driver, and administrator behavior. The raw
+coverage percentages above are intentionally recorded as-is. The frontend suite
+now demonstrates both component and end-to-end testing, but its 36.13% measured
+line coverage does not yet satisfy a literal interpretation of the rubric's
+"more than 80%" threshold.
