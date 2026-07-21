@@ -36,7 +36,7 @@ export function DeliveryAddressCard() {
           </label>
           <input
             type="text"
-            placeholder="e.g. Sita Sharma"
+            placeholder="e.g. Ram Laxmi"
             value={deliveryAddress.recipientName}
             onChange={(e) => updateDeliveryField("recipientName", e.target.value)}
             className="w-full h-11 border border-[var(--border)] rounded-lg px-3.5 text-[13px] bg-white text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
