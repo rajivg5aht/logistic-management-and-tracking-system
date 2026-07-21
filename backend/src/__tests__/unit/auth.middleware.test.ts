@@ -7,7 +7,7 @@ jest.mock("../../models/user.model", () => ({
   UserModel: { findById: jest.fn() },
 }));
 
-import type { NextFunction, Response } from "express";
+import type { Response } from "express";
 import jwt from "jsonwebtoken";
 import {
   adminMiddleware,
@@ -40,87 +40,115 @@ const resolvedUser = (user: unknown) => {
 describe("Unit: authentication and role middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    verifyMock.mockReset();
+    findByIdMock.mockReset();
   });
 
-  test("authentication rejects a request without an authorization header", async () => {
-    const res = responseMock();
-    const next = jest.fn();
+  test("rejects missing, non-Bearer, and empty authorization values", async () => {
+    const missingResponse = responseMock();
+    const missingNext = jest.fn();
+    await authMiddleware(requestMock(), missingResponse, missingNext);
+    expect(missingResponse.status).toHaveBeenCalledWith(401);
+    expect(missingNext).not.toHaveBeenCalled();
 
-    await authMiddleware(requestMock(), res, next);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  test("authentication rejects a non-Bearer authorization scheme", async () => {
-    const res = responseMock();
-
-    await authMiddleware(requestMock("Basic credentials"), res, jest.fn());
-
-    expect(res.json).toHaveBeenCalledWith(
+    const basicResponse = responseMock();
+    await authMiddleware(requestMock("Basic credentials"), basicResponse, jest.fn());
+    expect(basicResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Unauthorized - No token provided" }),
     );
-  });
 
-  test("authentication rejects an empty Bearer token", async () => {
-    const res = responseMock();
-
-    await authMiddleware(requestMock("Bearer "), res, jest.fn());
-
-    expect(res.json).toHaveBeenCalledWith(
+    const emptyResponse = responseMock();
+    await authMiddleware(requestMock("Bearer "), emptyResponse, jest.fn());
+    expect(emptyResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Unauthorized - Invalid token format" }),
     );
   });
 
-  test("authentication converts signature errors into a safe 401 response", async () => {
-    verifyMock.mockImplementation(() => {
+  test("hides token verification and account lookup failures", async () => {
+    verifyMock.mockImplementationOnce(() => {
       throw new Error("signature details");
     });
-    const res = responseMock();
+    const signatureResponse = responseMock();
+    await authMiddleware(
+      requestMock("Bearer invalid"),
+      signatureResponse,
+      jest.fn(),
+    );
+    expect(signatureResponse.status).toHaveBeenCalledWith(401);
+    expect(signatureResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unauthorized - Invalid or expired token",
+      }),
+    );
 
-    await authMiddleware(requestMock("Bearer invalid"), res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith(
+    verifyMock.mockReturnValue({
+      id: "user-1",
+      email: "user@example.com",
+      role: "customer",
+    });
+    findByIdMock.mockReturnValue({
+      select: jest.fn().mockRejectedValue(new Error("database unavailable")),
+    });
+    const lookupResponse = responseMock();
+    await authMiddleware(
+      requestMock("Bearer valid"),
+      lookupResponse,
+      jest.fn(),
+    );
+    expect(lookupResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Unauthorized - Invalid or expired token",
       }),
     );
   });
 
-  test("authentication rejects a token whose account no longer exists", async () => {
-    verifyMock.mockReturnValue({ id: "missing", email: "old@example.com", role: "customer" });
+  test("rejects deleted and inactive accounts with the correct status", async () => {
+    verifyMock.mockReturnValue({
+      id: "missing",
+      email: "old@example.com",
+      role: "customer",
+    });
     resolvedUser(null);
-    const res = responseMock();
-
-    await authMiddleware(requestMock("Bearer valid"), res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith(
+    const missingResponse = responseMock();
+    await authMiddleware(
+      requestMock("Bearer valid"),
+      missingResponse,
+      jest.fn(),
+    );
+    expect(missingResponse.status).toHaveBeenCalledWith(401);
+    expect(missingResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Unauthorized - Account not found" }),
     );
-  });
 
-  test("authentication blocks an inactive account", async () => {
-    verifyMock.mockReturnValue({ id: "user-1", email: "user@example.com", role: "customer" });
+    verifyMock.mockReturnValue({
+      id: "user-1",
+      email: "user@example.com",
+      role: "customer",
+    });
     resolvedUser({
       _id: { toString: () => "user-1" },
       email: "user@example.com",
       role: "customer",
       status: "inactive",
     });
-    const res = responseMock();
-
-    await authMiddleware(requestMock("Bearer valid"), res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
+    const inactiveResponse = responseMock();
+    await authMiddleware(
+      requestMock("Bearer valid"),
+      inactiveResponse,
+      jest.fn(),
+    );
+    expect(inactiveResponse.status).toHaveBeenCalledWith(403);
+    expect(inactiveResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Forbidden - Account is inactive" }),
     );
   });
 
-  test("authentication attaches the current database role before continuing", async () => {
-    verifyMock.mockReturnValue({ id: "user-1", email: "old@example.com", role: "customer" });
+  test("attaches the current database identity before continuing", async () => {
+    verifyMock.mockReturnValue({
+      id: "user-1",
+      email: "old@example.com",
+      role: "customer",
+    });
     resolvedUser({
       _id: { toString: () => "user-1" },
       email: "driver@example.com",
@@ -129,9 +157,7 @@ describe("Unit: authentication and role middleware", () => {
     });
     const req = requestMock("Bearer valid");
     const next = jest.fn();
-
     await authMiddleware(req, responseMock(), next);
-
     expect(req.user).toEqual({
       id: "user-1",
       email: "driver@example.com",
@@ -140,81 +166,45 @@ describe("Unit: authentication and role middleware", () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  test("authentication handles account lookup failures without leaking details", async () => {
-    verifyMock.mockReturnValue({ id: "user-1", email: "user@example.com", role: "customer" });
-    findByIdMock.mockReturnValue({
-      select: jest.fn().mockRejectedValue(new Error("database unavailable")),
-    });
-    const res = responseMock();
+  test("admin authorization rejects visitors and customers but allows admins", async () => {
+    const visitorResponse = responseMock();
+    await adminMiddleware(requestMock(), visitorResponse, jest.fn());
+    expect(visitorResponse.status).toHaveBeenCalledWith(401);
 
-    await authMiddleware(requestMock("Bearer valid"), res, jest.fn());
-
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Unauthorized - Invalid or expired token",
-      }),
-    );
-  });
-
-  test("admin authorization requires an authenticated user", async () => {
-    const res = responseMock();
-
-    await adminMiddleware(requestMock(), res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(401);
-  });
-
-  test("admin authorization rejects a customer", async () => {
-    const req = requestMock();
-    req.user = { id: "1", email: "user@example.com", role: "customer" };
-    const res = responseMock();
-
-    await adminMiddleware(req, res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
+    const customer = requestMock();
+    customer.user = { id: "1", email: "user@example.com", role: "customer" };
+    const customerResponse = responseMock();
+    await adminMiddleware(customer, customerResponse, jest.fn());
+    expect(customerResponse.status).toHaveBeenCalledWith(403);
+    expect(customerResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Forbidden - Admin access required" }),
     );
-  });
 
-  test("admin authorization allows an administrator", async () => {
-    const req = requestMock();
-    req.user = { id: "1", email: "admin@example.com", role: "admin" };
-    const next = jest.fn() as NextFunction;
-
-    await adminMiddleware(req, responseMock(), next);
-
+    const admin = requestMock();
+    admin.user = { id: "1", email: "admin@example.com", role: "admin" };
+    const next = jest.fn();
+    await adminMiddleware(admin, responseMock(), next);
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  test("driver authorization requires an authenticated user", async () => {
-    const res = responseMock();
+  test("driver authorization rejects visitors and admins but allows drivers", async () => {
+    const visitorResponse = responseMock();
+    await driverMiddleware(requestMock(), visitorResponse, jest.fn());
+    expect(visitorResponse.status).toHaveBeenCalledWith(401);
 
-    await driverMiddleware(requestMock(), res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(401);
-  });
-
-  test("driver authorization rejects an administrator", async () => {
-    const req = requestMock();
-    req.user = { id: "1", email: "admin@example.com", role: "admin" };
-    const res = responseMock();
-
-    await driverMiddleware(req, res, jest.fn());
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
+    const admin = requestMock();
+    admin.user = { id: "1", email: "admin@example.com", role: "admin" };
+    const adminResponse = responseMock();
+    await driverMiddleware(admin, adminResponse, jest.fn());
+    expect(adminResponse.status).toHaveBeenCalledWith(403);
+    expect(adminResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Forbidden - Driver access required" }),
     );
-  });
 
-  test("driver authorization allows a driver", async () => {
-    const req = requestMock();
-    req.user = { id: "1", email: "driver@example.com", role: "driver" };
-    const next = jest.fn() as NextFunction;
-
-    await driverMiddleware(req, responseMock(), next);
-
+    const driver = requestMock();
+    driver.user = { id: "1", email: "driver@example.com", role: "driver" };
+    const next = jest.fn();
+    await driverMiddleware(driver, responseMock(), next);
     expect(next).toHaveBeenCalledTimes(1);
   });
 });

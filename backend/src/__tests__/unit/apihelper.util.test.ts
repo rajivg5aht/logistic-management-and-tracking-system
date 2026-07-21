@@ -12,62 +12,59 @@ const responseMock = () => {
 };
 
 describe("Unit: API response helper", () => {
-  test("success returns a standard 200 response by default", () => {
-    const res = responseMock();
-
-    ApiResponseHelper.success(res, { trackingId: "CNP-001" });
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
+  test("builds default, custom, and paginated success responses", () => {
+    const defaultResponse = responseMock();
+    ApiResponseHelper.success(defaultResponse, { trackingId: "CNP-001" });
+    expect(defaultResponse.status).toHaveBeenCalledWith(200);
+    expect(defaultResponse.json).toHaveBeenCalledWith({
       status: 200,
       success: true,
       message: "Success",
       data: { trackingId: "CNP-001" },
       meta: undefined,
     });
-  });
 
-  test("success supports a custom message and status", () => {
-    const res = responseMock();
-
-    ApiResponseHelper.success(res, { id: "new" }, "Shipment created", 201);
-
-    expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith(
+    const createdResponse = responseMock();
+    ApiResponseHelper.success(
+      createdResponse,
+      { id: "new" },
+      "Shipment created",
+      201,
+    );
+    expect(createdResponse.status).toHaveBeenCalledWith(201);
+    expect(createdResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Shipment created", status: 201 }),
+    );
+
+    const paginatedResponse = responseMock();
+    const meta = { page: 2, limit: 10, total: 24, totalPages: 3 };
+    ApiResponseHelper.success(
+      paginatedResponse,
+      ["shipment"],
+      "Success",
+      200,
+      meta,
+    );
+    expect(paginatedResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({ meta }),
     );
   });
 
-  test("success includes pagination metadata", () => {
-    const res = responseMock();
-    const meta = { page: 2, limit: 10, total: 24, totalPages: 3 };
-
-    ApiResponseHelper.success(res, ["shipment"], "Success", 200, meta);
-
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ meta }));
-  });
-
-  test("error returns a standard 500 response by default", () => {
-    const res = responseMock();
-
-    ApiResponseHelper.error(res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
+  test("builds default and custom error responses", () => {
+    const defaultResponse = responseMock();
+    ApiResponseHelper.error(defaultResponse);
+    expect(defaultResponse.status).toHaveBeenCalledWith(500);
+    expect(defaultResponse.json).toHaveBeenCalledWith({
       status: 500,
       success: false,
       message: "Error",
       data: null,
     });
-  });
 
-  test("error supports a custom status and message", () => {
-    const res = responseMock();
-
-    ApiResponseHelper.error(res, "Forbidden", 403);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(
+    const forbiddenResponse = responseMock();
+    ApiResponseHelper.error(forbiddenResponse, "Forbidden", 403);
+    expect(forbiddenResponse.status).toHaveBeenCalledWith(403);
+    expect(forbiddenResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Forbidden", status: 403 }),
     );
   });

@@ -13,8 +13,8 @@ const chat = (request: typeof fetch) =>
   );
 
 describe("Unit: AssistantService response handling", () => {
-  test("joins text chunks returned by the assistant API", async () => {
-    const request = jest.fn().mockResolvedValue(
+  test("joins valid text chunks while ignoring non-text and blank chunks", async () => {
+    const joinedRequest = jest.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
           choices: [
@@ -31,14 +31,11 @@ describe("Unit: AssistantService response handling", () => {
         { status: 200 },
       ),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).resolves.toMatchObject({
+    await expect(chat(joinedRequest)).resolves.toMatchObject({
       message: "Open Tracking.\nEnter your tracking ID.",
     });
-  });
 
-  test("ignores non-text and blank response chunks", async () => {
-    const request = jest.fn().mockResolvedValue(
+    const filteredRequest = jest.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
           choices: [
@@ -56,91 +53,68 @@ describe("Unit: AssistantService response handling", () => {
         { status: 200 },
       ),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).resolves.toMatchObject({
+    await expect(chat(filteredRequest)).resolves.toMatchObject({
       message: "Use the dashboard",
     });
   });
 
-  test("maps an unauthorized response to a configuration error", async () => {
-    const request = jest.fn().mockResolvedValue(
-      new Response("{}", { status: 401 }),
-    ) as unknown as typeof fetch;
+  test("maps authentication, quota, and generic upstream HTTP failures", async () => {
+    for (const status of [401, 403]) {
+      const request = jest.fn().mockResolvedValue(
+        new Response("{}", { status }),
+      ) as unknown as typeof fetch;
+      await expect(chat(request)).rejects.toMatchObject({
+        status: 503,
+        message: expect.stringContaining("key"),
+      });
+    }
 
-    await expect(chat(request)).rejects.toMatchObject({
-      status: 503,
-      message: expect.stringContaining("key"),
-    });
-  });
-
-  test("maps a forbidden response to a configuration error", async () => {
-    const request = jest.fn().mockResolvedValue(
-      new Response("{}", { status: 403 }),
-    ) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
-      status: 503,
-      message: expect.stringContaining("key"),
-    });
-  });
-
-  test("maps an unavailable free-tier quota to a service error", async () => {
-    const request = jest.fn().mockResolvedValue(
+    const quotaRequest = jest.fn().mockResolvedValue(
       new Response("{}", { status: 402 }),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
+    await expect(chat(quotaRequest)).rejects.toMatchObject({
       status: 503,
       message: expect.stringContaining("quota"),
     });
-  });
 
-  test("maps other upstream failures to a gateway error", async () => {
-    const request = jest.fn().mockResolvedValue(
+    const serverRequest = jest.fn().mockResolvedValue(
       new Response("{}", { status: 500 }),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({ status: 502 });
+    await expect(chat(serverRequest)).rejects.toMatchObject({ status: 502 });
   });
 
-  test("rejects a successful response containing invalid JSON", async () => {
-    const request = jest.fn().mockResolvedValue(
+  test("handles malformed, empty, timed-out, and unavailable responses", async () => {
+    const invalidJsonRequest = jest.fn().mockResolvedValue(
       new Response("not-json", { status: 200 }),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
+    await expect(chat(invalidJsonRequest)).rejects.toMatchObject({
       status: 502,
       message: "Mistral returned an invalid response.",
     });
-  });
 
-  test("rejects a successful response without message content", async () => {
-    const request = jest.fn().mockResolvedValue(
+    const emptyRequest = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ choices: [] }), { status: 200 }),
     ) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
+    await expect(chat(emptyRequest)).rejects.toMatchObject({
       status: 502,
       message: "Mistral returned an empty response.",
     });
-  });
 
-  test("reports assistant request timeouts as status 504", async () => {
-    const timeout = Object.assign(new Error("timed out"), { name: "TimeoutError" });
-    const request = jest.fn().mockRejectedValue(timeout) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
+    const timeout = Object.assign(new Error("timed out"), {
+      name: "TimeoutError",
+    });
+    const timeoutRequest = jest
+      .fn()
+      .mockRejectedValue(timeout) as unknown as typeof fetch;
+    await expect(chat(timeoutRequest)).rejects.toMatchObject({
       status: 504,
       message: expect.stringContaining("too long"),
     });
-  });
 
-  test("reports network failures as a temporary gateway error", async () => {
-    const request = jest
+    const networkRequest = jest
       .fn()
       .mockRejectedValue(new Error("connection refused")) as unknown as typeof fetch;
-
-    await expect(chat(request)).rejects.toMatchObject({
+    await expect(chat(networkRequest)).rejects.toMatchObject({
       status: 502,
       message: expect.stringContaining("temporarily unavailable"),
     });
