@@ -162,6 +162,8 @@ describe("customer dashboard navigation and profile", () => {
     const user = userEvent.setup();
     render(<DashboardOverview user={currentUser} token="token" />);
     expect(await screen.findByText("No active shipments")).toBeInTheDocument();
+    expect(screen.queryByText("Live Fleet Tracking")).not.toBeInTheDocument();
+    expect(screen.getByText("Insured Transit")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Track Now" }));
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Enter a tracking ID to continue.",
@@ -173,6 +175,11 @@ describe("customer dashboard navigation and profile", () => {
     const user = userEvent.setup();
     render(<DashboardOverview user={currentUser} token="token" />);
     expect(await screen.findAllByText("LN-1001")).not.toHaveLength(0);
+    expect(screen.getByRole("columnheader", { name: "Tracking ID" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View shipment LN-1001" })).toHaveAttribute(
+      "href",
+      "/tracking?trackingId=LN-1001",
+    );
     await user.type(screen.getByLabelText("Tracking ID"), "LN-3003");
     await user.click(screen.getByRole("button", { name: "Track Now" }));
     expect(navigation.push).toHaveBeenCalledWith("/tracking?trackingId=LN-3003");

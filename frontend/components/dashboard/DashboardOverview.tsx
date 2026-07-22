@@ -3,7 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, FileText, HelpCircle, Package, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  FileText,
+  Headphones,
+  HelpCircle,
+  Leaf,
+  MapPin,
+  Package,
+  ShieldCheck,
+} from "lucide-react";
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   getMyShipments,
@@ -18,6 +28,27 @@ const RECENT_STATUS_STYLES: Record<CustomerShipment["status"], string> = {
   delivered: "bg-[var(--success-soft)] text-[var(--success)]",
   cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
+
+const DASHBOARD_BENEFITS = [
+  {
+    icon: ShieldCheck,
+    title: "Insured Transit",
+    description: "Every parcel is covered by our standard protection plan.",
+    iconClass: "border-[rgba(200,162,74,0.24)] bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+  },
+  {
+    icon: Headphones,
+    title: "24/7 Support",
+    description: "Dedicated logistics experts are available whenever you need help.",
+    iconClass: "border-[var(--info-border)] bg-[var(--info-soft)] text-[var(--info)]",
+  },
+  {
+    icon: Leaf,
+    title: "Carbon Neutral",
+    description: "We offset the carbon footprint of deliveries across Nepal.",
+    iconClass: "border-[var(--success-border)] bg-[var(--success-soft)] text-[var(--success)]",
+  },
+] as const;
 
 export default function DashboardOverview({
   user,
@@ -303,145 +334,140 @@ export default function DashboardOverview({
         )}
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="bg-[var(--surface-dark-2)] rounded-2xl p-6 shadow-lg border border-[var(--border-dark)] relative overflow-hidden">
-            <h2 className="text-lg font-extrabold text-white mb-4">
-              Live Fleet Tracking
+      <section className="w-full" aria-labelledby="recent-shipments-heading">
+        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-5 py-4 sm:px-6">
+            <h2 id="recent-shipments-heading" className="text-lg font-extrabold text-[var(--text)]">
+              Recent Shipments
             </h2>
-            
-            <div className="relative h-64 bg-[var(--surface-dark)] rounded-xl overflow-hidden">
-              <svg className="absolute inset-0 w-full h-full">
-                <path
-                  d="M 150 120 Q 200 80 280 100"
-                  stroke="var(--info)"
-                  strokeWidth="2"
-                  fill="none"
-                  className="animate-pulse"
-                />
-                <path
-                  d="M 450 180 Q 550 150 650 200"
-                  stroke="var(--success)"
-                  strokeWidth="2"
-                  fill="none"
-                  className="animate-pulse"
-                />
-                <path
-                  d="M 200 140 Q 350 180 450 220"
-                  stroke="var(--warning)"
-                  strokeWidth="2"
-                  fill="none"
-                  className="animate-pulse"
-                />
-                
-                <circle cx="150" cy="120" r="4" fill="var(--info)" />
-                <circle cx="280" cy="100" r="4" fill="var(--info)" />
-                <circle cx="450" cy="180" r="4" fill="var(--success)" />
-                <circle cx="650" cy="200" r="4" fill="var(--success)" />
-                <circle cx="200" cy="140" r="4" fill="var(--warning)" />
-                <circle cx="450" cy="220" r="4" fill="var(--warning)" />
-              </svg>
+            <Link
+              href="/shipments/history"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent-hover)] no-underline transition-colors hover:text-[var(--accent-strong)]"
+            >
+              View all
+              <ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
 
-              <div className="absolute top-4 right-4 flex items-center gap-4 bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
-                  <span className="text-xs font-semibold text-white">Active</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-[var(--warning)]" />
-                  <span className="text-xs font-semibold text-white">Alert</span>
-                </div>
-              </div>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left">
+              <thead className="bg-[var(--surface-soft)] text-xs font-extrabold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                <tr>
+                  <th className="px-5 py-3.5 sm:px-6" scope="col">Tracking ID</th>
+                  <th className="px-4 py-3.5" scope="col">Destination</th>
+                  <th className="px-4 py-3.5" scope="col">Status</th>
+                  <th className="px-4 py-3.5" scope="col">Booking date</th>
+                  <th className="px-5 py-3.5 text-right sm:px-6" scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)] text-sm">
+                {recentLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td className="px-5 py-4 sm:px-6"><div className="h-4 w-24 rounded bg-[var(--surface-muted)]" /></td>
+                      <td className="px-4 py-4"><div className="h-4 w-32 rounded bg-[var(--surface-muted)]" /></td>
+                      <td className="px-4 py-4"><div className="h-5 w-20 rounded-full bg-[var(--surface-muted)]" /></td>
+                      <td className="px-4 py-4"><div className="h-4 w-24 rounded bg-[var(--surface-muted)]" /></td>
+                      <td className="px-5 py-4 sm:px-6"><div className="ml-auto h-8 w-8 rounded-lg bg-[var(--surface-muted)]" /></td>
+                    </tr>
+                  ))
+                ) : recentError ? (
+                  <tr>
+                    <td className="px-5 py-6 text-sm font-medium text-[var(--danger)] sm:px-6" colSpan={5}>
+                      {recentError}
+                    </td>
+                  </tr>
+                ) : recentShipments.length === 0 ? (
+                  <tr>
+                    <td className="px-5 py-8 text-center sm:px-6" colSpan={5}>
+                      <Package size={26} className="mx-auto text-[var(--text-muted)]" />
+                      <p className="mt-2 text-sm font-bold text-[var(--text)]">No shipments yet</p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        Your confirmed shipments will appear here.
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  recentShipments.slice(0, 4).map((shipment) => {
+                    const destinations = [shipment.delivery.city, shipment.delivery.district]
+                      .filter((location, index, locations) => location && locations.indexOf(location) === index)
+                      .join(", ");
+                    const destination = destinations || "Destination pending";
+                    const destinationDetail =
+                      shipment.delivery.streetAddress || shipment.delivery.recipientName || "Delivery address pending";
+                    const trackingHref =
+                      "/tracking?trackingId=" + encodeURIComponent(shipment.trackingId);
+
+                    return (
+                      <tr key={shipment.id} className="transition-colors hover:bg-[var(--accent-soft)]">
+                        <td className="px-5 py-4 sm:px-6">
+                          <Link href={trackingHref} className="font-extrabold text-[var(--accent-hover)] no-underline hover:underline">
+                            {shipment.trackingId}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-[var(--text)]">{destination}</p>
+                          <p className="mt-0.5 max-w-48 truncate text-xs text-[var(--text-muted)]">{destinationDetail}</p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={
+                              "inline-flex rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase " +
+                              RECENT_STATUS_STYLES[shipment.status]
+                            }
+                          >
+                            {getShipmentDisplayStatus(shipment)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 font-medium text-[var(--text-soft)]">
+                          <time dateTime={shipment.createdAt}>
+                            {new Intl.DateTimeFormat("en-NP", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }).format(new Date(shipment.createdAt))}
+                          </time>
+                        </td>
+                        <td className="px-5 py-4 text-right sm:px-6">
+                          <Link
+                            aria-label={"View shipment " + shipment.trackingId}
+                            href={trackingHref}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--accent-hover)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent-strong)]"
+                          >
+                            <ArrowRight size={17} aria-hidden="true" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+      </section>
 
-        <div className="lg:col-span-1">
-          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
-            <div className="border-b border-[var(--border)] p-5">
-              <h2 className="text-lg font-extrabold text-[var(--text)]">
-                Recent Shipments
-              </h2>
+      <section aria-label="Customer benefits" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {DASHBOARD_BENEFITS.map(({ icon: Icon, title, description, iconClass }) => (
+          <div
+            key={title}
+            className="flex gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"
+          >
+            <div
+              className={[
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+                iconClass,
+              ].join(" ")}
+            >
+              <Icon size={19} aria-hidden="true" />
             </div>
-
-            <div className="divide-y divide-[var(--border)]">
-              {recentLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="animate-pulse p-4">
-                    <div className="h-4 w-2/3 rounded bg-[var(--surface-muted)]" />
-                    <div className="mt-2 h-3 w-1/2 rounded bg-[var(--surface-muted)]" />
-                  </div>
-                ))
-              ) : recentError ? (
-                <p className="p-5 text-sm font-medium text-[var(--danger)]">
-                  {recentError}
-                </p>
-              ) : recentShipments.length === 0 ? (
-                <div className="p-5 text-center">
-                  <Package
-                    size={26}
-                    className="mx-auto text-[var(--text-muted)]"
-                  />
-                  <p className="mt-2 text-sm font-bold text-[var(--text)]">
-                    No shipments yet
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">
-                    Your confirmed shipments will appear here.
-                  </p>
-                </div>
-              ) : (
-                recentShipments.slice(0, 4).map((shipment) => (
-                  <Link
-                    key={shipment.id}
-                    href={`/tracking?trackingId=${encodeURIComponent(shipment.trackingId)}`}
-                    className="block p-4 no-underline transition-colors hover:bg-[var(--surface-soft)]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-sm font-extrabold text-[var(--text)]">
-                          {shipment.delivery.recipientName ||
-                            shipment.delivery.city ||
-                            "Parcel delivery"}
-                        </h3>
-                        <p className="mt-1 text-xs font-semibold text-[var(--text-muted)]">
-                          {shipment.trackingId}
-                        </p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase ${RECENT_STATUS_STYLES[shipment.status]}`}
-                      >
-                        {getShipmentDisplayStatus(shipment)}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
-                      <span className="truncate">
-                        {shipment.delivery.city ||
-                          shipment.delivery.district ||
-                          "Destination pending"}
-                      </span>
-                      <time className="shrink-0" dateTime={shipment.createdAt}>
-                        {new Intl.DateTimeFormat("en-NP", {
-                          month: "short",
-                          day: "numeric",
-                        }).format(new Date(shipment.createdAt))}
-                      </time>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-
-            <div className="bg-[var(--accent-soft)] p-4">
-              <Link
-                href="/shipments/history"
-                className="block w-full rounded-lg py-2.5 text-center text-sm font-bold text-[var(--accent)] no-underline transition-colors hover:bg-[var(--accent-soft)]"
-              >
-                VIEW SHIPMENT HISTORY
-              </Link>
+            <div>
+              <h2 className="text-sm font-extrabold text-[var(--text)]">{title}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">{description}</p>
             </div>
           </div>
-        </div>
-      </div>
+        ))}
+      </section>
     </div>
   );
 }
