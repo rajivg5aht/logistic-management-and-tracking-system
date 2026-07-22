@@ -53,43 +53,6 @@ const faqs = [
   },
 ];
 
-function OfficeMap() {
-  return (
-    <svg viewBox="0 0 600 260" className="h-full w-full" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <rect width="600" height="260" fill="var(--surface-muted)" />
-
-      <rect x="34" y="24" width="120" height="78" rx="8" fill="rgba(95,127,53,0.16)" />
-      <g fill="var(--surface-soft)" stroke="var(--border)" strokeWidth="1.5">
-        <rect x="200" y="24" width="120" height="70" rx="6" />
-        <rect x="360" y="30" width="110" height="60" rx="6" />
-        <rect x="500" y="24" width="90" height="80" rx="6" />
-        <rect x="34" y="150" width="150" height="86" rx="6" />
-        <rect x="360" y="160" width="130" height="76" rx="6" />
-        <rect x="520" y="150" width="70" height="86" rx="6" />
-      </g>
-
-      <g stroke="var(--border-strong)" strokeWidth="8" strokeLinecap="round">
-        <line x1="0" y1="120" x2="600" y2="120" />
-        <line x1="190" y1="0" x2="190" y2="260" />
-        <line x1="350" y1="0" x2="350" y2="260" />
-        <line x1="490" y1="0" x2="490" y2="260" />
-      </g>
-      <line x1="0" y1="120" x2="600" y2="120" stroke="var(--accent)" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
-
-      <path d="M-20 60 C 140 110, 250 60, 360 140 S 540 220, 620 190" fill="none" stroke="var(--accent)" strokeWidth="16" opacity="0.30" strokeLinecap="round" />
-
-      <g transform="translate(300,110)">
-        <circle r="30" fill="rgba(200,162,74,0.18)">
-          <animate attributeName="r" values="24;34;24" dur="2.6s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.35;0;0.35" dur="2.6s" repeatCount="indefinite" />
-        </circle>
-        <path d="M0 -22 C 11 -22 20 -13 20 -2 C 20 12 0 26 0 26 C 0 26 -20 12 -20 -2 C -20 -13 -11 -22 0 -22 Z" fill="var(--accent-hover)" stroke="var(--surface)" strokeWidth="2" />
-        <circle cx="0" cy="-2" r="6.5" fill="var(--surface)" />
-      </g>
-    </svg>
-  );
-}
-
 export default function ContactContent() {
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -183,23 +146,6 @@ export default function ContactContent() {
                       </svg>
                     </a>
                   ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="card overflow-hidden">
-              <div className="flex items-center gap-1.5 border-b border-[var(--border)] px-5 py-3 text-sm">
-                <span className="font-bold tracking-tight">
-                  <span className="text-[var(--text)]">Cargo</span>
-                  <span className="text-[var(--accent)]">Nep</span>
-                </span>
-                <span className="text-[var(--text-muted)]">· Contact Us</span>
-              </div>
-              <div className="relative aspect-[600/260]">
-                <OfficeMap />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.92)] px-3 py-2 text-xs font-semibold text-[var(--text)] shadow-[var(--shadow-sm)] backdrop-blur">
-                  <MapPin size={14} className="text-[var(--accent-hover)]" />
-                  Find us at Koteshwor-32
                 </div>
               </div>
             </div>
