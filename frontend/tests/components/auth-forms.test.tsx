@@ -59,7 +59,30 @@ describe("authentication and account forms", () => {
     expect(screen.getByLabelText("Full Name")).toBeRequired();
     expect(screen.getByLabelText("Phone Number")).toBeRequired();
     expect(screen.getByLabelText("Work Email")).toBeRequired();
+    expect(screen.getByLabelText("Password")).toHaveAttribute("minlength", "6");
+    expect(screen.getByRole("progressbar", { name: "Password strength" })).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
     expect(screen.getByRole("button", { name: "Create Account" })).toBeEnabled();
+  });
+
+  test("updates the registration password strength as recommendations are met", async () => {
+    const user = userEvent.setup();
+    render(<RegisterForm />);
+
+    const password = screen.getByLabelText("Password");
+    const meter = screen.getByRole("progressbar", { name: "Password strength" });
+
+    await user.type(password, "abc");
+    expect(screen.getByText("Weak")).toBeInTheDocument();
+    expect(meter).toHaveAttribute("aria-valuenow", "1");
+
+    await user.clear(password);
+    await user.type(password, "Abcdef1!");
+    expect(screen.getByText("Strong")).toBeInTheDocument();
+    expect(meter).toHaveAttribute("aria-valuenow", "4");
+    expect(meter).toHaveAttribute("aria-valuetext", "Strong");
   });
 
   test("renders the forgot-password request and sign-in link", () => {
