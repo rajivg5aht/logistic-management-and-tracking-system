@@ -1,6 +1,6 @@
 import http from "http";
 import app from "./src/app";
-import { PORT } from "./src/configs/constant";
+import { MISTRAL_API_KEY, PORT } from "./src/configs/constant";
 import { connectToMongoDB } from "./src/database/mongodb";
 import { initSocketServer } from "./src/socket";
 
@@ -13,6 +13,9 @@ const startServer = async () => {
 
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(
+        `Mistral AI assistant: ${MISTRAL_API_KEY ? "configured" : "not configured"}`,
+      );
     });
   } catch (error) {
     console.error("Failed to start server:", error);

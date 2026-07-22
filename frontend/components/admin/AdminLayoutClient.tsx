@@ -16,9 +16,10 @@ import {
   Wallet,
   LogOut,
   Menu,
+  Search,
   Bell,
   ChevronRight,
-  MessageSquareText,
+  Megaphone,
   UserRoundCog,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -38,7 +39,7 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/payments": "Payments",
   "/admin/analytics": "Analytics",
   "/admin/users": "User Management",
-  "/admin/inquiries": "Inquiries",
+  "/admin/inquiries": "Announcements / Inquiries",
 };
 
 interface AdminLayoutClientProps {
@@ -124,7 +125,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
     { label: "Payments", href: "/admin/payments", icon: Wallet, active: pathname.startsWith("/admin/payments") },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3, active: pathname.startsWith("/admin/analytics") },
     { label: "User Management", href: "/admin/users", icon: Users, active: pathname.startsWith("/admin/users") },
-    { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquareText, active: pathname.startsWith("/admin/inquiries") },
+    { label: "Announcements / Inquiries", href: "/admin/inquiries", icon: Megaphone, active: pathname.startsWith("/admin/inquiries") },
   ];
 
   return (
@@ -263,7 +264,26 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
           transitionDuration: hydrated ? '280ms' : '0ms'
         }}
       >
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-end gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
+          <div
+            role="search"
+            className="relative hidden min-w-0 flex-1 md:block md:max-w-[560px]"
+          >
+            <Search
+              size={19}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-soft)]"
+            />
+            <input
+              type="search"
+              aria-label="Search shipments, customers, drivers, or vehicles"
+              placeholder="Search shipments, customers, drivers, vehicles..."
+              autoComplete="off"
+              className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-12 pr-4 text-sm font-medium text-[var(--text)] shadow-sm outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+              suppressHydrationWarning
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Link
               href="/admin/fleet/reports"
@@ -272,7 +292,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
             >
               <Bell size={19} />
               {pendingIncidentCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#D0533F] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--danger)] px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
                   {pendingIncidentCount > 9 ? "9+" : pendingIncidentCount}
                 </span>
               )}
@@ -298,8 +318,8 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
                 <p className="text-sm font-bold leading-tight text-[var(--text)]">{displayName}</p>
               </div>
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-white"
-                style={{ background: "linear-gradient(135deg, #123E6B, #0C3B67)" }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-black text-[var(--text-on-accent)]"
+                style={{ background: "linear-gradient(135deg, var(--accent), var(--accent-hover))" }}
               >
                 {profileImageSrc && !profileImageFailed ? (
                   <Image

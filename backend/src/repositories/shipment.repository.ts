@@ -59,6 +59,7 @@ export interface IShipmentRepository {
   delete(id: string): Promise<boolean>;
 
   getByCustomer(customerId: string): Promise<IShipment[]>;
+  getByTrackingId(trackingId: string): Promise<IShipment | null>;
   getByDriver(
     driverId: string,
     scope?: "active" | "history",
@@ -98,6 +99,10 @@ export class ShipmentMongoRepository implements IShipmentRepository {
 
   async getByCustomer(customerId: string): Promise<IShipment[]> {
     return ShipmentModel.find({ customer: customerId }).sort({ createdAt: -1 });
+  }
+
+  async getByTrackingId(trackingId: string): Promise<IShipment | null> {
+    return ShipmentModel.findOne({ trackingId });
   }
 
   async getByDriver(

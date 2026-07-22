@@ -164,7 +164,7 @@ export default function LiveTrackingMapInner({
   delivery,
   geometry,
   approximate,
-  accent = "#0C3B67",
+  accent = "var(--accent-strong)",
 }: Props) {
   const driverPosition = useMemo<LatLng | null>(
     () => location ? [location.latitude, location.longitude] : null,
@@ -173,7 +173,7 @@ export default function LiveTrackingMapInner({
   const driverIcon = useMemo(() => makeDriverIcon(accent), [accent]);
   const routeOptions = useMemo(
     () => ({
-      color: "#6C63FF",
+      color: "#E9C46A",
       weight: 4,
       opacity: 0.85,
       dashArray: approximate ? "8 8" : undefined,

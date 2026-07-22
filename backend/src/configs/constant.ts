@@ -1,6 +1,15 @@
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({
+  path: [
+    path.resolve(process.cwd(), "backend/.env"),
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "../../.env"),
+    path.resolve(__dirname, "../../../.env"),
+  ],
+  quiet: true,
+});
 
 const parseOriginList = (value?: string): string[] =>
   value
@@ -41,3 +50,20 @@ export const CORS_ORIGINS: string[] =
       : localOrigins;
 
 export const FRONTEND_ORIGIN: string = CORS_ORIGINS[0];
+
+// Email (used for password reset emails via nodemailer)
+export const EMAIL_USER: string =
+  process.env.EMAIL_USER || "example@gmail.com";
+
+export const EMAIL_PASS: string = process.env.EMAIL_PASS || "password123";
+
+// Base URL of the frontend, used to build the password reset link
+export const CLIENT_URL: string = process.env.CLIENT_URL || FRONTEND_ORIGIN;
+
+// Mistral Free mode supports this chat model with usage rate limits.
+export const MISTRAL_API_KEY: string =
+  process.env.MISTRAL_API_KEY?.trim() || "";
+export const MISTRAL_MODEL: string =
+  process.env.MISTRAL_MODEL || "mistral-small-latest";
+export const MISTRAL_API_URL: string =
+  process.env.MISTRAL_API_URL || "https://api.mistral.ai/v1";

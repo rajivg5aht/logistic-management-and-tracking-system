@@ -58,7 +58,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? formatNPR(analytics.totalRevenue) : "—",
       sub: "Collected to date",
       icon: DollarSign,
-      iconClass: "bg-[var(--teal-tint)] text-[var(--teal)]",
+      iconClass: "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
       ...deltaBadge(analytics?.revenueDelta ?? null),
     },
     {
@@ -66,7 +66,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? analytics.deliveries.toLocaleString("en-IN") : "—",
       sub: "Completed to date",
       icon: Truck,
-      iconClass: "bg-[var(--teal-tint)] text-[var(--teal)]",
+      iconClass: "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
       ...deltaBadge(analytics?.deliveriesDelta ?? null),
     },
     {
@@ -82,7 +82,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       value: analytics ? `${analytics.successRate}%` : "—",
       sub: "Delivered vs cancelled",
       icon: ShieldCheck,
-      iconClass: "bg-[#F3EBF9] text-[var(--step-active)]",
+      iconClass: "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
       ...deltaBadge(analytics?.successDelta ?? null, { unit: " pts" }),
     },
   ];
@@ -94,7 +94,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
     {
       label: "Available",
       value: percentage(fleetStats?.available ?? 0),
-      color: "var(--teal)",
+      color: "var(--accent)",
     },
     {
       label: "Active",
@@ -142,7 +142,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
   const regionTotal = analytics?.totalShipments ?? 0;
   const regionShare = (count: number) =>
     regionTotal > 0 ? Math.round((count / regionTotal) * 100) : 0;
-  const regionBar = "linear-gradient(90deg, #2E97AB, #1D7A8C)";
+  const regionBar = "linear-gradient(90deg, var(--accent-hover), #E9C46A)";
   const leader = regions[0];
   const rest = regions.slice(1);
 
@@ -171,7 +171,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                   {card.text}
                 </span>
               </div>
-              <p className="mt-4 text-sm font-bold text-[var(--teal)]">{card.label}</p>
+              <p className="mt-4 text-sm font-bold text-[var(--accent-strong)]">{card.label}</p>
               <h3 className="mt-1 text-2xl font-black tracking-tight text-[var(--text)]">
                 {card.value}
               </h3>
@@ -214,11 +214,11 @@ export default function AdminAnalytics({ token }: { token: string }) {
               ))}
               {points.length > 0 && (
                 <>
-                  <path d={areaPath} fill="var(--teal)" fillOpacity="0.08" />
+                  <path d={areaPath} fill="var(--accent)" fillOpacity="0.08" />
                   <path
                     d={linePath}
                     fill="none"
-                    stroke="var(--teal)"
+                    stroke="var(--accent)"
                     strokeWidth="4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -230,14 +230,14 @@ export default function AdminAnalytics({ token }: { token: string }) {
                       cy={p.y}
                       r="4"
                       fill="var(--surface)"
-                      stroke="var(--teal)"
+                      stroke="var(--accent)"
                       strokeWidth="3"
                     />
                   ))}
                 </>
               )}
             </svg>
-            <div className="mt-3 flex items-center justify-between px-2 text-xs font-bold text-[var(--teal)]">
+            <div className="mt-3 flex items-center justify-between px-2 text-xs font-bold text-[var(--accent-strong)]">
               {(months.length > 0
                 ? months.map((m) => m.label)
                 : ["—", "—", "—", "—", "—", "—"]
@@ -287,7 +287,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
               })}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-black text-[var(--step-active)]">
+              <span className="text-3xl font-black text-[var(--accent-strong)]">
                 {percentage(
                   (fleetStats?.available ?? 0) + (fleetStats?.active ?? 0),
                 )}
@@ -324,7 +324,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--teal-tint)] text-[var(--teal)]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
               <MapPin size={18} className="stroke-[2.4]" />
             </span>
             <div>
@@ -336,7 +336,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
           </div>
           {regions.length > 0 && (
             <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-1 text-xs font-bold text-[var(--text-soft)] sm:self-auto">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
               {regionTotal.toLocaleString("en-IN")} total shipments
             </span>
           )}
@@ -356,7 +356,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                 className="relative overflow-hidden rounded-[var(--radius-md)] border p-4"
                 style={{
                   borderColor: "rgba(200,162,74,0.4)",
-                  background: "linear-gradient(135deg, #FBF1DC 0%, #FFFFFF 55%)",
+                  background: "linear-gradient(135deg, var(--gold-tint) 0%, #FFFFFF 55%)",
                 }}
                 title={`${leader.region} — ${leader.count.toLocaleString("en-IN")} shipments (${regionShare(leader.count)}% of total)`}
               >
@@ -368,7 +368,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                   <span
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[var(--accent-strong)]"
                     style={{
-                      background: "linear-gradient(135deg, #F0D083, #C99A3D)",
+                      background: "linear-gradient(135deg, var(--accent), #C99A3D)",
                       boxShadow: "0 6px 16px rgba(201,154,61,0.35)",
                     }}
                   >
@@ -414,7 +414,7 @@ export default function AdminAnalytics({ token }: { token: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <span className="flex min-w-0 items-center gap-1.5 text-sm font-bold text-[var(--text)]">
-                        <MapPin size={13} className="shrink-0 text-[var(--teal)]" />
+                        <MapPin size={13} className="shrink-0 text-[var(--accent-strong)]" />
                         <span className="truncate">{rg.region}</span>
                       </span>
                       <span className="shrink-0 whitespace-nowrap text-sm font-black text-[var(--text)]">

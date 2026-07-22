@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -16,11 +16,22 @@ import {
   ChevronRight,
   ChevronDown,
   UserRoundCog,
+  Search,
+  MapPin,
+  Package,
+  Bell,
+  Megaphone,
+  CircleHelp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthUser } from "@/lib/api/auth.api";
 import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import {
+  getMyAnnouncements,
+  type Announcement,
+} from "@/lib/api/announcement.api";
+import {
+  driverGetAssignments,
   driverGetMe,
   driverUpdateAvailability,
   type AvailabilityStatus,
@@ -38,6 +49,7 @@ const NAV_ITEMS = [
   { label: "My Assignments", href: "/driver/assignments", icon: ClipboardList },
   { label: "Fleet", href: "/driver/fleet", icon: Truck },
   { label: "Route", href: "/driver/route", icon: MapPinned },
+  { label: "Announcements", href: "/driver/announcements", icon: Megaphone },
 ];
 
 const AVAILABILITY_META: Record<
@@ -46,8 +58,8 @@ const AVAILABILITY_META: Record<
 > = {
   available: { label: "Available", dot: "bg-[var(--success)]", cls: "text-[var(--success)]" },
   assigned: { label: "Assigned", dot: "bg-[var(--accent-hover)]", cls: "text-[var(--accent-hover)]" },
-  "on-delivery": { label: "On Delivery", dot: "bg-[#C77718]", cls: "text-[#C77718]" },
-  "off-duty": { label: "Off Duty", dot: "bg-[#5A6B82]", cls: "text-[#5A6B82]" },
+  "on-delivery": { label: "On Delivery", dot: "bg-[var(--warning)]", cls: "text-[var(--warning)]" },
+  "off-duty": { label: "Off Duty", dot: "bg-[var(--inactive)]", cls: "text-[var(--inactive)]" },
   inactive: { label: "Inactive", dot: "bg-[var(--danger)]", cls: "text-[var(--danger)]" },
 };
 export default function DriverLayoutClient({
@@ -65,9 +77,13 @@ export default function DriverLayoutClient({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   const [availability, setAvailability] = useState<AvailabilityStatus | null>(null);
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [activeDeliveryCount, setActiveDeliveryCount] = useState(0);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [driverSearch, setDriverSearch] = useState("");
 
   useEffect(() => {
     setProfileImageFailed(false);
@@ -87,9 +103,38 @@ export default function DriverLayoutClient({
 
   useAutoRefresh(loadMe, { intervalMs: 15_000 });
 
+  const loadActiveDeliveryCount = useCallback(async () => {
+    try {
+      const assignments = await driverGetAssignments(token, "active");
+      setActiveDeliveryCount(assignments.length);
+    } catch {
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadActiveDeliveryCount();
+  }, [loadActiveDeliveryCount]);
+
+  useAutoRefresh(loadActiveDeliveryCount, { intervalMs: 15_000 });
+
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      setAnnouncements(await getMyAnnouncements(token));
+    } catch {
+      setAnnouncements([]);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadAnnouncements();
+  }, [loadAnnouncements]);
+
+  useAutoRefresh(loadAnnouncements, { intervalMs: 15_000 });
+
   useEffect(() => {
     setIsOpen(false);
     setProfileOpen(false);
+    setNotificationOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -130,6 +175,13 @@ export default function DriverLayoutClient({
     } finally {
       setToggling(false);
     }
+  };
+
+  const handleDriverSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = driverSearch.trim();
+    if (!query) return;
+    router.push(`/driver/assignments?search=${encodeURIComponent(query)}`);
   };
 
   const meta = availability ? AVAILABILITY_META[availability] : null;
@@ -328,17 +380,156 @@ export default function DriverLayoutClient({
             <Menu size={20} />
           </button>
 
-          <div className="hidden items-center gap-2 text-sm font-semibold text-[var(--text-soft)] sm:flex">
-            <Truck size={16} className="text-[var(--accent)]" />
-            Driver Console
-          </div>
+          <form
+            onSubmit={handleDriverSearch}
+            className="relative hidden min-w-0 max-w-[290px] flex-1 lg:block"
+            role="search"
+          >
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={driverSearch}
+              onChange={(event) => setDriverSearch(event.target.value)}
+              placeholder="Search shipment or route..."
+              aria-label="Search shipment or route"
+              className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-10 pr-3 text-xs font-medium text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
+            />
+          </form>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {toggleError && (
               <span className="hidden max-w-[220px] truncate text-xs font-medium text-[var(--danger)] sm:inline">
                 {toggleError}
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={handleToggle}
+              disabled={!canToggle || toggling}
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-[var(--success-soft)] px-2.5 text-xs font-bold text-[var(--success)] transition-colors hover:bg-[var(--success-soft)] disabled:cursor-default disabled:opacity-70 sm:h-10 sm:px-3"
+              aria-label={canToggle ? `Availability: ${meta?.label ?? "Loading"}. Click to change.` : `Availability: ${meta?.label ?? "Loading"}`}
+              title={canToggle ? "Change availability" : "Availability changes automatically during a delivery"}
+            >
+              {toggling ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <span className={`h-2 w-2 rounded-full ${meta?.dot ?? "bg-[var(--text-muted)]"}`} />
+              )}
+              <span className="hidden whitespace-nowrap xl:inline">
+                {availability === "available" ? "On Duty" : meta?.label ?? "Loading"}
+              </span>
+            </button>
+
+            <Link
+              href="/driver/route"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-2.5 text-xs font-bold shadow-sm transition-colors hover:bg-[var(--accent-hover)] sm:h-10 sm:px-3"
+              style={{ color: "var(--text-on-accent)" }}
+              aria-label="Start GPS tracking"
+            >
+              <MapPin size={15} aria-hidden="true" />
+              <span className="hidden whitespace-nowrap xl:inline">Start GPS</span>
+            </Link>
+
+            <Link
+              href="/driver/assignments"
+              className="hidden h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] sm:inline-flex"
+            >
+              <Package size={15} aria-hidden="true" />
+              <span className="hidden whitespace-nowrap xl:inline">My Deliveries</span>
+              {activeDeliveryCount > 0 && (
+                <span className="flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-soft)] px-1 text-[9px] font-black text-[var(--accent-strong)]">
+                  {activeDeliveryCount > 9 ? "9+" : activeDeliveryCount}
+                </span>
+              )}
+            </Link>
+
+            <div className="relative hidden sm:block">
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => setNotificationOpen((open) => !open)}
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:h-10 sm:w-10"
+                aria-label={`${announcements.length} announcement notifications`}
+                aria-expanded={notificationOpen}
+                aria-haspopup="dialog"
+              >
+                <Bell size={18} aria-hidden="true" />
+                {announcements.length > 0 && (
+                  <span className="absolute right-0.5 top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[var(--danger)] px-1 text-[9px] font-black leading-none text-white ring-2 ring-[var(--surface)]">
+                    {announcements.length > 9 ? "9+" : announcements.length}
+                  </span>
+                )}
+              </button>
+
+              {notificationOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close notifications"
+                    className="fixed inset-0 z-30 cursor-default"
+                    onClick={() => setNotificationOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 z-40 mt-2 w-80 overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-xl"
+                    role="dialog"
+                    aria-label="Announcement notifications"
+                  >
+                    <div className="border-b border-[var(--border)] px-4 py-3">
+                      <p className="text-sm font-extrabold text-[var(--text)]">
+                        Announcements
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                        Official updates from CargoNep
+                      </p>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {announcements.length === 0 ? (
+                        <p className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                          No announcements yet.
+                        </p>
+                      ) : (
+                        announcements.slice(0, 5).map((announcement) => (
+                          <Link
+                            key={announcement.id}
+                            href="/driver/announcements"
+                            onClick={() => setNotificationOpen(false)}
+                            className="block border-b border-[var(--border-light)] px-4 py-3 transition-colors last:border-0 hover:bg-[var(--surface-soft)]"
+                          >
+                            <p className="truncate text-sm font-bold text-[var(--text)]">
+                              {announcement.title}
+                            </p>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">
+                              {announcement.message}
+                            </p>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                    <Link
+                      href="/driver/announcements"
+                      onClick={() => setNotificationOpen(false)}
+                      className="block border-t border-[var(--border)] px-4 py-3 text-center text-xs font-extrabold text-[var(--accent-strong)] hover:bg-[var(--accent-soft)]"
+                    >
+                      View all announcements
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <Link
+              href="/contact"
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:inline-flex sm:h-10 sm:w-10"
+              aria-label="Driver help"
+              title="Help"
+            >
+              <CircleHelp size={18} aria-hidden="true" />
+            </Link>
 
             <div className="relative">
               <div className="flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--surface-soft)]">

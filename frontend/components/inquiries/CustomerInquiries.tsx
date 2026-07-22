@@ -28,10 +28,10 @@ const STATUS_LABELS: Record<InquiryStatus, string> = {
 };
 
 const STATUS_STYLES: Record<InquiryStatus, string> = {
-  new: "bg-amber-50 text-amber-700",
-  "in-progress": "bg-blue-50 text-blue-700",
-  resolved: "bg-emerald-50 text-emerald-700",
-  escalated: "bg-red-50 text-red-700",
+  new: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  "in-progress": "bg-[var(--info-soft)] text-[var(--info)]",
+  resolved: "bg-[var(--success-soft)] text-[var(--success)]",
+  escalated: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 function formatDate(value: string): string {
@@ -114,15 +114,15 @@ export default function CustomerInquiries({
         <button suppressHydrationWarning type="button" onClick={openModal} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--text-on-accent)] transition-colors hover:bg-[var(--accent-hover)]"><Plus size={16} /> New Inquiry</button>
       </div>
 
-      {successMessage && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800" role="status"><CheckCircle2 size={16} /> {successMessage}</div>}
+      {successMessage && <div className="flex items-center gap-2 rounded-xl border border-[var(--success-border)] bg-[var(--success-soft)] px-4 py-3 text-sm font-medium text-[var(--success)]" role="status"><CheckCircle2 size={16} /> {successMessage}</div>}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Total</p><p className="mt-2 text-2xl font-extrabold text-[var(--text)]">{inquiries.length}</p></div>
-        <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]"><Clock3 size={14} className="text-amber-600" /> Awaiting Reply</p><p className="mt-2 text-2xl font-extrabold text-[var(--text)]">{waitingCount}</p></div>
-        <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]"><CheckCircle2 size={14} className="text-emerald-600" /> Replied</p><p className="mt-2 text-2xl font-extrabold text-[var(--text)]">{repliedCount}</p></div>
+        <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]"><Clock3 size={14} className="text-[var(--warning)]" /> Awaiting Reply</p><p className="mt-2 text-2xl font-extrabold text-[var(--text)]">{waitingCount}</p></div>
+        <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]"><CheckCircle2 size={14} className="text-[var(--success)]" /> Replied</p><p className="mt-2 text-2xl font-extrabold text-[var(--text)]">{repliedCount}</p></div>
       </div>
 
-      {error && <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert"><span>{error}</span><button suppressHydrationWarning type="button" onClick={loadInquiries} className="rounded-lg p-2 hover:bg-red-100" aria-label="Retry loading inquiries"><RefreshCw size={16} /></button></div>}
+      {error && <div className="flex items-center justify-between rounded-xl border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger)]" role="alert"><span>{error}</span><button suppressHydrationWarning type="button" onClick={loadInquiries} className="rounded-lg p-2 hover:bg-[var(--danger-soft)]" aria-label="Retry loading inquiries"><RefreshCw size={16} /></button></div>}
 
       {loading ? (
         <div className="flex min-h-64 items-center justify-center rounded-xl border border-[var(--border)] bg-white"><Loader2 className="h-6 w-6 animate-spin text-[var(--accent)]" /></div>
@@ -139,9 +139,9 @@ export default function CustomerInquiries({
               <div className="space-y-4 p-5">
                 <div><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Your message</p><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-soft)]">{inquiry.message}</p></div>
                 {inquiry.adminReply ? (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs font-extrabold text-emerald-800">CargoNep Support replied</p>{inquiry.repliedAt && <span className="text-[10px] font-medium text-emerald-700">{formatDate(inquiry.repliedAt)}</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-emerald-950">{inquiry.adminReply}</p></div>
+                  <div className="rounded-xl border border-[var(--success-border)] bg-[var(--success-soft)] p-4"><div className="flex items-center justify-between gap-3"><p className="text-xs font-extrabold text-[var(--success)]">CargoNep Support replied</p>{inquiry.repliedAt && <span className="text-[10px] font-medium text-[var(--success)]">{formatDate(inquiry.repliedAt)}</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--success)]">{inquiry.adminReply}</p></div>
                 ) : (
-                  <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"><Clock3 size={16} /> Our support team has not replied yet.</div>
+                  <div className="flex items-center gap-2 rounded-xl bg-[var(--warning-soft)] px-4 py-3 text-sm font-medium text-[var(--warning)]"><Clock3 size={16} /> Our support team has not replied yet.</div>
                 )}
               </div>
             </article>
@@ -150,7 +150,7 @@ export default function CustomerInquiries({
       )}
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Create new inquiry">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Create new inquiry">
           <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b border-[var(--border)] px-6 py-5">
               <div><h2 className="text-lg font-extrabold text-[var(--text)]">Contact CargoNep Support</h2><p className="mt-1 text-xs text-[var(--text-muted)]">Send a message without leaving your dashboard.</p></div>
@@ -158,12 +158,12 @@ export default function CustomerInquiries({
             </div>
             <form onSubmit={submitInquiry} className="space-y-5 p-6">
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-xs font-bold text-[var(--text-soft)]">Account name<input suppressHydrationWarning type="text" value={user.fullName} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-slate-50 px-3 text-sm text-[var(--text-muted)]" /></label>
-                <label className="text-xs font-bold text-[var(--text-soft)]">Account email<input suppressHydrationWarning type="email" value={user.email} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-slate-50 px-3 text-sm text-[var(--text-muted)]" /></label>
+                <label className="text-xs font-bold text-[var(--text-soft)]">Account name<input suppressHydrationWarning type="text" value={user.fullName} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-sm text-[var(--text-muted)]" /></label>
+                <label className="text-xs font-bold text-[var(--text-soft)]">Account email<input suppressHydrationWarning type="email" value={user.email} disabled className="mt-2 h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-sm text-[var(--text-muted)]" /></label>
               </div>
               <label className="block text-xs font-bold text-[var(--text-soft)]">Subject<div className="relative mt-2"><select suppressHydrationWarning value={subject} onChange={(event) => setSubject(event.target.value)} className="h-11 w-full appearance-none rounded-lg border border-[var(--border)] bg-white px-3 pr-10 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"><option>Support</option><option>Business Partnership</option><option>Complaint</option><option>General Inquiry</option></select></div></label>
               <label className="block text-xs font-bold text-[var(--text-soft)]">Message<textarea suppressHydrationWarning value={message} onChange={(event) => setMessage(event.target.value)} required minLength={10} maxLength={2000} rows={6} placeholder="How can our support team help?" className="mt-2 w-full resize-y rounded-lg border border-[var(--border)] p-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" /></label>
-              {formError && <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">{formError}</p>}
+              {formError && <p className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger)]" role="alert">{formError}</p>}
               <div className="flex justify-end gap-3 border-t border-[var(--border)] pt-5"><button suppressHydrationWarning type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-bold text-[var(--text-soft)] hover:bg-[var(--surface-soft)]">Cancel</button><button suppressHydrationWarning type="submit" disabled={submitting} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--text-on-accent)] hover:bg-[var(--accent-hover)] disabled:opacity-60">{submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Send Inquiry</button></div>
             </form>
           </div>

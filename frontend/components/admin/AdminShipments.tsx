@@ -54,8 +54,8 @@ import { useShipmentLiveLocation } from "@/lib/hooks/useShipmentLiveLocation";
 import LiveMap from "@/components/tracking/LiveMap";
 import { getDistrictCoords } from "@/lib/nepalGeo";
 
-const NAVY = "#0C3B67";
-const NAVY_BTN = "#123E6B";
+const NAVY = "var(--accent-strong)";
+const NAVY_BTN = "var(--accent)";
 
 interface AdminShipmentsProps {
   token: string;
@@ -70,8 +70,8 @@ const TABS: { label: string; status?: ShipmentStatus }[] = [
 ];
 
 const STATUS_STYLES: Record<ShipmentStatus, string> = {
-  pending: "bg-[#FDECD8] text-[#C77718]",
-  "in-transit": "bg-[#E4EEFB] text-[var(--info)]",
+  pending: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  "in-transit": "bg-[var(--info-soft)] text-[var(--info)]",
   delivered: "bg-[var(--success-soft)] text-[var(--success)]",
   cancelled: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
@@ -106,7 +106,7 @@ function editableDeliveryStage(
 }
 
 const PAYMENT_STYLES: Record<string, string> = {
-  cod: "bg-[#EEF1F4] text-[#5A6B82]",
+  cod: "bg-[var(--inactive-soft)] text-[var(--inactive)]",
   prepaid: "bg-[var(--success-soft)] text-[var(--success)]",
 };
 
@@ -312,9 +312,9 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
 
   const statCards = [
     { label: "Pending Orders", value: stats?.pending, sub: "Awaiting dispatch", Icon: ClipboardList, tint: "bg-[var(--info-soft)] text-[var(--info)]" },
-    { label: "In Transit", value: stats?.inTransit, sub: "On the way", Icon: Truck, tint: "bg-[#FBF1DC] text-[var(--accent-hover)]" },
-    { label: "Delivered", value: stats?.delivered, sub: "Completed", Icon: CircleCheckBig, tint: "bg-[#E6F4EC] text-[#1F9D57]" },
-    { label: "Failed / Cancelled", value: stats?.cancelled, sub: "Needs attention", Icon: XCircle, tint: "bg-[#FBE9E5] text-[#D0533F]" },
+    { label: "In Transit", value: stats?.inTransit, sub: "On the way", Icon: Truck, tint: "bg-[var(--gold-tint)] text-[var(--accent-hover)]" },
+    { label: "Delivered", value: stats?.delivered, sub: "Completed", Icon: CircleCheckBig, tint: "bg-[var(--success-soft)] text-[var(--success)]" },
+    { label: "Failed / Cancelled", value: stats?.cancelled, sub: "Needs attention", Icon: XCircle, tint: "bg-[var(--danger-soft)] text-[var(--danger)]" },
   ];
 
   const rangeStart = meta && meta.total > 0 ? (meta.page - 1) * meta.limit + 1 : 0;
@@ -348,7 +348,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 </div>
                 <span className="text-xs font-semibold text-[var(--text-muted)]">{card.sub}</span>
               </div>
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[#5A6B82]">
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-[var(--inactive)]">
                 {card.label}
               </p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tight" style={{ color: NAVY }}>
@@ -372,7 +372,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 onClick={() => handleTabChange(idx)}
                 className={`rounded-full px-4 py-2 text-sm font-bold transition-all cursor-pointer ${
                   activeTab === idx
-                    ? "text-white"
+                    ? "text-[var(--text-on-accent)]"
                     : "text-[var(--text-muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
                 }`}
                 style={activeTab === idx ? { backgroundColor: NAVY_BTN } : undefined}
@@ -390,7 +390,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                 placeholder="Search tracking, sender, driver..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm outline-none transition-all focus:border-[#123E6B]/40 sm:w-64"
+                className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-sm outline-none transition-all focus:border-[var(--accent)] sm:w-64"
                 suppressHydrationWarning
               />
             </div>
@@ -502,7 +502,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                         <td className="px-5 py-4">
                           <span
                             className="font-bold"
-                            style={{ color: s.status === "cancelled" ? "#D0453A" : "var(--text)" }}
+                            style={{ color: s.status === "cancelled" ? "var(--danger)" : "var(--text)" }}
                           >
                             NPR {s.amount.toLocaleString()}
                           </span>
@@ -537,7 +537,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                                 e.stopPropagation();
                                 setDetail(s);
                               }}
-                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B] cursor-pointer"
+                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
                               title="View details"
                               suppressHydrationWarning
                             >
@@ -549,7 +549,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                                 e.stopPropagation();
                                 handleEditOpen(s);
                               }}
-                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[#123E6B] cursor-pointer"
+                              className="rounded-lg p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--accent-strong)] cursor-pointer"
                               title="Update shipment"
                               suppressHydrationWarning
                             >
@@ -615,7 +615,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
                       onClick={() => setPage(p)}
                       className={`h-9 min-w-9 rounded-lg border px-3 text-sm font-bold transition-all cursor-pointer ${
                         page === p
-                          ? "border-transparent text-white"
+                          ? "border-transparent text-[var(--text-on-accent)]"
                           : "border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
                       }`}
                       style={page === p ? { backgroundColor: NAVY_BTN } : undefined}
@@ -769,7 +769,7 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
               type="button"
               onClick={handleDeleteSubmit}
               disabled={actionLoading}
-              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#b23a30] cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--danger)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[var(--danger)] cursor-pointer disabled:opacity-50"
             >
               {actionLoading && <Loader2 size={16} className="animate-spin" />}
               Delete
@@ -843,7 +843,7 @@ function DetailSection({
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-        <span className="text-[#123E6B]">{icon}</span>
+        <span className="text-[var(--accent-strong)]">{icon}</span>
         {title}
       </h3>
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -927,7 +927,7 @@ function ShipmentDetailDrawer({
             <div
               className="relative shrink-0 px-6 pb-5 pt-6 text-white"
               style={{
-                background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY_BTN} 100%)`,
+                background: `linear-gradient(135deg, ${NAVY} 0%, var(--surface-dark-2) 100%)`,
               }}
             >
               <button
@@ -957,7 +957,7 @@ function ShipmentDetailDrawer({
                 <div className="relative pl-6">
                   <span className="absolute bottom-3 left-[6px] top-3 w-px bg-[var(--border)]" />
                   <div className="relative pb-5">
-                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--teal)] ring-4 ring-[var(--teal)]/15" />
+                    <span className="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[var(--accent)] ring-4 ring-[var(--accent)]/15" />
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                       Pickup - Sender
                     </p>
@@ -1013,7 +1013,7 @@ function ShipmentDetailDrawer({
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-[#E4EEFB] px-2.5 py-1 text-[11px] font-bold text-[var(--info)]">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--info-soft)] px-2.5 py-1 text-[11px] font-bold text-[var(--info)]">
                     <Truck size={12} /> {SERVICE_LABELS[shipment.service] ?? shipment.service}
                   </span>
                   {shipment.insurance && (
@@ -1022,7 +1022,7 @@ function ShipmentDetailDrawer({
                     </span>
                   )}
                   {shipment.specialHandling && (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-[#FBF1DC] px-2.5 py-1 text-[11px] font-bold text-[var(--accent-hover)]">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--gold-tint)] px-2.5 py-1 text-[11px] font-bold text-[var(--accent-hover)]">
                       <Sparkles size={12} /> Special handling
                     </span>
                   )}
@@ -1070,7 +1070,7 @@ function ShipmentDetailDrawer({
                       </div>
                     </div>
                     {shipment.driverStage && (
-                      <span className="inline-flex rounded-full bg-[#E4EEFB] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--info)]">
+                      <span className="inline-flex rounded-full bg-[var(--info-soft)] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--info)]">
                         {DRIVER_STAGE_LABELS[shipment.driverStage] ?? shipment.driverStage}
                       </span>
                     )}
@@ -1093,7 +1093,7 @@ function ShipmentDetailDrawer({
                     {liveLocation && (
                       <span
                         className="flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold text-white"
-                        style={{ backgroundColor: "#1D7A8C" }}
+                        style={{ backgroundColor: "#E9C46A" }}
                       >
                         <span className="relative flex h-2 w-2">
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -1107,7 +1107,7 @@ function ShipmentDetailDrawer({
                     location={liveLocation}
                     delivery={getDistrictCoords(shipment.delivery.district ?? "")}
                     height={220}
-                    accent={NAVY}
+                    accent="#E9C46A"
                     waitingLabel="Waiting for driver location..."
                   />
                 </DetailSection>

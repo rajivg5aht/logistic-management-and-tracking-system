@@ -6,9 +6,13 @@ import adminRoutes from "./routes/admin.route";
 import adminDriverRoutes from "./routes/adminDriver.route";
 import driverRoutes from "./routes/driver.route";
 import shipmentRoutes from "./routes/shipment.route";
+import publicTrackingRoutes from "./routes/publicTracking.route";
 import adminShipmentRoutes from "./routes/adminShipment.route";
 import inquiryRoutes from "./routes/inquiry.route";
 import adminInquiryRoutes from "./routes/adminInquiry.route";
+import announcementRoutes from "./routes/announcement.route";
+import adminAnnouncementRoutes from "./routes/adminAnnouncement.route";
+import assistantRoutes from "./routes/assistant.route";
 import adminVehicleRoutes from "./routes/adminVehicle.route";
 import adminFleetReportRoutes from "./routes/adminFleetReport.route";
 import paymentRoutes from "./routes/payment.route";
@@ -46,9 +50,13 @@ app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/admin/payments", adminPaymentRoutes);
 app.use("/api/v1/driver", driverRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
+app.use("/api/v1/track", publicTrackingRoutes);
 app.use("/api/v1/admin/shipments", adminShipmentRoutes);
 app.use("/api/v1/inquiries", inquiryRoutes);
 app.use("/api/v1/admin/inquiries", adminInquiryRoutes);
+app.use("/api/v1/announcements", announcementRoutes);
+app.use("/api/v1/admin/announcements", adminAnnouncementRoutes);
+app.use("/api/v1/assistant", assistantRoutes);
 
 app.use((_req: Request, res: Response) => {
   return res.status(404).json({

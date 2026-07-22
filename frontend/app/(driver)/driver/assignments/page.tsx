@@ -8,7 +8,16 @@ export const metadata = {
   description: "Your active delivery and completed history.",
 };
 
-export default async function DriverAssignmentsPage() {
+interface DriverAssignmentsPageProps {
+  searchParams: Promise<{ search?: string | string[] }>;
+}
+
+export default async function DriverAssignmentsPage({
+  searchParams,
+}: DriverAssignmentsPageProps) {
+  const params = await searchParams;
+  const rawSearch = Array.isArray(params.search) ? params.search[0] : params.search;
+  const initialSearch = rawSearch?.trim().slice(0, 120) ?? "";
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_driver")?.value;
   const token = cookieStore.get("token_driver")?.value;
@@ -28,5 +37,5 @@ export default async function DriverAssignmentsPage() {
     redirect("/dashboard");
   }
 
-  return <DriverAssignments token={token} />;
+  return <DriverAssignments token={token} initialSearch={initialSearch} />;
 }

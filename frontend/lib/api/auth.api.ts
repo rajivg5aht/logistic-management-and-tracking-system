@@ -102,3 +102,23 @@ export async function changePassword(
     body: JSON.stringify(payload),
   });
 }
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  return apiRequest<void>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/api/v1/auth/reset-password/${encodeURIComponent(token)}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ newPassword }),
+    },
+  );
+}

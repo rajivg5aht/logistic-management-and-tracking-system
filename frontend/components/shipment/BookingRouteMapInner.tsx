@@ -40,7 +40,7 @@ function makePinIcon(label: string, color: string, textColor: string): L.DivIcon
   });
 }
 
-const PICKUP_ICON = makePinIcon("A", "#6C63FF", "#ffffff");
+const PICKUP_ICON = makePinIcon("A", "#E9C46A", "#ffffff");
 const DELIVERY_ICON = makePinIcon("B", "#E9C46A", "#3A2E12");
 
 function FitBounds({
@@ -79,7 +79,7 @@ export default function BookingRouteMapInner({
 }: Props) {
   const routeOptions = useMemo(
     () => ({
-      color: "#6C63FF",
+      color: "#E9C46A",
       weight: 4,
       opacity: 0.85,
       dashArray: approximate ? "8 8" : undefined,

@@ -99,6 +99,28 @@ export class ShipmentController {
     }
   }
 
+  async publicTrackByCode(req: Request, res: Response) {
+    try {
+      const trackingId = (req.params.trackingId as string) ?? "";
+      if (!trackingId.trim()) {
+        return ApiResponseHelper.error(res, "Tracking ID is required", 400);
+      }
+
+      const shipment = await shipmentService.getByTrackingId(trackingId);
+      return ApiResponseHelper.success(
+        res,
+        shipment,
+        "Shipment retrieved successfully",
+      );
+    } catch (error: any) {
+      return ApiResponseHelper.error(
+        res,
+        error.message || "Internal Server Error",
+        error.status || 500,
+      );
+    }
+  }
+
   async customerUpdateShipment(req: AuthRequest, res: Response) {
     try {
       if (!req.user) {

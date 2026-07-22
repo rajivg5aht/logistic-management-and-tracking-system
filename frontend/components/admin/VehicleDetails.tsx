@@ -55,28 +55,28 @@ const STATUS_CONFIG: Record<
   active: {
     label: "Active",
     badge: "bg-[var(--success-soft)] text-[var(--success)]",
-    hero: "from-[#E9F6EE] to-[#CFE9D9]",
+    hero: "from-[var(--success-soft)] to-[var(--success-border)]",
     iconColor: "text-[var(--success)]",
     dot: "bg-[var(--success)]",
   },
   maintenance_required: {
     label: "Maintenance Required",
-    badge: "bg-[#FBF1DC] text-[var(--accent-hover)]",
-    hero: "from-[#FBF2DE] to-[#F3E2BC]",
+    badge: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
+    hero: "from-[var(--gold-tint)] to-[var(--accent-soft)]",
     iconColor: "text-[var(--accent-hover)]",
     dot: "bg-[var(--accent-hover)]",
   },
   available: {
     label: "Available",
-    badge: "bg-[#EDF1F6] text-[#5A6B82]",
-    hero: "from-[#EFF2F7] to-[#DBE2EC]",
-    iconColor: "text-[#5A6B82]",
-    dot: "bg-[#5A6B82]",
+    badge: "bg-[var(--surface-muted)] text-[var(--inactive)]",
+    hero: "from-[var(--surface-muted)] to-[var(--border)]",
+    iconColor: "text-[var(--inactive)]",
+    dot: "bg-[var(--inactive)]",
   },
   inactive: {
     label: "Inactive",
     badge: "bg-[var(--danger-soft)] text-[var(--danger)]",
-    hero: "from-[#FBE7E3] to-[#F3CEC8]",
+    hero: "from-[var(--danger-soft)] to-[var(--danger-border)]",
     iconColor: "text-[var(--danger)]",
     dot: "bg-[var(--danger)]",
   },
@@ -135,7 +135,7 @@ function expiryMeta(value: string | null): {
   if (days <= 30)
     return {
       label: `${days} day${days === 1 ? "" : "s"} left`,
-      cls: "bg-[#FBF1DC] text-[var(--accent-hover)]",
+      cls: "bg-[var(--gold-tint)] text-[var(--accent-hover)]",
       Icon: Clock,
     };
   return { label: "Valid", cls: "bg-[var(--success-soft)] text-[var(--success)]", Icon: CheckCircle2 };
@@ -478,7 +478,7 @@ function BackLink() {
   return (
     <Link
       href="/admin/fleet"
-      className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-muted)] transition-colors hover:text-[var(--teal)]"
+      className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-muted)] transition-colors hover:text-[var(--accent-strong)]"
     >
       <ArrowLeft size={16} /> Back to Fleet
     </Link>
@@ -515,7 +515,7 @@ function SectionCard({
 }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)]">
-      <h2 className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[var(--teal)]">
+      <h2 className="mb-4 flex items-center gap-2 text-sm font-extrabold text-[var(--accent-strong)]">
         <Icon size={16} /> {title}
       </h2>
       {children}

@@ -41,9 +41,9 @@ const STATUS_META: Record<ShipmentStatus, { text: string; bg: string; color: str
   },
   "in-transit": {
     text: "In Transit",
-    bg: "bg-[#EAF1FC]",
-    color: "text-[#3E80E5]",
-    dot: "bg-[#3E80E5]",
+    bg: "bg-[var(--info-soft)]",
+    color: "text-[var(--info)]",
+    dot: "bg-[var(--info)]",
   },
   delivered: {
     text: "Delivered",
@@ -235,7 +235,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           )}
           <Link
             href="/shipments"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--teal)] text-white text-sm font-bold hover:bg-[#15656e] transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-[var(--text-on-accent)] text-sm font-bold hover:bg-[var(--accent-hover)] transition-colors"
           >
             <Plus size={16} />
             New Shipment
@@ -248,20 +248,20 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="animate-pulse rounded-2xl border border-[#F5E6D8] bg-[#FDF6F0] p-5"
+              className="animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
             >
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 shrink-0 rounded-xl bg-[#F3EBF9]" />
+                <div className="h-12 w-12 shrink-0 rounded-xl bg-[var(--accent-soft)]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 w-1/3 rounded bg-[#F0E3D5]" />
-                  <div className="h-3 w-1/2 rounded bg-[#F0E3D5]" />
+                  <div className="h-3.5 w-1/3 rounded bg-[var(--border)]" />
+                  <div className="h-3 w-1/2 rounded bg-[var(--border)]" />
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-[#F5E6D8] bg-[#FDF6F0] p-10 text-center">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-10 text-center">
           <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(181,71,59,0.1)] text-[var(--danger)]">
             <AlertCircle size={24} />
           </div>
@@ -276,8 +276,8 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
           </button>
         </div>
       ) : shipments.length === 0 ? (
-        <div className="rounded-2xl border border-[#F5E6D8] bg-[#FDF6F0] p-12 text-center">
-          <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F3EBF9]">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-12 text-center">
+          <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
             <PackageOpen size={30} className="text-[var(--accent)]" />
           </div>
           <h3 className="text-lg font-extrabold text-[var(--text)]">No shipments yet</h3>
@@ -303,10 +303,10 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
               return (
                 <div
                   key={shipment.id}
-                  className="bg-[#FDF6F0] border border-[#F5E6D8] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-[var(--surface-soft)] border border-[var(--border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F3EBF9]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
                       {getIcon(shipment)}
                     </div>
 
@@ -360,7 +360,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                           <button
                             type="button"
                             onClick={() => setEditing(shipment)}
-                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[var(--teal)]/40 hover:bg-[#F4FAFA] hover:text-[var(--teal)] cursor-pointer"
+                            className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)] hover:text-[var(--accent-strong)] cursor-pointer"
                             title="Edit shipment"
                             suppressHydrationWarning
                           >
@@ -431,7 +431,7 @@ export default function ShipmentHistory({ token }: { user?: AuthUser; token: str
                     disabled={page === "..."}
                     className={`min-w-[40px] h-10 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                       page === safePage
-                        ? "bg-[var(--teal)] text-white"
+                        ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                         : page === "..."
                         ? "text-[var(--text-muted)] cursor-default"
                         : "border border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"

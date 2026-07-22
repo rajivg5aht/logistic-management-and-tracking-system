@@ -37,28 +37,28 @@ import { formatNPR } from "@/lib/pricing";
 import { useAutoRefresh } from "@/lib/hooks/useAutoRefresh";
 
 const VEHICLE_STATUS_META: Record<string, { label: string; cls: string }> = {
-  available: { label: "Available", cls: "bg-[#E6F4EC] text-[#1F9D57]" },
+  available: { label: "Available", cls: "bg-[var(--success-soft)] text-[var(--success)]" },
   active: { label: "Active", cls: "bg-[var(--info-soft)] text-[var(--info)]" },
-  maintenance_required: { label: "Maintenance Required", cls: "bg-[#FBF0DA] text-[#C08A2D]" },
-  inactive: { label: "Inactive", cls: "bg-[#FBE9E5] text-[#D0533F]" },
+  maintenance_required: { label: "Maintenance Required", cls: "bg-[var(--warning-soft)] text-[var(--warning)]" },
+  inactive: { label: "Inactive", cls: "bg-[var(--danger-soft)] text-[var(--danger)]" },
 };
 
 const SEVERITY_META: Record<string, string> = {
-  low: "bg-[#E6F4EC] text-[#1F9D57]",
+  low: "bg-[var(--success-soft)] text-[var(--success)]",
   medium: "bg-[var(--info-soft)] text-[var(--info)]",
-  high: "bg-[#FBF0DA] text-[#C08A2D]",
-  critical: "bg-[#FBE9E5] text-[#D0533F]",
+  high: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  critical: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
 const STATUS_META: Record<string, string> = {
-  pending_review: "bg-[#FBF0DA] text-[#C08A2D]",
-  maintenance_required: "bg-[#FCE8D8] text-[#C06A2D]",
-  resolved: "bg-[#E6F4EC] text-[#1F9D57]",
-  rejected: "bg-[#FBE9E5] text-[#D0533F]",
+  pending_review: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  maintenance_required: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  resolved: "bg-[var(--success-soft)] text-[var(--success)]",
+  rejected: "bg-[var(--danger-soft)] text-[var(--danger)]",
   submitted: "bg-[var(--info-soft)] text-[var(--info)]",
-  under_review: "bg-[#FBF0DA] text-[#C08A2D]",
-  approved: "bg-[#E6F4EC] text-[#1F9D57]",
-  reimbursed: "bg-[#E7F5F2] text-[var(--teal)]",
+  under_review: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  approved: "bg-[var(--success-soft)] text-[var(--success)]",
+  reimbursed: "bg-[var(--success-soft)] text-[var(--accent-strong)]",
 };
 
 const INCIDENT_CATEGORIES: DriverFleetIncidentPayload["category"][] = [
@@ -102,7 +102,7 @@ function expiryTone(value: string | null | undefined): string {
   if (Number.isNaN(target)) return "text-[var(--text)]";
   const days = (target - Date.now()) / 86_400_000;
   if (days < 0) return "text-[var(--danger)] font-bold";
-  if (days < 30) return "text-[#C08A2D] font-bold";
+  if (days < 30) return "text-[var(--warning)] font-bold";
   return "text-[var(--text)]";
 }
 
@@ -214,7 +214,7 @@ export default function DriverFleet({ token }: { token: string }) {
               style={{ boxShadow: "var(--shadow-sm)" }}
             >
               <div className="flex flex-col sm:flex-row">
-                <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#1E293B] to-[#334155] sm:h-auto sm:w-52">
+                <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[var(--surface-dark)] to-[var(--surface-dark-2)] sm:h-auto sm:w-52">
                   {vehicle.imageUrl ? (
                     <Image
                       src={vehicle.imageUrl}
@@ -276,7 +276,7 @@ export default function DriverFleet({ token }: { token: string }) {
                 Icon={AlertTriangle}
                 title="Report an Issue"
                 subtitle="Log a mechanical or safety problem"
-                tint="bg-[#FBE9E5] text-[#D0533F]"
+                tint="bg-[var(--danger-soft)] text-[var(--danger)]"
                 onClick={() => setModal({ type: "incident" })}
               />
               <ActionCard
@@ -525,7 +525,7 @@ function HistoryTab({ fleet }: { fleet: DriverFleet }) {
                 <span
                   className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${
                     a.status === "current"
-                      ? "bg-[#E6F4EC] text-[#1F9D57]"
+                      ? "bg-[var(--success-soft)] text-[var(--success)]"
                       : "bg-[var(--surface-soft)] text-[var(--text-muted)]"
                   }`}
                 >
@@ -826,7 +826,7 @@ function SubmitRow({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
+        className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-60 cursor-pointer"
       >
         {pending && <Loader2 size={15} className="animate-spin" />}
         {label}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard, MessageSquareText } from "lucide-react";
+import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Sidebar() {
@@ -56,7 +56,7 @@ export function Sidebar() {
     { label: "Tracking", href: "/tracking", icon: MapPinned },
     { label: "Shipment History", href: "/shipments/history", icon: Package },
     { label: "Payments", href: "/payments", icon: CreditCard },
-    { label: "My Inquiries", href: "/inquiries", icon: MessageSquareText },
+    { label: "Announcements / Inquiries", href: "/inquiries", icon: Megaphone },
     { label: "Profile", href: "/profile", icon: User },
   ];
 

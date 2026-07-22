@@ -54,13 +54,13 @@ const TABS: { id: RoleTab; label: string }[] = [
 
 const AVATAR_STYLES = [
   "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
-  "bg-[var(--teal-tint)] text-[var(--teal)]",
-  "bg-[rgba(108,99,255,0.12)] text-[var(--step-active)]",
+  "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+  "bg-[rgba(233,196,106,0.12)] text-[var(--accent-strong)]",
   "bg-[rgba(95,127,53,0.12)] text-[var(--success)]",
 ];
 
 const ROLE_CONFIG: Record<string, { label: string; Icon: LucideIcon; cls: string }> = {
-  admin: { label: "Admin", Icon: Shield, cls: "bg-[var(--teal-tint)] text-[var(--teal)]" },
+  admin: { label: "Admin", Icon: Shield, cls: "bg-[var(--accent-soft)] text-[var(--accent-strong)]" },
   driver: { label: "Driver", Icon: Truck, cls: "bg-[var(--accent-soft)] text-[var(--accent-strong)]" },
   customer: { label: "Customer", Icon: User, cls: "bg-[rgba(95,127,53,0.12)] text-[var(--success)]" },
 };
@@ -326,7 +326,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
   return (
     <div className="space-y-6 font-sans">
       <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-black tracking-tight text-[var(--teal)]">User Management</h1>
+        <h1 className="text-2xl font-black tracking-tight text-[var(--accent-strong)]">User Management</h1>
         <div className="relative sm:w-72 lg:w-80">
           <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[var(--text-muted)]">
             <Search size={18} />
@@ -354,7 +354,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
               }}
               className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer ${
                 activeTab === tab.id
-                  ? "bg-[var(--surface)] text-[var(--teal)] shadow-[var(--shadow-sm)]"
+                  ? "bg-[var(--surface)] text-[var(--accent-strong)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-muted)] hover:text-[var(--text)]"
               }`}
               suppressHydrationWarning
@@ -406,7 +406,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
 
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--accent-hover)]">System Uptime</p>
-          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--teal)]">99.9%</p>
+          <p className="mt-2 text-4xl font-black tracking-tight text-[var(--accent-strong)]">99.9%</p>
           <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">Service Healthy</p>
         </div>
       </div>
@@ -529,7 +529,7 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
                             {user.role === "driver" ? (
                               <Link
                                 href="/admin/drivers"
-                                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--teal)] hover:bg-[var(--teal-tint)]"
+                                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--accent-strong)] hover:bg-[var(--accent-soft)]"
                               >
                                 Manage driver
                               </Link>
@@ -640,9 +640,9 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-extrabold text-[var(--teal)]">Quick Insights</h2>
+        <h2 className="mb-4 text-lg font-extrabold text-[var(--accent-strong)]">Quick Insights</h2>
         <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
-          <h3 className="text-sm font-extrabold text-[var(--teal)]">
+          <h3 className="text-sm font-extrabold text-[var(--accent-strong)]">
             Registration Growth <span className="font-semibold text-[var(--text-muted)]">(Last 7 Days)</span>
           </h3>
           {!stats ? (

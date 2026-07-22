@@ -1,14 +1,19 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import CustomerInquiries from "@/components/inquiries/CustomerInquiries";
+import CustomerCommunications from "@/components/inquiries/CustomerCommunications";
 import type { AuthUser } from "@/lib/api/auth.api";
 
 export const metadata = {
-  title: "My Inquiries - CargoNep",
-  description: "View your support inquiries and CargoNep responses.",
+  title: "Announcements and Inquiries - CargoNep",
+  description: "View official announcements, support inquiries, and responses.",
 };
 
-export default async function CustomerInquiriesPage() {
+export default async function CustomerInquiriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
   const cookieStore = await cookies();
   const token = cookieStore.get("token_customer")?.value;
   const userCookie = cookieStore.get("user_customer")?.value;
@@ -21,5 +26,11 @@ export default async function CustomerInquiriesPage() {
     redirect("/login");
   }
 
-  return <CustomerInquiries token={token} user={user} />;
+  return (
+    <CustomerCommunications
+      token={token}
+      user={user}
+      initialTab={tab === "announcements" ? "announcements" : "inquiries"}
+    />
+  );
 }

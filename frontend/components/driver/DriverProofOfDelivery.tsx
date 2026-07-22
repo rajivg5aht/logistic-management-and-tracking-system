@@ -71,7 +71,7 @@ const SignaturePad = forwardRef<
     ctx.lineWidth = 2.2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#2D2D2D";
+    ctx.strokeStyle = "var(--text)";
   }, []);
 
   useEffect(() => {
@@ -339,14 +339,14 @@ export default function DriverProofOfDelivery({
             </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--teal-tint)] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[var(--teal)]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-[var(--accent-strong)]">
           <ShieldCheck size={13} />
           Live Verification
         </span>
       </div>
 
       {!isOutForDelivery && (
-        <div className="flex items-center gap-2 rounded-xl border border-[#F3D9A0] bg-[#FDF3E0] px-4 py-3 text-sm font-semibold text-[#B8791B]">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-3 text-sm font-semibold text-[var(--warning)]">
           <AlertTriangle size={16} />
           Mark this shipment “Out for Delivery” on the route before confirming
           delivery.
@@ -360,7 +360,7 @@ export default function DriverProofOfDelivery({
             style={{ boxShadow: "var(--shadow-sm)" }}
           >
             <div className="flex items-center gap-2">
-              <PackageCheck size={18} className="text-[var(--teal)]" />
+              <PackageCheck size={18} className="text-[var(--accent-strong)]" />
               <h2 className="text-base font-black text-[var(--text)]">
                 Package Verification
               </h2>
@@ -412,7 +412,7 @@ export default function DriverProofOfDelivery({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <PenLine size={18} className="text-[var(--teal)]" />
+                <PenLine size={18} className="text-[var(--accent-strong)]" />
                 <h2 className="text-base font-black text-[var(--text)]">
                   Recipient Signature
                 </h2>
@@ -477,7 +477,7 @@ export default function DriverProofOfDelivery({
             type="button"
             onClick={confirmDelivery}
             disabled={!canConfirm || submitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--teal)] px-6 py-3.5 text-sm font-black text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-black text-[var(--text-on-accent)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 size={17} className="animate-spin" />
@@ -503,7 +503,7 @@ export default function DriverProofOfDelivery({
             <div
               className="relative h-36 w-full"
               style={{
-                background: "linear-gradient(135deg, #EAF1F7 0%, #F3F1E9 100%)",
+                background: "linear-gradient(135deg, var(--info-soft) 0%, var(--surface-soft) 100%)",
               }}
             >
               <svg
@@ -514,16 +514,16 @@ export default function DriverProofOfDelivery({
                 <path
                   d="M40 120 C 140 40, 260 40, 360 60"
                   fill="none"
-                  stroke="var(--teal)"
+                  stroke="var(--accent)"
                   strokeWidth="3"
                   strokeDasharray="7 7"
                   strokeLinecap="round"
                 />
-                <circle cx="40" cy="120" r="8" fill="#1E9E4C" />
-                <circle cx="360" cy="60" r="8" fill="var(--teal)" />
+                <circle cx="40" cy="120" r="8" fill="var(--success)" />
+                <circle cx="360" cy="60" r="8" fill="var(--accent)" />
               </svg>
-              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[var(--teal)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]" />
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[var(--accent-strong)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
                 In Proximity
               </span>
               <span className="absolute bottom-2 right-3 rounded-md bg-white/85 px-2 py-0.5 text-[10px] font-bold text-[var(--text-soft)]">
@@ -541,7 +541,7 @@ export default function DriverProofOfDelivery({
             </p>
             <div className="mt-3 space-y-3">
               <div className="flex gap-2.5">
-                <Package size={16} className="mt-0.5 shrink-0 text-[var(--teal)]" />
+                <Package size={16} className="mt-0.5 shrink-0 text-[var(--accent-strong)]" />
                 <div>
                   <p className="text-sm font-bold capitalize text-[var(--text)]">
                     {shipment.package.parcelType} parcel
@@ -552,7 +552,7 @@ export default function DriverProofOfDelivery({
                 </div>
               </div>
               <div className="flex gap-2.5">
-                <MapPin size={16} className="mt-0.5 shrink-0 text-[var(--teal)]" />
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[var(--accent-strong)]" />
                 <div>
                   <p className="text-sm font-bold text-[var(--text)]">
                     {shipment.delivery.recipientName || "Recipient"}
@@ -583,7 +583,7 @@ export default function DriverProofOfDelivery({
                   Insured
                 </HandlingBadge>
               )}
-              <HandlingBadge className="bg-[var(--teal-tint)] text-[var(--teal)]">
+              <HandlingBadge className="bg-[var(--accent-soft)] text-[var(--accent-strong)]">
                 Signature Required
               </HandlingBadge>
               {shipment.specialHandling && (
@@ -603,8 +603,8 @@ export default function DriverProofOfDelivery({
             <div
               className={`rounded-[var(--radius-lg)] border p-5 ${
                 codCollected
-                  ? "border-[#BFE6CD] bg-[var(--success-soft)]"
-                  : "border-[#F3D9A0] bg-[#FDF3E0]"
+                  ? "border-[var(--success-border)] bg-[var(--success-soft)]"
+                  : "border-[var(--warning-border)] bg-[var(--warning-soft)]"
               }`}
             >
               <div className="flex items-center justify-between gap-3">
@@ -613,7 +613,7 @@ export default function DriverProofOfDelivery({
                     className={`flex h-9 w-9 items-center justify-center rounded-lg ${
                       codCollected
                         ? "bg-[var(--success)] text-white"
-                        : "bg-[#E9B44C]/25 text-[#B8791B]"
+                        : "bg-[var(--warning-soft)] text-[var(--warning)]"
                     }`}
                   >
                     {codCollected ? (
@@ -657,7 +657,7 @@ export default function DriverProofOfDelivery({
           <div
             className="rounded-[var(--radius-lg)] p-5 text-white"
             style={{
-              background: "linear-gradient(135deg, #0C3B67 0%, #16548C 100%)",
+              background: "linear-gradient(135deg, var(--accent-strong) 0%, var(--accent-hover) 100%)",
             }}
           >
             <p className="text-[10px] font-black uppercase tracking-wider text-white/60">

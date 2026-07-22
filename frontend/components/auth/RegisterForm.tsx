@@ -1,17 +1,19 @@
 "use client";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   registerAction,
   type AuthFormState,
 } from "@/actions/auth.actions";
 import { FieldError } from "@/components/auth/FieldError";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 
 const initialState: AuthFormState = {
   success: false,
 };
 
 export function RegisterForm() {
+  const [password, setPassword] = useState("");
   const [state, formAction, isPending] = useActionState(
     registerAction,
     initialState,
@@ -30,8 +32,8 @@ export function RegisterForm() {
               name="fullName"
               type="text"
               autoComplete="name"
-              placeholder="Jordan Lee"
-            className="form-input"
+              placeholder="Rajiv"
+              className="form-input"
               required
             />
             <FieldError errors={state.fieldErrors?.fullName} />
@@ -64,7 +66,7 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-              className="form-input"
+            className="form-input"
             required
           />
           <FieldError errors={state.fieldErrors?.email} />
@@ -79,9 +81,12 @@ export function RegisterForm() {
               id="password"
               name="password"
               type="password"
+              aria-describedby="password-strength-status password-requirements"
               autoComplete="new-password"
               placeholder="Create a password"
               className="form-input"
+              minLength={6}
+              onChange={(event) => setPassword(event.target.value)}
               required
             />
             <FieldError errors={state.fieldErrors?.password} />
@@ -101,6 +106,10 @@ export function RegisterForm() {
               required
             />
             <FieldError errors={state.fieldErrors?.confirmPassword} />
+          </div>
+
+          <div className="sm:col-span-2">
+            <PasswordStrengthMeter password={password} />
           </div>
         </div>
 

@@ -6,12 +6,19 @@ import {
   changePassword,
   loginUser,
   registerUser,
+  requestPasswordReset,
+  resetPassword,
   updateProfile,
   updatePassword,
   type AuthUser,
   type UpdateProfilePayload,
 } from "@/lib/api/auth.api";
-import { loginSchema, registerSchema } from "@/lib/schemas/auth.schema";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from "@/lib/schemas/auth.schema";
 import { AUTH_COOKIE_MAX_AGE } from "@/lib/config";
 import { z } from "zod";
 
@@ -166,6 +173,82 @@ export async function loginAction(
   } else {
     redirect("/dashboard");
   }
+}
+
+export async function forgotPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    await requestPasswordReset(parsed.data.email);
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Could not send reset link",
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      "If an account exists for that email, a password reset link is on its way. Please check your inbox.",
+  };
+}
+
+export async function resetPasswordAction(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const token = formData.get("token") as string;
+
+  if (!token) {
+    return {
+      success: false,
+      message: "This reset link is invalid or has expired.",
+    };
+  }
+
+  const parsed = resetPasswordSchema.safeParse({
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    await resetPassword(token, parsed.data.newPassword);
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Could not reset password",
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      "Your password has been reset. You can now sign in with your new password.",
+  };
 }
 
 export async function updateProfileAction(

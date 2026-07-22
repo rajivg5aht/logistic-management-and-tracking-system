@@ -37,8 +37,8 @@ const STATUS_META: Record<
   pending: {
     label: "Pending",
     bg: "bg-[rgba(181,162,74,0.1)]",
-    text: "text-[#8B7355]",
-    dot: "bg-[#8B7355]",
+    text: "text-[var(--warning)]",
+    dot: "bg-[var(--warning)]",
   },
   paid: {
     label: "Paid",
@@ -49,14 +49,14 @@ const STATUS_META: Record<
   collected: {
     label: "Collected",
     bg: "bg-[rgba(62,128,229,0.12)]",
-    text: "text-[#3E80E5]",
-    dot: "bg-[#3E80E5]",
+    text: "text-[var(--info)]",
+    dot: "bg-[var(--info)]",
   },
   settled: {
     label: "Settled",
-    bg: "bg-[rgba(29,122,140,0.1)]",
-    text: "text-[var(--teal)]",
-    dot: "bg-[var(--teal)]",
+    bg: "bg-[rgba(121,83,18,0.1)]",
+    text: "text-[var(--accent-strong)]",
+    dot: "bg-[var(--accent)]",
   },
   refunded: {
     label: "Refunded",
@@ -229,7 +229,7 @@ export default function CustomerPayments({
         </div>
         <Link
           href="/shipments"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--teal)] hover:bg-[#15656e] text-white text-sm font-bold transition-colors no-underline"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-on-accent)] text-sm font-bold transition-colors no-underline"
         >
           <Plus size={16} />
           New Shipment
@@ -238,7 +238,7 @@ export default function CustomerPayments({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-[#E8F4F8] to-[#D4E9F0] rounded-2xl p-6 shadow-sm border border-[#B8D4E3]">
+          <div className="bg-gradient-to-br from-[var(--accent-soft)] to-[var(--accent-soft)] rounded-2xl p-6 shadow-sm border border-[var(--accent-soft)]">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
@@ -261,7 +261,7 @@ export default function CustomerPayments({
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-4 border border-[var(--border)] shadow-sm">
               <div className="flex items-center gap-1.5">
-                <Clock size={13} className="text-[#8B7355]" />
+                <Clock size={13} className="text-[var(--warning)]" />
                 <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                   COD Due
                 </p>
@@ -292,7 +292,7 @@ export default function CustomerPayments({
                 {methodBreakdown.map(({ method, label, count, amount }) => (
                   <div
                     key={method}
-                    className="bg-[#F3EBF9] rounded-xl p-4 border border-[#E0D0F0]"
+                    className="bg-[var(--accent-soft)] rounded-xl p-4 border border-[var(--border-strong)]"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-bold text-[var(--text)]">
@@ -368,7 +368,7 @@ export default function CustomerPayments({
               </div>
             ) : payments.length === 0 ? (
               <div className="p-12 text-center">
-                <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F3EBF9]">
+                <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
                   <FileText size={30} className="text-[var(--accent)]" />
                 </div>
                 <h3 className="text-lg font-extrabold text-[var(--text)]">
@@ -448,7 +448,7 @@ export default function CustomerPayments({
                                     )}
                                   </div>
                                   {payment.reference && payment.trackingId && (
-                                    <p className="text-xs text-[#3E80E5] font-medium">
+                                    <p className="text-xs text-[var(--info)] font-medium">
                                       {payment.reference}
                                     </p>
                                   )}
@@ -530,7 +530,7 @@ export default function CustomerPayments({
                           }
                           className={`min-w-[40px] h-10 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                             page === safePage
-                              ? "bg-[var(--teal)] text-white"
+                              ? "bg-[var(--accent)] text-[var(--text-on-accent)]"
                               : page === "..."
                               ? "text-[var(--text-muted)] cursor-default"
                               : "border border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--surface-soft)]"
@@ -558,9 +558,9 @@ export default function CustomerPayments({
             )}
           </div>
 
-          <div className="bg-gradient-to-r from-[#F5E6D8] to-[#EED9C4] rounded-2xl p-6 shadow-sm border border-[#E5D4B8]">
+          <div className="bg-gradient-to-r from-[var(--border)] to-[var(--gold-tint)] rounded-2xl p-6 shadow-sm border border-[var(--border-strong)]">
             <div className="flex items-start gap-4">
-              <div className="w-20 h-20 bg-[#2C3E50] rounded-lg shrink-0 flex items-center justify-center">
+              <div className="w-20 h-20 bg-[var(--text)] rounded-lg shrink-0 flex items-center justify-center">
                 <svg
                   className="w-10 h-10 text-white"
                   fill="none"
@@ -585,7 +585,7 @@ export default function CustomerPayments({
                 </p>
                 <Link
                   href="/inquiries"
-                  className="text-sm font-bold text-[#3E80E5] hover:underline no-underline"
+                  className="text-sm font-bold text-[var(--info)] hover:underline no-underline"
                 >
                   Contact Support {"->"}
                 </Link>
