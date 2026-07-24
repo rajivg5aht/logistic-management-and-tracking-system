@@ -82,7 +82,7 @@ describe("shared and public UI", () => {
   test("links each core logistics solution", () => {
     render(<CoreSolutions />);
     expect(screen.getByRole("link", { name: /Explore Booking/i })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: /Live Dashboard/i })).toHaveAttribute("href", "/tracking");
+    expect(screen.getByRole("link", { name: /Live Dashboard/i })).toHaveAttribute("href", "/login");
   });
 
   test("renders legal sections and update information", () => {

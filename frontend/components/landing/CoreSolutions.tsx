@@ -15,7 +15,7 @@ const solutions = [
     title: "Track in Real Time",
     desc: "High-precision GPS tracking for every parcel. Get instant updates on route changes and accurate estimated arrival times.",
     action: "Live Dashboard",
-    href: "/tracking",
+    href: "/login",
   },
   {
     icon: <Wallet size={22} />,

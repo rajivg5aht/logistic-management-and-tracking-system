@@ -13,9 +13,9 @@ const footerLinks = {
   ],
   Services: [
     { label: "Book a Shipment", href: "/login" },
-    { label: "Real-time Tracking", href: "/tracking" },
+    { label: "Real-time Tracking", href: "/login" },
     { label: "Cash on Delivery", href: "/register" },
-    { label: "Business API", href: "#" },
+    { label: "AI Support", href: "#" },
   ],
 };
 
