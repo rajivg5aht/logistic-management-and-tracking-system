@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import CoreSolutions from "@/components/landing/CoreSolutions";
 import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
+import Industries from "@/components/landing/Industries";
 import Navbar from "@/components/landing/Navbar";
 import Stats from "@/components/landing/Stats";
 import LegalContent from "@/components/legal/LegalContent";
@@ -83,6 +84,14 @@ describe("shared and public UI", () => {
     render(<CoreSolutions />);
     expect(screen.getByRole("link", { name: /Explore Booking/i })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: /Live Dashboard/i })).toHaveAttribute("href", "/login");
+  });
+
+  test("shows industries served with six cargo categories", () => {
+    render(<Industries />);
+    expect(screen.getByRole("heading", { name: "Industries We Keep Moving" })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(6);
+    expect(screen.getByRole("heading", { name: "Retail & eCommerce" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Electronic components on a circuit board" })).toBeInTheDocument();
   });
 
   test("renders legal sections and update information", () => {
