@@ -91,7 +91,7 @@ describe("shared and public UI", () => {
     expect(screen.getByRole("heading", { name: "Industries We Keep Moving" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(6);
     expect(screen.getByRole("heading", { name: "Retail & eCommerce" })).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Electronic components on a circuit board" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Warehouse worker monitoring technology systems" })).toBeInTheDocument();
   });
 
   test("renders legal sections and update information", () => {

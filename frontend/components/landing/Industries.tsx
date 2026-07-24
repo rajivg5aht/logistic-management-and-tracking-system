@@ -6,43 +6,43 @@ const industries = [
   {
     title: "Manufacturing & Industry",
     description: "Reliable movement of parts, equipment, and production materials across Nepal.",
-    image: "/image.png",
-    alt: "Cargo transport moving across Nepal",
+    image: "/industrial.png",
+    alt: "Industrial cargo transport moving across Nepal",
     icon: Factory,
   },
   {
     title: "Retail & eCommerce",
     description: "Flexible last-mile fulfilment that keeps stores and online orders moving.",
-    image: "/story.png",
-    alt: "Packed parcels ready for delivery",
+    image: "/retail.png",
+    alt: "Retail distribution team preparing customer orders",
     icon: PackageCheck,
   },
   {
     title: "Technology",
     description: "Careful delivery for devices, components, and high-value equipment.",
-    image: "/tech.png",
-    alt: "Electronic components on a circuit board",
+    image: "/technology.png",
+    alt: "Warehouse worker monitoring technology systems",
     icon: Cpu,
   },
   {
     title: "Construction & Projects",
     description: "Coordinated transport for materials and time-sensitive project supplies.",
-    image: "/himal.jpg",
-    alt: "Nepal's mountain terrain along a logistics route",
+    image: "/construction.png",
+    alt: "Construction workers preparing a project site",
     icon: HardHat,
   },
   {
     title: "Healthcare",
     description: "Dependable handling for medical supplies and essential healthcare deliveries.",
-    image: "/hi.jpg",
-    alt: "Professional logistics service for essential deliveries",
+    image: "/medicine.png",
+    alt: "Medical supplies prepared for healthcare delivery",
     icon: Pill,
   },
   {
     title: "General Cargo",
     description: "Practical freight support for commercial goods of every size and shape.",
-    image: "/cargo_ship_neon.png",
-    alt: "Cargo vessel representing freight transport",
+    image: "/general%20logistic.png",
+    alt: "Container ship transporting general cargo",
     icon: Boxes,
   },
 ];
@@ -71,8 +71,7 @@ export default function Industries() {
               <Card
                 key={industry.title}
                 padding="p-0"
-                glow
-                className="h-full overflow-hidden border-[var(--border-light)]"
+                className="h-full overflow-hidden border-0 shadow-[0_16px_40px_rgba(58,46,18,0.12)] hover:shadow-[0_22px_48px_rgba(58,46,18,0.16)]"
               >
                 <div className="relative h-40 overflow-hidden bg-[var(--surface-muted)] sm:h-44">
                   <Image
