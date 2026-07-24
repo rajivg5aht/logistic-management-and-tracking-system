@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
   { label: "Home", id: "hero", href: "/#hero" },
@@ -111,13 +111,6 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <button suppressHydrationWarning
-            type="button"
-            aria-label="Search"
-            className="hidden h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--text)] sm:flex"
-          >
-            <Search size={18} />
-          </button>
           <Link href="/login" className="btn-secondary btn-sm hidden sm:inline-flex">
             Login
           </Link>

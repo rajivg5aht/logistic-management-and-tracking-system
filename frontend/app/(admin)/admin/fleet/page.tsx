@@ -8,7 +8,13 @@ export const metadata = {
   description: "Manage vehicles, maintenance, and driver assignments.",
 };
 
-export default async function AdminFleetPage() {
+export default async function AdminFleetPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialSearch = (Array.isArray(params.search) ? params.search[0] : params.search)?.trim() ?? "";
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_admin")?.value;
   const token = cookieStore.get("token_admin")?.value;
@@ -24,5 +30,5 @@ export default async function AdminFleetPage() {
 
   if (user.role !== "admin") redirect("/dashboard");
 
-  return <AdminFleetManagement token={token} />;
+  return <AdminFleetManagement token={token} initialSearch={initialSearch} />;
 }

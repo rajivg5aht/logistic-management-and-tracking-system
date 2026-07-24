@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   LayoutGrid,
@@ -42,6 +42,13 @@ const ADMIN_BREADCRUMBS: Record<string, string> = {
   "/admin/inquiries": "Announcements / Inquiries",
 };
 
+const ADMIN_SEARCH_TARGETS = [
+  { label: "Shipments", description: "tracking ID, customer, or destination", href: "/admin/shipments" },
+  { label: "Users", description: "customer or account details", href: "/admin/users" },
+  { label: "Drivers", description: "driver name, ID, or vehicle", href: "/admin/drivers" },
+  { label: "Fleet", description: "registration, make, or branch", href: "/admin/fleet" },
+] as const;
+
 interface AdminLayoutClientProps {
   children: React.ReactNode;
   user: AuthUser;
@@ -60,6 +67,8 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [pendingIncidentCount, setPendingIncidentCount] = useState(0);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
   useEffect(() => {
     setProfileImageFailed(false);
@@ -110,6 +119,18 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
     } catch {
       router.push("/login");
     }
+  };
+
+  const runGlobalSearch = (href: string) => {
+    const query = globalSearch.trim();
+    if (!query) return;
+    router.push(`${href}?search=${encodeURIComponent(query)}`);
+    setIsGlobalSearchOpen(false);
+  };
+
+  const handleGlobalSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    runGlobalSearch("/admin/shipments");
   };
 
   const displayName = activeUser?.fullName?.trim() || "Admin User";
@@ -265,7 +286,8 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
         }}
       >
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)]/95 px-8 backdrop-blur lg:px-12 xl:px-16">
-          <div
+          <form
+            onSubmit={handleGlobalSearch}
             role="search"
             className="relative hidden min-w-0 flex-1 md:block md:max-w-[560px]"
           >
@@ -279,10 +301,37 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
               aria-label="Search shipments, customers, drivers, or vehicles"
               placeholder="Search shipments, customers, drivers, vehicles..."
               autoComplete="off"
+              value={globalSearch}
+              onChange={(event) => setGlobalSearch(event.target.value)}
+              onFocus={() => setIsGlobalSearchOpen(true)}
+              onKeyDown={(event) => { if (event.key === "Escape") setIsGlobalSearchOpen(false); }}
+              aria-expanded={isGlobalSearchOpen && Boolean(globalSearch.trim())}
+              aria-controls="admin-search-destinations"
               className="h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-12 pr-4 text-sm font-medium text-[var(--text)] shadow-sm outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:ring-2 focus:ring-[var(--accent-soft)]"
               suppressHydrationWarning
             />
-          </div>
+            {isGlobalSearchOpen && globalSearch.trim() && (
+              <div
+                id="admin-search-destinations"
+                className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-lg"
+              >
+                <p className="px-3 pb-2 pt-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                  Search &quot;{globalSearch.trim()}&quot; in
+                </p>
+                {ADMIN_SEARCH_TARGETS.map((target) => (
+                  <button
+                    key={target.href}
+                    type="button"
+                    onClick={() => runGlobalSearch(target.href)}
+                    className="flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-soft)]"
+                  >
+                    <span className="text-sm font-bold text-[var(--text)]">{target.label}</span>
+                    <span className="mt-0.5 text-xs text-[var(--text-muted)]">{target.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
 
           <div className="flex items-center gap-2">
             <Link

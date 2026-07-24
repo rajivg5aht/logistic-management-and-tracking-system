@@ -8,7 +8,13 @@ export const metadata = {
   description: "Add and manage company drivers and availability.",
 };
 
-export default async function AdminDriversPage() {
+export default async function AdminDriversPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialSearch = (Array.isArray(params.search) ? params.search[0] : params.search)?.trim() ?? "";
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_admin")?.value;
   const token = cookieStore.get("token_admin")?.value;
@@ -28,5 +34,5 @@ export default async function AdminDriversPage() {
     redirect("/dashboard");
   }
 
-  return <AdminDriverManagement token={token} />;
+  return <AdminDriverManagement token={token} initialSearch={initialSearch} />;
 }

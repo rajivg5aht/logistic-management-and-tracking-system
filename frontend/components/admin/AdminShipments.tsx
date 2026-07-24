@@ -59,6 +59,7 @@ const NAVY_BTN = "var(--accent)";
 
 interface AdminShipmentsProps {
   token: string;
+  initialSearch?: string;
 }
 
 const TABS: { label: string; status?: ShipmentStatus }[] = [
@@ -125,15 +126,15 @@ function locLine(city?: string, district?: string): string {
   return [city, district].filter(Boolean).join(", ") || "-";
 }
 
-export default function AdminShipments({ token }: AdminShipmentsProps) {
+export default function AdminShipments({ token, initialSearch = "" }: AdminShipmentsProps) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [meta, setMeta] = useState<ShipmentMeta | null>(null);
   const [stats, setStats] = useState<ShipmentStats | null>(null);
 
   const [activeTab, setActiveTab] = useState(0);
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -159,6 +160,12 @@ export default function AdminShipments({ token }: AdminShipmentsProps) {
     }, 400);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  useEffect(() => {
+    setSearchInput(initialSearch);
+    setSearchQuery(initialSearch);
+    setPage(1);
+  }, [initialSearch]);
 
   const fetchData = useCallback(
     async (silent = false) => {

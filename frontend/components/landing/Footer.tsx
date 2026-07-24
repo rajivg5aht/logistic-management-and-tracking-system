@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send } from "lucide-react";
 
 const footerLinks = {
   Company: [
@@ -35,7 +35,7 @@ export default function Footer() {
       <div className="pointer-events-none absolute top-0 left-1/2 h-px w-[70%] -translate-x-1/2 bg-gradient-to-r from-transparent via-[rgba(200,162,74,0.18)] to-transparent" />
 
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-10 pb-12 md:grid-cols-4 lg:grid-cols-[2.2fr_1fr_1fr_1.6fr] lg:gap-12">
+        <div className="grid grid-cols-2 gap-10 pb-12 md:grid-cols-4 lg:grid-cols-[1.7fr_0.9fr_1fr_1.4fr_1.55fr] lg:gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="text-xl font-bold tracking-tight">
               <span className="text-[var(--text-on-dark)]">Cargo</span>
@@ -75,6 +75,33 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+
+          <div className="col-span-2 md:col-span-1">
+            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--text-on-dark-muted)]">Contact Us</p>
+            <div className="space-y-4 text-sm leading-relaxed text-[var(--text-on-dark-muted)]">
+              <div className="flex gap-3">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                <address className="not-italic">
+                  CargoNep Logistics Center<br />
+                  Koteshwor-32, Kathmandu, Nepal
+                </address>
+              </div>
+              <a
+                href="tel:+97714000000"
+                className="flex items-center gap-3 transition-colors hover:text-[var(--accent)]"
+              >
+                <Phone size={16} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                +977-1-4XXXXXX
+              </a>
+              <a
+                href="mailto:support@cargonep.com.np"
+                className="flex items-center gap-3 break-all transition-colors hover:text-[var(--accent)]"
+              >
+                <Mail size={16} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+                support@cargonep.com.np
+              </a>
+            </div>
+          </div>
 
           <div className="col-span-2 md:col-span-1">
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--text-on-dark-muted)]">Stay Updated</p>

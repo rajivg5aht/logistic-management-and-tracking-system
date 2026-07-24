@@ -41,6 +41,7 @@ import { getInitials, getPageNumbers } from "@/lib/ui-helpers";
 interface AdminUserManagementProps {
   token: string;
   currentUser: AuthUser;
+  initialSearch?: string;
   onMutationFinished?: () => void;
 }
 
@@ -76,13 +77,13 @@ function formatRegDate(value?: string): string {
   });
 }
 
-export default function AdminUserManagement({ token, currentUser, onMutationFinished }: AdminUserManagementProps) {
+export default function AdminUserManagement({ token, currentUser, initialSearch = "", onMutationFinished }: AdminUserManagementProps) {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [meta, setMeta] = useState<AdminUserMeta | null>(null);
   const [stats, setStats] = useState<AdminUserStats | null>(null);
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeTab, setActiveTab] = useState<RoleTab>("all");
 
   const [loading, setLoading] = useState(true);
@@ -114,6 +115,12 @@ export default function AdminUserManagement({ token, currentUser, onMutationFini
     }, 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    setSearchInput(initialSearch);
+    setSearchQuery(initialSearch);
+    setPage(1);
+  }, [initialSearch]);
 
   const fetchUsers = useCallback(
     async (silent = false) => {
