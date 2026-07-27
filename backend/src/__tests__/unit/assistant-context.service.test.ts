@@ -13,6 +13,7 @@ describe("Unit: AssistantContextService", () => {
     const getMyShipments = jest.fn().mockResolvedValue([shipment]);
     const service = new AssistantContextService({
       shipments: { getMyShipments },
+      payments: { getMyPayments: jest.fn() },
     });
 
     const context = await service.build(
@@ -31,6 +32,7 @@ describe("Unit: AssistantContextService", () => {
     const getMyShipments = jest.fn();
     const service = new AssistantContextService({
       shipments: { getMyShipments },
+      payments: { getMyPayments: jest.fn() },
     });
 
     await service.build(
@@ -39,5 +41,31 @@ describe("Unit: AssistantContextService", () => {
     );
 
     expect(getMyShipments).not.toHaveBeenCalled();
+  });
+
+  test("returns a local payment summary for the signed-in customer", async () => {
+    const getMyPayments = jest.fn().mockResolvedValue([
+      { status: "pending", amount: 1250 },
+      { status: "paid", amount: 900 },
+    ]);
+    const service = new AssistantContextService({
+      shipments: { getMyShipments: jest.fn() },
+      payments: { getMyPayments },
+    });
+
+    const context = await service.build(
+      { id: "customer-1", role: "customer" },
+      "Show my payment summary",
+    );
+
+    expect(getMyPayments).toHaveBeenCalledWith("customer-1");
+    expect(context.response).toContain("payment summary");
+    expect(context.cards).toEqual([
+      expect.objectContaining({
+        title: "Payment summary",
+        description: "1 pending payment ? Rs 1,250",
+        href: "/payments",
+      }),
+    ]);
   });
 });

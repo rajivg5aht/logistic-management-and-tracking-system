@@ -1,3 +1,4 @@
+import { PaymentService } from "./payment.service";
 import { ShipmentService, type SafeShipment } from "./shipment.service";
 import type {
   AssistantAction,
@@ -15,6 +16,7 @@ export type AssistantContext = {
 
 type CustomerContextDependencies = {
   shipments: Pick<ShipmentService, "getMyShipments">;
+  payments: Pick<PaymentService, "getMyPayments">;
 };
 
 const CUSTOMER_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
@@ -58,9 +60,11 @@ const ADMIN_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
 
 export class AssistantContextService {
   private readonly shipments: CustomerContextDependencies["shipments"];
+  private readonly payments: CustomerContextDependencies["payments"];
 
   constructor(dependencies: Partial<CustomerContextDependencies> = {}) {
     this.shipments = dependencies.shipments ?? new ShipmentService();
+    this.payments = dependencies.payments ?? new PaymentService();
   }
 
   private shipmentCard(shipment: SafeShipment): AssistantCard {
@@ -115,6 +119,31 @@ export class AssistantContextService {
         response: shipments.length
           ? "Here are your most recent shipments."
           : "You do not have any shipments yet. You can book one from the Shipments page.",
+      };
+    }
+
+    if (/\b(show|list|view)\s+(my\s+)?(payment|payments|cod|invoice|invoices)\b|\bmy\s+(payment|payments|cod)\s+summary\b/i.test(message)) {
+      const payments = await this.payments.getMyPayments(user.id);
+      const pending = payments.filter((payment) => payment.status === "pending");
+      const totalPending = pending.reduce(
+        (total, payment) => total + payment.amount,
+        0,
+      );
+      return {
+        ...context,
+        cards: [
+          {
+            title: "Payment summary",
+            description: pending.length
+              ? `${pending.length} pending payment${pending.length === 1 ? "" : "s"} ? Rs ${totalPending.toLocaleString("en-NP")}`
+              : "No pending payments",
+            tone: pending.length ? "warning" : "success",
+            href: "/payments",
+          },
+        ],
+        response: pending.length
+          ? "Your current payment summary is shown below."
+          : "You do not have any pending payments.",
       };
     }
 
