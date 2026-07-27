@@ -66,7 +66,20 @@ export class AssistantService {
     messages: AssistantMessageDTO[],
     user: AssistantUser,
   ): Promise<AssistantChatResult> {
-    const context = await this.contextService.build(user);
+    const context = await this.contextService.build(
+      user,
+      messages[messages.length - 1]?.content ?? "",
+    );
+
+    if (context.response) {
+      return {
+        message: context.response,
+        model: "CargoNep data",
+        cards: context.cards,
+        actions: context.actions,
+        suggestions: context.suggestions,
+      };
+    }
 
     if (!this.config.apiKey) {
       throw new HttpException(
