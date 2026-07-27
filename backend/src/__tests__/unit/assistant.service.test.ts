@@ -29,8 +29,8 @@ describe("Unit: AssistantService", () => {
       message: "Open Tracking and enter your tracking ID.",
       model: "mistral-small-latest",
       cards: [],
-      actions: [],
-      suggestions: [],
+      actions: expect.arrayContaining([{ label: "Track shipment", href: "/tracking" }]),
+      suggestions: expect.arrayContaining([{ label: "My shipments", prompt: "Show my recent shipments" }]),
     });
     expect(request).toHaveBeenCalledTimes(1);
 

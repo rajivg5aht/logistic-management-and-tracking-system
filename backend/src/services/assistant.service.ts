@@ -1,5 +1,6 @@
 import type { AssistantMessageDTO } from "../dtos/assistant.dto";
 import { HttpException } from "../exceptions/http-exception";
+import { AssistantContextService } from "./assistant-context.service";
 import {
   MISTRAL_API_KEY,
   MISTRAL_API_URL,
@@ -42,6 +43,7 @@ export class AssistantService {
       model: MISTRAL_MODEL,
     },
     private readonly request: typeof fetch = fetch,
+    private readonly contextService = new AssistantContextService(),
   ) {}
 
   private extractMessage(payload: MistralChatResponse): string {
@@ -64,6 +66,8 @@ export class AssistantService {
     messages: AssistantMessageDTO[],
     user: AssistantUser,
   ): Promise<AssistantChatResult> {
+    const context = await this.contextService.build(user);
+
     if (!this.config.apiKey) {
       throw new HttpException(
         503,
@@ -136,9 +140,9 @@ export class AssistantService {
     return {
       message,
       model: this.config.model,
-      cards: [],
-      actions: [],
-      suggestions: [],
+      cards: context.cards,
+      actions: context.actions,
+      suggestions: context.suggestions,
     };
   }
 }
