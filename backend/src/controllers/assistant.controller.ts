@@ -19,7 +19,7 @@ export class AssistantController {
 
       const result = await assistantService.chat(
         parsed.data.messages,
-        req.user.role,
+        { id: req.user.id, role: req.user.role },
       );
       return ApiResponseHelper.success(
         res,

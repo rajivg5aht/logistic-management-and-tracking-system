@@ -22,12 +22,15 @@ describe("Unit: AssistantService", () => {
 
     const result = await service.chat(
       [{ role: "user", content: "How do I track my parcel?" }],
-      "customer",
+      { id: "customer-1", role: "customer" },
     );
 
     expect(result).toEqual({
       message: "Open Tracking and enter your tracking ID.",
       model: "mistral-small-latest",
+      cards: [],
+      actions: [],
+      suggestions: [],
     });
     expect(request).toHaveBeenCalledTimes(1);
 
@@ -52,7 +55,10 @@ describe("Unit: AssistantService", () => {
     const service = new AssistantService({ ...config, apiKey: "" }, request);
 
     await expect(
-      service.chat([{ role: "user", content: "Hello" }], "customer"),
+      service.chat(
+        [{ role: "user", content: "Hello" }],
+        { id: "customer-1", role: "customer" },
+      ),
     ).rejects.toMatchObject({ status: 503 });
     expect(request).not.toHaveBeenCalled();
   });
@@ -64,7 +70,10 @@ describe("Unit: AssistantService", () => {
     const service = new AssistantService(config, request);
 
     await expect(
-      service.chat([{ role: "user", content: "Hello" }], "customer"),
+      service.chat(
+        [{ role: "user", content: "Hello" }],
+        { id: "customer-1", role: "customer" },
+      ),
     ).rejects.toMatchObject({ status: 429 });
   });
 });

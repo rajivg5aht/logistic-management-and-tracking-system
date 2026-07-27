@@ -5,6 +5,7 @@ import {
   MISTRAL_API_URL,
   MISTRAL_MODEL,
 } from "../configs/constant";
+import type { AssistantChatResult, AssistantUser } from "../types/assistant.type";
 
 type AssistantServiceConfig = {
   apiKey: string;
@@ -61,8 +62,8 @@ export class AssistantService {
 
   async chat(
     messages: AssistantMessageDTO[],
-    userRole: string,
-  ): Promise<{ message: string; model: string }> {
+    user: AssistantUser,
+  ): Promise<AssistantChatResult> {
     if (!this.config.apiKey) {
       throw new HttpException(
         503,
@@ -83,7 +84,7 @@ export class AssistantService {
           messages: [
             {
               role: "system",
-              content: `${SYSTEM_PROMPT}\nCurrent signed-in role: ${userRole}.`,
+              content: `${SYSTEM_PROMPT}\nCurrent signed-in role: ${user.role}.`,
             },
             ...messages,
           ],
@@ -132,6 +133,12 @@ export class AssistantService {
       throw new HttpException(502, "Mistral returned an empty response.");
     }
 
-    return { message, model: this.config.model };
+    return {
+      message,
+      model: this.config.model,
+      cards: [],
+      actions: [],
+      suggestions: [],
+    };
   }
 }
