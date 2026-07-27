@@ -18,6 +18,7 @@ type CustomerContextDependencies = {
   shipments: Pick<ShipmentService, "getMyShipments">;
   payments: Pick<PaymentService, "getMyPayments">;
   driverShipments: Pick<ShipmentService, "getMyAssignments">;
+  driverStats: Pick<ShipmentService, "getDriverStats">;
 };
 
 const CUSTOMER_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
@@ -63,11 +64,13 @@ export class AssistantContextService {
   private readonly shipments: CustomerContextDependencies["shipments"];
   private readonly payments: CustomerContextDependencies["payments"];
   private readonly driverShipments: CustomerContextDependencies["driverShipments"];
+  private readonly driverStats: CustomerContextDependencies["driverStats"];
 
   constructor(dependencies: Partial<CustomerContextDependencies> = {}) {
     this.shipments = dependencies.shipments ?? new ShipmentService();
     this.payments = dependencies.payments ?? new PaymentService();
     this.driverShipments = dependencies.driverShipments ?? new ShipmentService();
+    this.driverStats = dependencies.driverStats ?? new ShipmentService();
   }
 
   private shipmentCard(shipment: SafeShipment): AssistantCard {
@@ -178,6 +181,26 @@ export class AssistantContextService {
         response: assignments.length
           ? "Here are your active delivery assignments."
           : "You do not have an active delivery assignment right now.",
+      };
+    }
+
+    if (/\b(show\s+)?my\s+cod\s+(summary|to\s+collect)\b|\bshow\s+my\s+cod\b/i.test(message)) {
+      const stats = await this.driverStats.getDriverStats(user.id);
+      return {
+        ...context,
+        cards: [
+          {
+            title: "COD to collect",
+            description: stats.codToCollect
+              ? `Rs ${stats.codToCollect.toLocaleString("en-NP")} across active deliveries`
+              : "No COD is waiting to be collected",
+            tone: stats.codToCollect ? "warning" : "success",
+            href: "/driver/assignments",
+          },
+        ],
+        response: stats.codToCollect
+          ? "Your COD collection summary is shown below."
+          : "You do not have any COD waiting to be collected.",
       };
     }
 

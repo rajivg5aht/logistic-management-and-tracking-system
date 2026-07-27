@@ -15,6 +15,7 @@ describe("Unit: AssistantContextService", () => {
       shipments: { getMyShipments },
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments: jest.fn() },
+      driverStats: { getDriverStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -35,6 +36,7 @@ describe("Unit: AssistantContextService", () => {
       shipments: { getMyShipments },
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments: jest.fn() },
+      driverStats: { getDriverStats: jest.fn() },
     });
 
     await service.build(
@@ -54,6 +56,7 @@ describe("Unit: AssistantContextService", () => {
       shipments: { getMyShipments: jest.fn() },
       payments: { getMyPayments },
       driverShipments: { getMyAssignments: jest.fn() },
+      driverStats: { getDriverStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -78,6 +81,7 @@ describe("Unit: AssistantContextService", () => {
       shipments: { getMyShipments: jest.fn() },
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments },
+      driverStats: { getDriverStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -91,6 +95,29 @@ describe("Unit: AssistantContextService", () => {
       expect.objectContaining({
         title: "LN-123456",
         href: "/driver/assignments?search=LN-123456",
+      }),
+    ]);
+  });
+
+  test("returns the driver's local COD total", async () => {
+    const getDriverStats = jest.fn().mockResolvedValue({ codToCollect: 2750 });
+    const service = new AssistantContextService({
+      shipments: { getMyShipments: jest.fn() },
+      payments: { getMyPayments: jest.fn() },
+      driverShipments: { getMyAssignments: jest.fn() },
+      driverStats: { getDriverStats },
+    });
+
+    const context = await service.build(
+      { id: "driver-1", role: "driver" },
+      "Show my COD summary",
+    );
+
+    expect(getDriverStats).toHaveBeenCalledWith("driver-1");
+    expect(context.cards).toEqual([
+      expect.objectContaining({
+        title: "COD to collect",
+        description: "Rs 2,750 across active deliveries",
       }),
     ]);
   });
