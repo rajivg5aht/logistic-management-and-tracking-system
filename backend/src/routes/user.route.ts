@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { UserController } from "../controllers/user.controller";
-import { adminMiddleware, authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware } from "../middleware/auth.middleware";
 import { upload } from "../configs/multer.config";
 
 const userRouter = Router();
@@ -16,7 +16,6 @@ userRouter.get("/whoami", authMiddleware, userController.whoami);
 userRouter.put(
   "/change-password",
   authMiddleware,
-  adminMiddleware,
   userController.changePassword,
 );
 userRouter.put(

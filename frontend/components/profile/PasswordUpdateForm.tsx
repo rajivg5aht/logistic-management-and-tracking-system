@@ -26,6 +26,28 @@ export default function PasswordUpdateForm() {
 
       <div>
         <label
+          htmlFor="currentPassword"
+          className="form-label"
+        >
+          Current Password
+        </label>
+        <input
+          type="password"
+          id="currentPassword"
+          name="currentPassword"
+          className="form-input"
+          autoComplete="current-password"
+          required
+        />
+        {state.fieldErrors?.currentPassword && (
+          <p className="mt-1 text-sm text-[var(--danger)]">
+            {state.fieldErrors.currentPassword[0]}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label
           htmlFor="newPassword"
           className="form-label"
         >

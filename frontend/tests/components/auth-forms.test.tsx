@@ -109,6 +109,7 @@ describe("authentication and account forms", () => {
 
   test("renders the signed-in password update form", () => {
     render(<PasswordUpdateForm />);
+    expect(screen.getByLabelText("Current Password")).toBeRequired();
     expect(screen.getByLabelText("New Password")).toHaveAttribute("minlength", "6");
     expect(screen.getByLabelText("Confirm New Password")).toBeRequired();
     expect(screen.getByRole("button", { name: "Update Password" })).toBeEnabled();

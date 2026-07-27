@@ -190,6 +190,7 @@ describe("customer dashboard navigation and profile", () => {
     render(<AccountSettings user={currentUser} />);
     expect(screen.getByText("Personal Profile")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Security" }));
+    expect(screen.getByLabelText("Current Password")).toBeRequired();
     expect(screen.getByText("New Password")).toBeInTheDocument();
     expect(screen.getByText("Confirm New Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Update Password" })).toBeInTheDocument();

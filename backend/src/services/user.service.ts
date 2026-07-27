@@ -327,10 +327,6 @@ export class UserService {
       }
     }
 
-    if (updateData.password) {
-      updateData.password = await this.hashPassword(updateData.password);
-    }
-
     const updatedUser = await userRepository.update(userId, updateData);
 
     if (!updatedUser) {
