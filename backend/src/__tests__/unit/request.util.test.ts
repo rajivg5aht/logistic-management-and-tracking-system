@@ -67,6 +67,8 @@ describe("Unit: request utilities", () => {
         },
       ).sort,
     ).toEqual({ field: "createdAt", direction: "desc" });
+  });
+
   test.each([
     [{}, { page: 1, limit: 10 }],
     [{ page: "1" }, { page: 1, limit: 10 }],
@@ -91,6 +93,37 @@ describe("Unit: request utilities", () => {
   ])("normalizes pagination case %#", (query, expected) => {
     expect(parsePagination(query)).toEqual(expected);
   });
+
+  test.each([
+    [{}, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "createdAt" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "-createdAt" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ sort: "-updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ sort: "trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: "-trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: "unknown" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "-unknown" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "desc" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "DESC" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "  -updatedAt  " }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ search: " Kathmandu " }, { field: "createdAt", direction: "desc" }, "Kathmandu"],
+    [{ search: "" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ search: "  " }, { field: "createdAt", direction: "desc" }, ""],
+    [{ page: "3", limit: "20", sort: "updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ page: "0", limit: "500", sort: "trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: null }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: 123 }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: ["updatedAt"] }, { field: "updatedAt", direction: "desc" }, ""],
+  ])("allows only documented collection query case %#", (query, expectedSort, expectedSearch) => {
+    const result = parseCollectionQuery(query, {
+      allowedSortFields: ["createdAt", "updatedAt", "trackingId"] as const,
+      defaultSortField: "createdAt",
+      defaultDirection: "desc",
+    });
+
+    expect(result.sort).toEqual(expectedSort);
+    expect(result.search).toBe(expectedSearch);
   });
 
   test("builds exact, rounded, and empty pagination metadata", () => {
