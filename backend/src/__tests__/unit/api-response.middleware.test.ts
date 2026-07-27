@@ -23,6 +23,20 @@ const createApp = () => {
   return app;
 };
 
+const createCollectionApp = () => {
+  const app = express();
+  app.use(apiResponseMiddleware);
+  app.get(/\/api\/v1\/.*/, (_req, res) => {
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Collection retrieved successfully",
+      data: [{ id: "resource-1" }],
+    });
+  });
+  return app;
+};
+
 describe("Unit: API response middleware", () => {
   test("adds HATEOAS links, standard headers, and an ETag to a collection", async () => {
     const response = await request(createApp()).get("/api/v1/shipments?page=1&limit=10");
@@ -54,6 +68,38 @@ describe("Unit: API response middleware", () => {
 
     expect(cached.status).toBe(304);
     expect(cached.text).toBe("");
+  });
+
+  test.each([
+    ["/api/v1/admin/fleet-reports/incidents", "/api/v1/admin/fleet-reports/incidents"],
+    ["/api/v1/admin/fleet-reports/fuel-expenses", "/api/v1/admin/fleet-reports/fuel-expenses"],
+    ["/api/v1/driver/fleet/fuel-expenses", "/api/v1/driver/fleet/fuel-expenses"],
+    ["/api/v1/driver/fleet/incidents", "/api/v1/driver/fleet/incidents"],
+    ["/api/v1/admin/announcements", "/api/v1/admin/announcements"],
+    ["/api/v1/admin/shipments", "/api/v1/admin/shipments"],
+    ["/api/v1/admin/vehicles", "/api/v1/admin/vehicles"],
+    ["/api/v1/admin/drivers", "/api/v1/admin/drivers"],
+    ["/api/v1/admin/users", "/api/v1/admin/users"],
+    ["/api/v1/admin/payments", "/api/v1/admin/payments"],
+    ["/api/v1/admin/inquiries", "/api/v1/admin/inquiries"],
+    ["/api/v1/announcements", "/api/v1/announcements"],
+    ["/api/v1/shipments", "/api/v1/shipments"],
+    ["/api/v1/driver/shipments", "/api/v1/driver/shipments"],
+    ["/api/v1/inquiries", "/api/v1/inquiries"],
+    ["/api/v1/payments", "/api/v1/payments"],
+    ["/api/v1/admin/shipments/resource-1?status=in-transit", "/api/v1/admin/shipments"],
+    ["/api/v1/driver/shipments/resource-1/stage", "/api/v1/driver/shipments"],
+    ["/api/v1/driver/fleet/incidents/resource-1", "/api/v1/driver/fleet/incidents"],
+    ["/api/v1/admin/vehicles/resource-1", "/api/v1/admin/vehicles"],
+  ])("adds canonical resource links for supported collection route %#", async (url, collection) => {
+    const response = await request(createCollectionApp()).get(url);
+
+    expect(response.status).toBe(200);
+    expect(response.body.links.self).toBe(url);
+    expect(response.body.data[0]._links).toEqual({
+      self: `${collection}/resource-1`,
+      collection,
+    });
   });
 
   test("uses the standard API envelope for routing and unhandled failures", async () => {
