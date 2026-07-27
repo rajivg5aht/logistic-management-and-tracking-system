@@ -2,7 +2,7 @@
 
 import {
   type FormEvent,
-  type KeyboardEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -49,6 +49,44 @@ const WELCOME_SUGGESTIONS: AssistantSuggestion[] = [
   { label: "My payments", prompt: "Show my payment summary" },
   { label: "Delivery stages", prompt: "Explain the delivery stages" },
 ];
+
+function formatInlineText(value: string): ReactNode[] {
+  return value.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="font-bold text-[var(--text)]">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function AssistantResponse({ content }: { content: string }) {
+  const lines = content.replace(/\r/g, "").split("\n");
+
+  return (
+    <div className="space-y-2 text-sm leading-6 text-[var(--text)]">
+      {lines.map((line, index) => {
+        const text = line.trim();
+        if (!text) return <div key={`space-${index}`} className="h-1" />;
+        if (text.startsWith("# ")) {
+          return (
+            <p key={index} className="pt-1 text-sm font-extrabold text-[var(--text)]">
+              {formatInlineText(text.slice(2))}
+            </p>
+          );
+        }
+        if (text.startsWith("* ")) {
+          return (
+            <p key={index} className="flex gap-2 pl-0.5">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+              <span>{formatInlineText(text.slice(2))}</span>
+            </p>
+          );
+        }
+        return <p key={index}>{formatInlineText(text)}</p>;
+      })}
+    </div>
+  );
+}
 
 export function AiAssistant({
   token,
@@ -143,13 +181,6 @@ export function AiAssistant({
     void sendContent(input);
   };
 
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      event.currentTarget.form?.requestSubmit();
-    }
-  };
-
   return (
     <>
       {isOpen && (
@@ -209,9 +240,7 @@ export function AiAssistant({
                     <Sparkles size={16} />
                   </span>
                   <div className="max-w-[82%] rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 shadow-sm">
-                    <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
-                      {message.content}
-                    </p>
+                    <AssistantResponse content={message.content} />
                     {message.cards && message.cards.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {message.cards.map((card) => (
@@ -297,15 +326,14 @@ export function AiAssistant({
             className="border-t border-[var(--border)] bg-white p-3"
           >
             <div className="flex items-end gap-2">
-              <textarea
+              <input
+                type="text"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleInputKeyDown}
                 disabled={sending}
                 maxLength={2000}
-                rows={1}
                 placeholder="Ask about shipments, tracking, or payments…"
-                className="max-h-28 min-h-10 min-w-0 flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3.5 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] disabled:bg-[var(--surface-soft)]"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-white px-3.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] disabled:bg-[var(--surface-soft)]"
                 aria-label="Message the assistant"
                 suppressHydrationWarning
               />

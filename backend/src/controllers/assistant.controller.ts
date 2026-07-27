@@ -11,6 +11,13 @@ export class AssistantController {
   async chat(req: AuthRequest, res: Response) {
     try {
       if (!req.user) return ApiResponseHelper.error(res, "Unauthorized", 401);
+      if (req.user.role !== "customer") {
+        return ApiResponseHelper.error(
+          res,
+          "The AI assistant is available to customer accounts only.",
+          403,
+        );
+      }
 
       const parsed = AssistantChatDTO.safeParse(req.body);
       if (!parsed.success) {
