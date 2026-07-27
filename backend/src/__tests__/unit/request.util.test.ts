@@ -67,6 +67,30 @@ describe("Unit: request utilities", () => {
         },
       ).sort,
     ).toEqual({ field: "createdAt", direction: "desc" });
+  test.each([
+    [{}, { page: 1, limit: 10 }],
+    [{ page: "1" }, { page: 1, limit: 10 }],
+    [{ page: "2" }, { page: 2, limit: 10 }],
+    [{ page: "0003" }, { page: 3, limit: 10 }],
+    [{ page: "4.9" }, { page: 4, limit: 10 }],
+    [{ page: "0" }, { page: 1, limit: 10 }],
+    [{ page: "-1" }, { page: 1, limit: 10 }],
+    [{ page: "missing" }, { page: 1, limit: 10 }],
+    [{ limit: "1" }, { page: 1, limit: 1 }],
+    [{ limit: "25" }, { page: 1, limit: 25 }],
+    [{ limit: "100" }, { page: 1, limit: 100 }],
+    [{ limit: "101" }, { page: 1, limit: 100 }],
+    [{ limit: "5000" }, { page: 1, limit: 100 }],
+    [{ limit: "4.8" }, { page: 1, limit: 4 }],
+    [{ limit: "0" }, { page: 1, limit: 10 }],
+    [{ limit: "-8" }, { page: 1, limit: 10 }],
+    [{ limit: "invalid" }, { page: 1, limit: 10 }],
+    [{ page: "5", limit: "12" }, { page: 5, limit: 12 }],
+    [{ page: "Infinity", limit: "Infinity" }, { page: 1, limit: 10 }],
+    [{ page: undefined, limit: undefined }, { page: 1, limit: 10 }],
+  ])("normalizes pagination case %#", (query, expected) => {
+    expect(parsePagination(query)).toEqual(expected);
+  });
   });
 
   test("builds exact, rounded, and empty pagination metadata", () => {
