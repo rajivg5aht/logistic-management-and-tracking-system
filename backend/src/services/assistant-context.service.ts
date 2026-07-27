@@ -17,6 +17,7 @@ export type AssistantContext = {
 type CustomerContextDependencies = {
   shipments: Pick<ShipmentService, "getMyShipments">;
   payments: Pick<PaymentService, "getMyPayments">;
+  driverShipments: Pick<ShipmentService, "getMyAssignments">;
 };
 
 const CUSTOMER_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
@@ -61,10 +62,12 @@ const ADMIN_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
 export class AssistantContextService {
   private readonly shipments: CustomerContextDependencies["shipments"];
   private readonly payments: CustomerContextDependencies["payments"];
+  private readonly driverShipments: CustomerContextDependencies["driverShipments"];
 
   constructor(dependencies: Partial<CustomerContextDependencies> = {}) {
     this.shipments = dependencies.shipments ?? new ShipmentService();
     this.payments = dependencies.payments ?? new PaymentService();
+    this.driverShipments = dependencies.driverShipments ?? new ShipmentService();
   }
 
   private shipmentCard(shipment: SafeShipment): AssistantCard {
@@ -150,15 +153,47 @@ export class AssistantContextService {
     return context;
   }
 
+  private async buildDriverContext(
+    user: AssistantUser,
+    message: string,
+  ): Promise<AssistantContext> {
+    const context: AssistantContext = {
+      cards: [],
+      actions: DRIVER_CONTEXT.actions,
+      suggestions: DRIVER_CONTEXT.suggestions,
+    };
+
+    if (/\b(show|list|view)\s+(my\s+)?(active\s+)?(delivery|deliveries|assignment|assignments)\b|\btoday'?s?\s+(delivery|deliveries)\b/i.test(message)) {
+      const assignments = await this.driverShipments.getMyAssignments(
+        user.id,
+        "active",
+      );
+      return {
+        ...context,
+        cards: assignments.slice(0, 3).map((shipment) => ({
+          title: shipment.trackingId,
+          description: `${shipment.status.replace(/-/g, " ")} ? ${shipment.pickup.city} to ${shipment.delivery.city}`,
+          href: `/driver/assignments?search=${encodeURIComponent(shipment.trackingId)}`,
+        })),
+        response: assignments.length
+          ? "Here are your active delivery assignments."
+          : "You do not have an active delivery assignment right now.",
+      };
+    }
+
+    return context;
+  }
+
   async build(user: AssistantUser, message = ""): Promise<AssistantContext> {
     if (user.role === "customer") {
       return this.buildCustomerContext(user, message);
     }
+    if (user.role === "driver") {
+      return this.buildDriverContext(user, message);
+    }
 
     const context =
-      user.role === "driver"
-        ? DRIVER_CONTEXT
-        : user.role === "admin"
+      user.role === "admin"
           ? ADMIN_CONTEXT
           : CUSTOMER_CONTEXT;
 

@@ -14,6 +14,7 @@ describe("Unit: AssistantContextService", () => {
     const service = new AssistantContextService({
       shipments: { getMyShipments },
       payments: { getMyPayments: jest.fn() },
+      driverShipments: { getMyAssignments: jest.fn() },
     });
 
     const context = await service.build(
@@ -33,6 +34,7 @@ describe("Unit: AssistantContextService", () => {
     const service = new AssistantContextService({
       shipments: { getMyShipments },
       payments: { getMyPayments: jest.fn() },
+      driverShipments: { getMyAssignments: jest.fn() },
     });
 
     await service.build(
@@ -51,6 +53,7 @@ describe("Unit: AssistantContextService", () => {
     const service = new AssistantContextService({
       shipments: { getMyShipments: jest.fn() },
       payments: { getMyPayments },
+      driverShipments: { getMyAssignments: jest.fn() },
     });
 
     const context = await service.build(
@@ -65,6 +68,29 @@ describe("Unit: AssistantContextService", () => {
         title: "Payment summary",
         description: "1 pending payment ? Rs 1,250",
         href: "/payments",
+      }),
+    ]);
+  });
+
+  test("returns active assignments for the signed-in driver", async () => {
+    const getMyAssignments = jest.fn().mockResolvedValue([shipment]);
+    const service = new AssistantContextService({
+      shipments: { getMyShipments: jest.fn() },
+      payments: { getMyPayments: jest.fn() },
+      driverShipments: { getMyAssignments },
+    });
+
+    const context = await service.build(
+      { id: "driver-1", role: "driver" },
+      "Show my active deliveries",
+    );
+
+    expect(getMyAssignments).toHaveBeenCalledWith("driver-1", "active");
+    expect(context.response).toContain("active delivery assignments");
+    expect(context.cards).toEqual([
+      expect.objectContaining({
+        title: "LN-123456",
+        href: "/driver/assignments?search=LN-123456",
       }),
     ]);
   });
