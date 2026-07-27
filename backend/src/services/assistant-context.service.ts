@@ -19,6 +19,7 @@ type CustomerContextDependencies = {
   payments: Pick<PaymentService, "getMyPayments">;
   driverShipments: Pick<ShipmentService, "getMyAssignments">;
   driverStats: Pick<ShipmentService, "getDriverStats">;
+  adminShipments: Pick<ShipmentService, "getStats">;
 };
 
 const CUSTOMER_CONTEXT: Omit<AssistantContext, "cards" | "response"> = {
@@ -65,12 +66,14 @@ export class AssistantContextService {
   private readonly payments: CustomerContextDependencies["payments"];
   private readonly driverShipments: CustomerContextDependencies["driverShipments"];
   private readonly driverStats: CustomerContextDependencies["driverStats"];
+  private readonly adminShipments: CustomerContextDependencies["adminShipments"];
 
   constructor(dependencies: Partial<CustomerContextDependencies> = {}) {
     this.shipments = dependencies.shipments ?? new ShipmentService();
     this.payments = dependencies.payments ?? new PaymentService();
     this.driverShipments = dependencies.driverShipments ?? new ShipmentService();
     this.driverStats = dependencies.driverStats ?? new ShipmentService();
+    this.adminShipments = dependencies.adminShipments ?? new ShipmentService();
   }
 
   private shipmentCard(shipment: SafeShipment): AssistantCard {
@@ -207,6 +210,31 @@ export class AssistantContextService {
     return context;
   }
 
+  private async buildAdminContext(message: string): Promise<AssistantContext> {
+    const context: AssistantContext = {
+      cards: [],
+      actions: ADMIN_CONTEXT.actions,
+      suggestions: ADMIN_CONTEXT.suggestions,
+    };
+
+    if (/\b(operations|shipment)\s+summary\b|\bshow\s+(the\s+)?(operations|shipments)\b/i.test(message)) {
+      const stats = await this.adminShipments.getStats();
+      return {
+        ...context,
+        cards: [
+          {
+            title: "Shipments",
+            description: `${stats.total} total ? ${stats.pending} pending ? ${stats.inTransit} in transit`,
+            href: "/admin/shipments",
+          },
+        ],
+        response: "Here is the current shipment operations summary.",
+      };
+    }
+
+    return context;
+  }
+
   async build(user: AssistantUser, message = ""): Promise<AssistantContext> {
     if (user.role === "customer") {
       return this.buildCustomerContext(user, message);
@@ -214,16 +242,14 @@ export class AssistantContextService {
     if (user.role === "driver") {
       return this.buildDriverContext(user, message);
     }
-
-    const context =
-      user.role === "admin"
-          ? ADMIN_CONTEXT
-          : CUSTOMER_CONTEXT;
+    if (user.role === "admin") {
+      return this.buildAdminContext(message);
+    }
 
     return {
       cards: [],
-      actions: context.actions,
-      suggestions: context.suggestions,
+      actions: CUSTOMER_CONTEXT.actions,
+      suggestions: CUSTOMER_CONTEXT.suggestions,
     };
   }
 }

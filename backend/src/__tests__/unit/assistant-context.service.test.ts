@@ -16,6 +16,7 @@ describe("Unit: AssistantContextService", () => {
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments: jest.fn() },
       driverStats: { getDriverStats: jest.fn() },
+      adminShipments: { getStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -37,6 +38,7 @@ describe("Unit: AssistantContextService", () => {
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments: jest.fn() },
       driverStats: { getDriverStats: jest.fn() },
+      adminShipments: { getStats: jest.fn() },
     });
 
     await service.build(
@@ -57,6 +59,7 @@ describe("Unit: AssistantContextService", () => {
       payments: { getMyPayments },
       driverShipments: { getMyAssignments: jest.fn() },
       driverStats: { getDriverStats: jest.fn() },
+      adminShipments: { getStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -82,6 +85,7 @@ describe("Unit: AssistantContextService", () => {
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments },
       driverStats: { getDriverStats: jest.fn() },
+      adminShipments: { getStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -106,6 +110,7 @@ describe("Unit: AssistantContextService", () => {
       payments: { getMyPayments: jest.fn() },
       driverShipments: { getMyAssignments: jest.fn() },
       driverStats: { getDriverStats },
+      adminShipments: { getStats: jest.fn() },
     });
 
     const context = await service.build(
@@ -118,6 +123,35 @@ describe("Unit: AssistantContextService", () => {
       expect.objectContaining({
         title: "COD to collect",
         description: "Rs 2,750 across active deliveries",
+      }),
+    ]);
+  });
+
+  test("returns the current shipment summary for an administrator", async () => {
+    const getStats = jest.fn().mockResolvedValue({
+      total: 24,
+      pending: 5,
+      inTransit: 8,
+    });
+    const service = new AssistantContextService({
+      shipments: { getMyShipments: jest.fn() },
+      payments: { getMyPayments: jest.fn() },
+      driverShipments: { getMyAssignments: jest.fn() },
+      driverStats: { getDriverStats: jest.fn() },
+      adminShipments: { getStats },
+    });
+
+    const context = await service.build(
+      { id: "admin-1", role: "admin" },
+      "Show the operations summary",
+    );
+
+    expect(getStats).toHaveBeenCalledTimes(1);
+    expect(context.cards).toEqual([
+      expect.objectContaining({
+        title: "Shipments",
+        description: "24 total ? 5 pending ? 8 in transit",
+        href: "/admin/shipments",
       }),
     ]);
   });
