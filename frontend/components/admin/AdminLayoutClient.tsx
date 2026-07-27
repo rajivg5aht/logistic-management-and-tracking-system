@@ -22,6 +22,7 @@ import {
   Megaphone,
   UserRoundCog,
 } from "lucide-react";
+import { AiAssistant } from "@/components/assistant/AiAssistant";
 import { useAuth } from "@/context/AuthContext";
 import { signOut } from "@/lib/auth/session";
 import { AuthUser } from "@/lib/api/auth.api";
@@ -335,6 +336,8 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
           </form>
 
           <div className="flex items-center gap-2">
+            <AiAssistant token={token} placement="navbar" />
+
             <Link
               href="/admin/fleet/reports"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-soft)] transition-colors hover:bg-[var(--surface-soft)] cursor-pointer"

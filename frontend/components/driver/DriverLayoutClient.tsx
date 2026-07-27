@@ -23,6 +23,7 @@ import {
   Megaphone,
   CircleHelp,
 } from "lucide-react";
+import { AiAssistant } from "@/components/assistant/AiAssistant";
 import { useAuth } from "@/context/AuthContext";
 import { signOut } from "@/lib/auth/session";
 import { AuthUser } from "@/lib/api/auth.api";
@@ -399,6 +400,8 @@ export default function DriverLayoutClient({
           </form>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <AiAssistant token={token} placement="navbar" />
+
             {toggleError && (
               <span className="hidden max-w-[220px] truncate text-xs font-medium text-[var(--danger)] sm:inline">
                 {toggleError}
