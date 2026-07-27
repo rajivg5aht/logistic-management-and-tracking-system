@@ -288,19 +288,15 @@ export default function AdminInquiries({ token }: { token: string }) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5">
         <section className="rounded-xl border border-[var(--info-border)] bg-[var(--info-soft)] p-6 shadow-sm">
           <h3 className="text-base font-extrabold text-[var(--text)]">Resolution Efficiency</h3>
           <p className="mt-2 text-xs font-medium leading-relaxed text-[var(--text-soft)]">Resolved inquiries as a share of all received customer messages.</p>
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-[var(--success)]" style={{ width: Math.min(100, efficiency) + "%" }} /></div>
           <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[var(--accent-strong)]"><ArrowUpRight size={14} /> {efficiency}% of inquiries resolved.</p>
         </section>
-        <section className="flex flex-col justify-between gap-5 rounded-xl bg-[var(--accent)] p-6 text-[var(--text-on-accent)] shadow-sm sm:flex-row sm:items-center">
-          <div><h3 className="text-lg font-extrabold">Need to scale?</h3><p className="mt-1 max-w-sm text-xs font-medium leading-relaxed text-[var(--info)]">Review automated responses for common general inquiries.</p></div>
-          <button suppressHydrationWarning type="button" className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-xs font-extrabold text-[var(--accent-strong)] transition-colors hover:bg-[var(--info-soft)]">Edit Templates</button>
-        </section>
-      </div>
 
+      </div>
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Inquiry details">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">

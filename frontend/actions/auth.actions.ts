@@ -9,7 +9,6 @@ import {
   requestPasswordReset,
   resetPassword,
   updateProfile,
-  updatePassword,
   type AuthUser,
   type UpdateProfilePayload,
 } from "@/lib/api/auth.api";
@@ -293,7 +292,8 @@ export async function updatePasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const parsed = passwordUpdateSchema.safeParse({
+  const parsed = passwordChangeSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -315,7 +315,10 @@ export async function updatePasswordAction(
       };
     }
 
-    await updatePassword(token, { password: parsed.data.newPassword });
+    await changePassword(token, {
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
 
     return {
       success: true,
@@ -494,7 +497,8 @@ export async function updateDriverPasswordAction(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const parsed = passwordUpdateSchema.safeParse({
+  const parsed = passwordChangeSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -517,7 +521,10 @@ export async function updateDriverPasswordAction(
       };
     }
 
-    await updatePassword(token, { password: parsed.data.newPassword });
+    await changePassword(token, {
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
 
     return {
       success: true,

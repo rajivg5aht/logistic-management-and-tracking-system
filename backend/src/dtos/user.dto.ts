@@ -24,12 +24,8 @@ export const UpdateUserDTO = z.object({
     .string()
     .min(10, "Phone number must be at least 10 digits long")
     .optional(),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 character long")
-    .optional(),
   profileImage: z.string().optional(),
-});
+}).strict();
 
 export type UpdateUserDTO = z.infer<typeof UpdateUserDTO>;
 

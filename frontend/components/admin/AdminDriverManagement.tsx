@@ -85,13 +85,13 @@ const EMPTY_FORM = {
   status: "active" as "active" | "inactive",
 };
 
-export default function AdminDriverManagement({ token }: { token: string }) {
+export default function AdminDriverManagement({ token, initialSearch = "" }: { token: string; initialSearch?: string }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [meta, setMeta] = useState<DriverMeta | null>(null);
   const [stats, setStats] = useState<AdminDriverStats | null>(null);
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [filter, setFilter] = useState<AvailabilityStatus | "all">("all");
   const [vehicleFilter, setVehicleFilter] = useState<
     "any" | "assigned" | "unassigned"
@@ -121,6 +121,12 @@ export default function AdminDriverManagement({ token }: { token: string }) {
     }, 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    setSearchInput(initialSearch);
+    setSearchQuery(initialSearch);
+    setPage(1);
+  }, [initialSearch]);
 
   const fetchDrivers = useCallback(
     async (silent = false) => {

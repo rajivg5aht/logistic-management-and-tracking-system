@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import CoreSolutions from "@/components/landing/CoreSolutions";
+import ClientReviews from "@/components/landing/ClientReviews";
 import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
+import Industries from "@/components/landing/Industries";
 import Navbar from "@/components/landing/Navbar";
 import Stats from "@/components/landing/Stats";
 import LegalContent from "@/components/legal/LegalContent";
@@ -82,8 +84,25 @@ describe("shared and public UI", () => {
   test("links each core logistics solution", () => {
     render(<CoreSolutions />);
     expect(screen.getByRole("link", { name: /Explore Booking/i })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: /Live Dashboard/i })).toHaveAttribute("href", "/tracking");
+    expect(screen.getByRole("link", { name: /Live Dashboard/i })).toHaveAttribute("href", "/login");
   });
+
+  test("shows industries served with six cargo categories", () => {
+    render(<Industries />);
+    expect(screen.getByRole("heading", { name: "Industries We Keep Moving" })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(6);
+    expect(screen.getByRole("heading", { name: "Retail & eCommerce" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Warehouse worker monitoring technology systems" })).toBeInTheDocument();
+  });
+  test("renders and advances client reviews", async () => {
+    const user = userEvent.setup();
+    render(<ClientReviews />);
+    expect(screen.getByRole("heading", { name: "What Our Clients Say" })).toBeInTheDocument();
+    expect(screen.getByText(/CargoNep gives our team the visibility/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Next review" }));
+    expect(screen.getByRole("button", { name: "Go to review 2" })).toHaveAttribute("aria-current", "true");
+  });
+
 
   test("renders legal sections and update information", () => {
     render(
@@ -150,6 +169,8 @@ describe("shared and public UI", () => {
     expect(screen.getByRole("link", { name: "Twitter" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy-policy");
     expect(screen.getByRole("button", { name: "Subscribe" })).toBeInTheDocument();
+    expect(screen.getByText("Contact Us")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "+977-1-4XXXXXX" })).toHaveAttribute("href", "tel:+97714000000");
   });
 
   test("renders a breadcrumb for a known customer page", () => {

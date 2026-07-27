@@ -31,8 +31,11 @@ export default function Hero() {
 
       {/* Dark left-to-right scrim: darkens the left for text, lets the sunset + peaks show on the right */}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(12,11,10,0.88)_0%,rgba(12,11,10,0.72)_38%,rgba(12,11,10,0.35)_62%,rgba(12,11,10,0.05)_100%)]" />
-      {/* Gentle top + bottom darkening for depth and to blend into the next section */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(12,11,10,0.35)_0%,transparent_28%,transparent_60%,rgba(12,11,10,0.55)_100%)]" />
+      {/* One continuous fade prevents a light seam where the hero meets the next section. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(12,11,10,0.35)_0%,transparent_28%,transparent_58%,rgba(248,245,239,0.08)_70%,rgba(248,245,239,0.42)_84%,var(--app-bg)_100%)]"
+      />
 
       {/* Content */}
       <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">

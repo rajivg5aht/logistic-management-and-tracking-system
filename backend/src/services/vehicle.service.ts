@@ -40,6 +40,11 @@ export type SafeVehicle = {
   createdAt: Date;
   updatedAt: Date;
 };
+export type VehicleSort = {
+  field: "createdAt" | "updatedAt" | "registrationNumber" | "odometerKm";
+  direction: "asc" | "desc";
+};
+
 
 const DATE_FIELDS = [
   "insuranceExpiry",
@@ -120,6 +125,7 @@ export class VehicleService {
     limit: number,
     search = "",
     status?: VehicleStatus,
+    sort: VehicleSort = { field: "createdAt", direction: "desc" },
   ): Promise<{ vehicles: SafeVehicle[]; total: number }> {
     const query: Record<string, unknown> = {};
     if (status) query.status = status;
@@ -134,7 +140,7 @@ export class VehicleService {
 
     const [vehicles, total] = await Promise.all([
       VehicleModel.find(query)
-        .sort({ createdAt: -1 })
+        .sort({ [sort.field]: sort.direction === "asc" ? 1 : -1 })
         .skip((page - 1) * limit)
         .limit(limit),
       VehicleModel.countDocuments(query),

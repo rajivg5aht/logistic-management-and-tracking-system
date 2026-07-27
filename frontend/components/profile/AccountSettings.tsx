@@ -285,6 +285,25 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
               )}
 
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="currentPassword" className="settings-label">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    id="currentPassword"
+                    name="currentPassword"
+                    className="form-input"
+                    autoComplete="current-password"
+                    required
+                  />
+                  {passwordState.fieldErrors?.currentPassword && (
+                    <p className="mt-1 text-sm text-[var(--danger)]">
+                      {passwordState.fieldErrors.currentPassword[0]}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="newPassword" className="settings-label">
                     New Password

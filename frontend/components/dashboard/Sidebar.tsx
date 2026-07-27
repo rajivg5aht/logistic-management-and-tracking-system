@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { LayoutDashboard, Mail, MapPinned, User, LogOut, X, Menu, Package, CreditCard, Megaphone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth/session";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -46,7 +47,7 @@ export function Sidebar() {
   }, [pathname]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/login");
   };
 

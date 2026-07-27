@@ -5,13 +5,17 @@ const DEFAULT_API_TIMEOUT_MS = 12_000;
 export const API_BASE_URL =
   typeof window !== "undefined"
     ? ""
+
     : SERVER_API_BASE_URL;
+
+export type ApiLinks = Record<string, string>;
 
 export type ApiResponse<T, TMeta = unknown> = {
   status: number;
   success: boolean;
   message: string;
   data: T;
+  links?: ApiLinks;
   meta?: TMeta;
 };
 

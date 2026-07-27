@@ -42,6 +42,9 @@ describe("Unit: request DTO validation", () => {
 
   test("validates profile and password recovery boundaries", () => {
     expect(UpdateUserDTO.safeParse({ email: "invalid" }).success).toBe(false);
+    expect(
+      UpdateUserDTO.safeParse({ password: "new-secret" }).success,
+    ).toBe(false);
     expect(ForgotPasswordDTO.safeParse({ email: "missing-at-sign" }).success).toBe(
       false,
     );

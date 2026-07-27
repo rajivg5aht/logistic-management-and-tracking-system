@@ -68,6 +68,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
             autoComplete="new-password"
             placeholder="Enter a new password"
             className="form-input"
+            suppressHydrationWarning
             required
           />
           <FieldError errors={state.fieldErrors?.newPassword} />
@@ -84,6 +85,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
             autoComplete="new-password"
             placeholder="Re-enter the new password"
             className="form-input"
+            suppressHydrationWarning
             required
           />
           <FieldError errors={state.fieldErrors?.confirmPassword} />
@@ -104,6 +106,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           type="submit"
           disabled={isPending}
           className="btn-primary mt-2 w-full"
+          suppressHydrationWarning
         >
           {isPending ? "Resetting..." : "Reset Password"}
         </button>

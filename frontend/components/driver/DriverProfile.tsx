@@ -17,6 +17,7 @@ import {
   type AuthFormState,
 } from "@/actions/auth.actions";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   formatDriverCode,
@@ -126,7 +127,7 @@ export default function DriverProfile({ user }: DriverProfileProps) {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut();
     } finally {
       setUser(null);
       router.push("/login");
@@ -355,6 +356,25 @@ export default function DriverProfile({ user }: DriverProfileProps) {
               )}
 
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="driverCurrentPassword" className="settings-label">
+                    Current Password
+                  </label>
+                  <input
+                    id="driverCurrentPassword"
+                    name="currentPassword"
+                    type="password"
+                    className="form-input"
+                    autoComplete="current-password"
+                    required
+                  />
+                  {passwordState.fieldErrors?.currentPassword && (
+                    <p className="mt-1 text-sm text-[var(--danger)]">
+                      {passwordState.fieldErrors.currentPassword[0]}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="driverNewPassword" className="settings-label">
                     New Password

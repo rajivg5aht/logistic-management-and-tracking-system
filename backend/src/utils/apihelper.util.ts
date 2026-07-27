@@ -7,12 +7,15 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
+export type ApiLinks = Record<string, string>;
+
 export interface ApiResponse<T> {
   status: number;
   success: boolean;
   message: string;
   data: T;
   meta?: PaginationMeta;
+  links?: ApiLinks;
 }
 
 export class ApiResponseHelper {

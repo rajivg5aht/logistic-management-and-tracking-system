@@ -15,7 +15,7 @@ const solutions = [
     title: "Track in Real Time",
     desc: "High-precision GPS tracking for every parcel. Get instant updates on route changes and accurate estimated arrival times.",
     action: "Live Dashboard",
-    href: "/tracking",
+    href: "/login",
   },
   {
     icon: <Wallet size={22} />,
@@ -31,7 +31,6 @@ export default function CoreSolutions() {
     <section id="solutions" className="section relative">
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-          <div className="section-tag"><span className="section-tag-dot" />Core Solutions</div>
           <h2 className="heading-lg">Our Core Solutions</h2>
           <p className="mt-4 body-text">
             Simplifying the complexities of transport and trade across Nepal with clean, technology-driven logistics.

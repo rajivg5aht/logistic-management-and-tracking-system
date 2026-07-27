@@ -5,6 +5,7 @@ import {
   handleControllerError,
   isObjectId,
   parsePagination,
+  parseCollectionQuery,
 } from "../../utils/request.util";
 
 const responseMock = () => {
@@ -36,6 +37,93 @@ describe("Unit: request utilities", () => {
       page: 1,
       limit: 10,
     });
+    expect(parsePagination({ limit: "999" })).toEqual({ page: 1, limit: 100 });
+  });
+
+  test("allows only endpoint-approved collection sorting", () => {
+    expect(
+      parseCollectionQuery(
+        { page: "2", limit: "30", search: "  Kathmandu  ", sort: "-updatedAt" },
+        {
+          allowedSortFields: ["createdAt", "updatedAt"] as const,
+          defaultSortField: "createdAt",
+          defaultDirection: "desc",
+        },
+      ),
+    ).toEqual({
+      page: 2,
+      limit: 30,
+      search: "Kathmandu",
+      sort: { field: "updatedAt", direction: "desc" },
+    });
+
+    expect(
+      parseCollectionQuery(
+        { sort: "customer" },
+        {
+          allowedSortFields: ["createdAt"] as const,
+          defaultSortField: "createdAt",
+          defaultDirection: "desc",
+        },
+      ).sort,
+    ).toEqual({ field: "createdAt", direction: "desc" });
+  });
+
+  test.each([
+    [{}, { page: 1, limit: 10 }],
+    [{ page: "1" }, { page: 1, limit: 10 }],
+    [{ page: "2" }, { page: 2, limit: 10 }],
+    [{ page: "0003" }, { page: 3, limit: 10 }],
+    [{ page: "4.9" }, { page: 4, limit: 10 }],
+    [{ page: "0" }, { page: 1, limit: 10 }],
+    [{ page: "-1" }, { page: 1, limit: 10 }],
+    [{ page: "missing" }, { page: 1, limit: 10 }],
+    [{ limit: "1" }, { page: 1, limit: 1 }],
+    [{ limit: "25" }, { page: 1, limit: 25 }],
+    [{ limit: "100" }, { page: 1, limit: 100 }],
+    [{ limit: "101" }, { page: 1, limit: 100 }],
+    [{ limit: "5000" }, { page: 1, limit: 100 }],
+    [{ limit: "4.8" }, { page: 1, limit: 4 }],
+    [{ limit: "0" }, { page: 1, limit: 10 }],
+    [{ limit: "-8" }, { page: 1, limit: 10 }],
+    [{ limit: "invalid" }, { page: 1, limit: 10 }],
+    [{ page: "5", limit: "12" }, { page: 5, limit: 12 }],
+    [{ page: "Infinity", limit: "Infinity" }, { page: 1, limit: 10 }],
+    [{ page: undefined, limit: undefined }, { page: 1, limit: 10 }],
+  ])("normalizes pagination case %#", (query, expected) => {
+    expect(parsePagination(query)).toEqual(expected);
+  });
+
+  test.each([
+    [{}, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "createdAt" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "-createdAt" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ sort: "-updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ sort: "trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: "-trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: "unknown" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "-unknown" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "desc" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "DESC" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: "  -updatedAt  " }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ search: " Kathmandu " }, { field: "createdAt", direction: "desc" }, "Kathmandu"],
+    [{ search: "" }, { field: "createdAt", direction: "desc" }, ""],
+    [{ search: "  " }, { field: "createdAt", direction: "desc" }, ""],
+    [{ page: "3", limit: "20", sort: "updatedAt" }, { field: "updatedAt", direction: "desc" }, ""],
+    [{ page: "0", limit: "500", sort: "trackingId" }, { field: "trackingId", direction: "desc" }, ""],
+    [{ sort: null }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: 123 }, { field: "createdAt", direction: "desc" }, ""],
+    [{ sort: ["updatedAt"] }, { field: "updatedAt", direction: "desc" }, ""],
+  ])("allows only documented collection query case %#", (query, expectedSort, expectedSearch) => {
+    const result = parseCollectionQuery(query, {
+      allowedSortFields: ["createdAt", "updatedAt", "trackingId"] as const,
+      defaultSortField: "createdAt",
+      defaultDirection: "desc",
+    });
+
+    expect(result.sort).toEqual(expectedSort);
+    expect(result.search).toBe(expectedSearch);
   });
 
   test("builds exact, rounded, and empty pagination metadata", () => {

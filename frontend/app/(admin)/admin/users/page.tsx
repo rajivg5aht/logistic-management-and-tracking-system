@@ -8,7 +8,13 @@ export const metadata = {
   description: "Manage system user accounts, roles, and statuses.",
 };
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialSearch = (Array.isArray(params.search) ? params.search[0] : params.search)?.trim() ?? "";
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_admin")?.value;
   const token = cookieStore.get("token_admin")?.value;
@@ -28,5 +34,5 @@ export default async function AdminUsersPage() {
     redirect("/dashboard");
   }
 
-  return <AdminUserManagement token={token} currentUser={user} />;
+  return <AdminUserManagement token={token} currentUser={user} initialSearch={initialSearch} />;
 }

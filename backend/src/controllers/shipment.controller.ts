@@ -10,6 +10,7 @@ import {
 } from "../dtos/shipment.dto";
 import { ApiResponseHelper } from "../utils/apihelper.util";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { parseCollectionQuery } from "../utils/request.util";
 import { SHIPMENT_STATUSES, ShipmentStatus } from "../types/shipment.type";
 
 const shipmentService = new ShipmentService();
@@ -236,9 +237,11 @@ export class ShipmentController {
 
   async adminGetShipments(req: Request, res: Response) {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const search = (req.query.search as string) || "";
+      const { page, limit, search, sort } = parseCollectionQuery(req.query, {
+        allowedSortFields: ["createdAt", "updatedAt", "trackingId"] as const,
+        defaultSortField: "createdAt",
+        defaultDirection: "desc",
+      });
       const statusParam = req.query.status as string | undefined;
       const status =
         statusParam && SHIPMENT_STATUSES.includes(statusParam as ShipmentStatus)
@@ -250,6 +253,7 @@ export class ShipmentController {
         limit,
         search,
         status,
+        sort,
       );
       const totalPages = Math.ceil(total / limit);
 

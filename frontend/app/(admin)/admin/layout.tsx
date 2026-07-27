@@ -1,28 +1,13 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import type { AuthUser } from "@/lib/api/auth.api";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
 import { AuthProvider } from "@/context/AuthContext";
+import { requireRole } from "@/lib/auth/role-guard";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user_admin")?.value;
-  const token = cookieStore.get("token_admin")?.value;
-
-  if (!userCookie || !token) redirect("/login");
-
-  let user: AuthUser;
-  try {
-    user = JSON.parse(userCookie) as AuthUser;
-  } catch {
-    redirect("/login");
-  }
-
-  if (user.role !== "admin") redirect("/dashboard");
+  const { user, token } = await requireRole("admin");
 
   return (
     <AuthProvider initialUser={user} role="admin">

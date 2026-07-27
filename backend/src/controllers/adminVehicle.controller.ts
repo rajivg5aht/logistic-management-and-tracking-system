@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { ApiResponseHelper } from "../utils/apihelper.util";
-import { VehicleService } from "../services/vehicle.service";
+import { VehicleService, type VehicleSort } from "../services/vehicle.service";
+import { parseCollectionQuery } from "../utils/request.util";
 import {
   AdminAssignVehicleDTO,
   AdminCreateVehicleDTO,
@@ -18,23 +19,25 @@ const vehicleService = new VehicleService();
 export class AdminVehicleController {
   async getVehicles(req: Request, res: Response) {
     try {
-      const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-      const limit = Math.min(
-        Math.max(parseInt(req.query.limit as string) || 10, 1),
-        200,
-      );
-      const search = (req.query.search as string) || "";
+      const { page, limit, search, sort } = parseCollectionQuery(req.query, {
+        allowedSortFields: ["createdAt", "updatedAt", "registrationNumber", "odometerKm"] as const,
+        defaultSortField: "createdAt",
+        defaultDirection: "desc",
+        maxLimit: 200,
+      });
       const requestedStatus = req.query.status as string | undefined;
       const status =
         requestedStatus &&
         VEHICLE_STATUSES.includes(requestedStatus as VehicleStatus)
           ? (requestedStatus as VehicleStatus)
           : undefined;
+      const vehicleSort: VehicleSort = sort;
       const { vehicles, total } = await vehicleService.getVehicles(
         page,
         limit,
         search,
         status,
+        vehicleSort,
       );
       return ApiResponseHelper.success(
         res,

@@ -150,14 +150,14 @@ function toDateInput(value: string | null) {
   return value ? value.slice(0, 10) : "";
 }
 
-export default function AdminFleetManagement({ token }: { token: string }) {
+export default function AdminFleetManagement({ token, initialSearch = "" }: { token: string; initialSearch?: string }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [stats, setStats] = useState<FleetStats | null>(null);
   const [meta, setMeta] = useState<FleetMeta | null>(null);
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [search, setSearch] = useState(initialSearch);
   const [filter, setFilter] = useState<VehicleStatus | "all">("all");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -185,6 +185,12 @@ export default function AdminFleetManagement({ token }: { token: string }) {
     }, 350);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    setSearchInput(initialSearch);
+    setSearch(initialSearch);
+    setPage(1);
+  }, [initialSearch]);
 
   const loadData = useCallback(
     async (silent = false) => {

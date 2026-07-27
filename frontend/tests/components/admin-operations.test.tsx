@@ -229,6 +229,12 @@ describe("admin operational components", () => {
     expect(api.getFleetStats).toHaveBeenCalledWith("token");
   });
 
+  test("uses an initial header search to filter shipments", async () => {
+    render(<AdminShipments token="token" initialSearch="CN-123" />);
+    expect(await screen.findByText(/No shipments found/)).toBeInTheDocument();
+    expect(api.getShipments).toHaveBeenCalledWith("token", 1, 10, "CN-123", undefined);
+  });
+
   test("renders analytics returned by shipment and fleet services", async () => {
     api.getFleetStats.mockResolvedValueOnce({
       total: 10,
@@ -275,6 +281,7 @@ describe("admin operational components", () => {
 
     const inquiryView = render(<AdminInquiries token="token" />);
     expect(await screen.findByText("No inquiries found.")).toBeInTheDocument();
+    expect(screen.queryByText("Need to scale?")).not.toBeInTheDocument();
     inquiryView.unmount();
 
     const announcementView = render(<AdminAnnouncements token="token" />);

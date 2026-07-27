@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 import { ShipmentModel, IShipment } from "../models/shipment.model";
 import { ShipmentStatus } from "../types/shipment.type";
 
+export type ShipmentSort = {
+  field: "createdAt" | "updatedAt" | "trackingId";
+  direction: "asc" | "desc";
+};
+
 export interface DailyVolume {
   date: string;
   label: string;
@@ -69,6 +74,7 @@ export interface IShipmentRepository {
     limit: number,
     search?: string,
     status?: ShipmentStatus,
+    sort?: ShipmentSort,
   ): Promise<{ shipments: IShipment[]; total: number }>;
   getStats(): Promise<ShipmentStats>;
   getDriverStats(driverId: string): Promise<DriverStats>;
@@ -123,6 +129,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
     limit: number,
     search?: string,
     status?: ShipmentStatus,
+    sort: ShipmentSort = { field: "createdAt", direction: "desc" },
   ): Promise<{ shipments: IShipment[]; total: number }> {
     const query: any = {};
 
@@ -143,7 +150,7 @@ export class ShipmentMongoRepository implements IShipmentRepository {
 
     const total = await ShipmentModel.countDocuments(query);
     const shipments = await ShipmentModel.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ [sort.field]: sort.direction === "asc" ? 1 : -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 

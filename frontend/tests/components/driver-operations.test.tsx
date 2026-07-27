@@ -113,12 +113,45 @@ describe("driver operational components", () => {
     expect(screen.getByText("Delivered")).toBeInTheDocument();
   });
 
-  test("renders driver dashboard statistics and empty assignment state", async () => {
+  test("renders a dispatch-ready dashboard when no assignment is active", async () => {
     render(<DriverDashboard user={driverUser} token="token" />);
-    expect(await screen.findByText("No active delivery")).toBeInTheDocument();
+    expect(await screen.findByText("Ready for your next assignment")).toBeInTheDocument();
     expect(screen.getByText("Delivered Today")).toBeInTheDocument();
     expect(screen.getByText("Total Completed")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view assignments/i })).toHaveAttribute("href", "/driver/assignments");
     expect(screen.getByText(/no vehicle assigned yet/i)).toBeInTheDocument();
+    expect(api.getAssignments).toHaveBeenCalledWith("token", "history");
+  });
+
+  test("shows recent delivery activity and vehicle readiness", async () => {
+    api.getAssignments
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{
+        id: "shipment-1",
+        trackingId: "CN-1001",
+        delivery: { city: "Pokhara", district: "Kaski" },
+        status: "delivered",
+        deliveredAt: "2026-07-25T08:30:00.000Z",
+        updatedAt: "2026-07-25T08:30:00.000Z",
+      }]);
+    api.getMe.mockResolvedValueOnce({
+      ...driverUser,
+      branch: "Pokhara",
+      availabilityStatus: "available",
+      vehicle: { id: "vehicle-1", registrationNumber: "BA 1 PA 2028", type: "truck", make: "Tata", model: "2010", capacityKg: 1500, status: "active" },
+    });
+    api.getFleet.mockResolvedValueOnce({
+      vehicle: { id: "vehicle-1", registrationNumber: "BA 1 PA 2028", type: "truck", make: "Tata", model: "2010", capacityKg: 1500, status: "active", nextServiceAt: "2026-08-10T00:00:00.000Z" },
+      assignmentHistory: [],
+      incidents: [{ id: "incident-1", status: "submitted" }],
+      fuelExpenses: [{ id: "fuel-1", status: "submitted" }],
+    });
+
+    render(<DriverDashboard user={driverUser} token="token" />);
+    expect(await screen.findByText("CN-1001")).toBeInTheDocument();
+    expect(screen.getByText("Pokhara, Kaski")).toBeInTheDocument();
+    expect(screen.getByText("1 open")).toBeInTheDocument();
+    expect(screen.getByText("1 pending")).toBeInTheDocument();
   });
 
   test("shows a driver dashboard loading failure", async () => {

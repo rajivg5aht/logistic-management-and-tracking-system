@@ -8,7 +8,13 @@ export const metadata = {
   description: "Monitor and manage shipments across the network.",
 };
 
-export default async function AdminShipmentsPage() {
+export default async function AdminShipmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialSearch = (Array.isArray(params.search) ? params.search[0] : params.search)?.trim() ?? "";
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user_admin")?.value;
   const token = cookieStore.get("token_admin")?.value;
@@ -28,5 +34,5 @@ export default async function AdminShipmentsPage() {
     redirect("/dashboard");
   }
 
-  return <AdminShipments token={token} />;
+  return <AdminShipments token={token} initialSearch={initialSearch} />;
 }

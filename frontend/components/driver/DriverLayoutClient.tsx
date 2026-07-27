@@ -24,6 +24,7 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth/session";
 import { AuthUser } from "@/lib/api/auth.api";
 import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import {
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
   { label: "Fleet", href: "/driver/fleet", icon: Truck },
   { label: "Route", href: "/driver/route", icon: MapPinned },
   { label: "Announcements", href: "/driver/announcements", icon: Megaphone },
+  { label: "Profile", href: "/driver/profile", icon: UserRoundCog },
 ];
 
 const AVAILABILITY_META: Record<
@@ -153,7 +155,7 @@ export default function DriverLayoutClient({
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut();
       router.push("/login");
     } catch {
       router.push("/login");
@@ -162,9 +164,8 @@ export default function DriverLayoutClient({
 
   const canToggle = availability === "available" || availability === "off-duty";
 
-  const handleToggle = async () => {
-    if (!canToggle || toggling) return;
-    const next = availability === "available" ? "off-duty" : "available";
+  const handleAvailabilityChange = async (next: "available" | "off-duty") => {
+    if (!canToggle || toggling || availability === next) return;
     setToggling(true);
     setToggleError(null);
     try {
@@ -185,6 +186,11 @@ export default function DriverLayoutClient({
   };
 
   const meta = availability ? AVAILABILITY_META[availability] : null;
+  const availabilityPillClass = availability === "available"
+    ? "bg-[var(--success-soft)] text-[var(--success)]"
+    : availability === "off-duty"
+      ? "bg-[var(--surface-soft)] text-[var(--text-soft)]"
+      : "bg-[var(--accent-soft)] text-[var(--accent-strong)]";
 
   const currentNav = NAV_ITEMS.find((item) =>
     item.exact
@@ -278,14 +284,6 @@ export default function DriverLayoutClient({
             >
               <Menu size={20} />
             </button>
-          </div>
-        )}
-
-        {!isCollapsed && (
-          <div className="px-5 pt-5">
-            <span className="rounded-md bg-[var(--accent-soft)] px-2 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--accent-strong)]">
-              Driver Portal
-            </span>
           </div>
         )}
 
@@ -409,11 +407,12 @@ export default function DriverLayoutClient({
 
             <button
               type="button"
-              onClick={handleToggle}
-              disabled={!canToggle || toggling}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-[var(--success-soft)] px-2.5 text-xs font-bold text-[var(--success)] transition-colors hover:bg-[var(--success-soft)] disabled:cursor-default disabled:opacity-70 sm:h-10 sm:px-3"
-              aria-label={canToggle ? `Availability: ${meta?.label ?? "Loading"}. Click to change.` : `Availability: ${meta?.label ?? "Loading"}`}
-              title={canToggle ? "Change availability" : "Availability changes automatically during a delivery"}
+              onClick={() => setProfileOpen(true)}
+              className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-2.5 text-xs font-bold transition-colors hover:brightness-95 sm:h-10 sm:px-3 ${availabilityPillClass}`}
+              aria-label={`Availability: ${meta?.label ?? "Loading"}. Open availability controls.`}
+              aria-expanded={profileOpen}
+              aria-haspopup="menu"
+              title="Open availability controls"
             >
               {toggling ? (
                 <Loader2 size={13} className="animate-spin" />
@@ -600,36 +599,48 @@ export default function DriverLayoutClient({
                       </Link>
                     </div>
                     {meta && (
-                      <div className="border-b border-[var(--border)] p-2">
-                        {canToggle ? (
-                          <button
-                            type="button"
-                            onClick={handleToggle}
-                            disabled={toggling}
-                            className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors hover:bg-[var(--surface-soft)] disabled:opacity-60 cursor-pointer"
-                            title="Toggle your availability"
-                          >
-                            <span className="flex items-center gap-2 text-[var(--text-soft)]">
-                              {toggling ? (
-                                <Loader2 size={14} className="animate-spin text-[var(--text-muted)]" />
-                              ) : (
-                                <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                              )}
-                              Availability
-                            </span>
-                            <span className={`text-xs font-bold ${meta.cls}`}>{meta.label}</span>
-                          </button>
-                        ) : (
-                          <div
-                            className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-sm font-semibold"
-                            title="Set automatically while a delivery is in progress"
-                          >
-                            <span className="flex items-center gap-2 text-[var(--text-soft)]">
-                              <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                              Availability
-                            </span>
-                            <span className={`text-xs font-bold ${meta.cls}`}>{meta.label}</span>
+                      <div className="border-b border-[var(--border)] px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--text)]">Availability</p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-muted)]">Receive new delivery assignments when you are on duty.</p>
                           </div>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-soft)] px-2.5 py-1 text-xs font-bold ${meta.cls}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                            {meta.label}
+                          </span>
+                        </div>
+                        {canToggle ? (
+                          <div className="mt-3">
+                            <div className="grid grid-cols-2 rounded-xl bg-[var(--surface-soft)] p-1" role="group" aria-label="Set availability">
+                              <button
+                                type="button"
+                                onClick={() => void handleAvailabilityChange("off-duty")}
+                                disabled={toggling || availability === "off-duty"}
+                                aria-pressed={availability === "off-duty"}
+                                className={`rounded-lg px-3 py-2 text-xs font-bold transition-all disabled:cursor-default ${availability === "off-duty" ? "bg-[var(--text-soft)] text-white shadow-sm" : "text-[var(--text-muted)] hover:bg-[var(--surface)]"}`}
+                              >
+                                Off
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleAvailabilityChange("available")}
+                                disabled={toggling || availability === "available"}
+                                aria-pressed={availability === "available"}
+                                className={`rounded-lg px-3 py-2 text-xs font-bold transition-all disabled:cursor-default ${availability === "available" ? "bg-[var(--success)] text-white shadow-sm" : "text-[var(--text-muted)] hover:bg-[var(--surface)]"}`}
+                              >
+                                On
+                              </button>
+                            </div>
+                            <p className="mt-2 flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                              {toggling ? <Loader2 size={13} className="animate-spin" /> : null}
+                              {toggling ? "Updating availability..." : "Choose On when you are ready for new work."}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="mt-3 rounded-lg bg-[var(--surface-soft)] px-3 py-2 text-xs leading-relaxed text-[var(--text-muted)]">
+                            Availability is managed automatically while a delivery is in progress.
+                          </p>
                         )}
                       </div>
                     )}
