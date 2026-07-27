@@ -17,6 +17,7 @@ import {
   type AuthFormState,
 } from "@/actions/auth.actions";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/api/auth.api";
 import {
   formatMemberSince,
@@ -125,7 +126,7 @@ export default function AdminProfile({ user }: AdminProfileProps) {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut();
     } finally {
       setUser(null);
       router.push("/login");

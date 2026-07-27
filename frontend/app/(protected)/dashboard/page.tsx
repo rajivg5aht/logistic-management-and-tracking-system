@@ -1,23 +1,8 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import type { AuthUser } from "@/lib/api/auth.api";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
+import { requireRole } from "@/lib/auth/role-guard";
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token_customer")?.value;
-  const userCookie = cookieStore.get("user_customer")?.value;
-
-  if (!token || !userCookie) {
-    redirect("/login");
-  }
-
-  let user: AuthUser;
-  try {
-    user = JSON.parse(userCookie) as AuthUser;
-  } catch {
-    redirect("/login");
-  }
+  const { user, token } = await requireRole("customer");
 
   return <DashboardOverview user={user} token={token} />;
 }

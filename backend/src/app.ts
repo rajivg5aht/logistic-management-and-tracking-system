@@ -1,4 +1,4 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import path from "path";
 import userRoutes from "./routes/user.route";
@@ -16,6 +16,8 @@ import assistantRoutes from "./routes/assistant.route";
 import adminVehicleRoutes from "./routes/adminVehicle.route";
 import adminFleetReportRoutes from "./routes/adminFleetReport.route";
 import paymentRoutes from "./routes/payment.route";
+import { apiResponseMiddleware } from "./middleware/api-response.middleware";
+import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middleware";
 import adminPaymentRoutes from "./routes/adminPayment.route";
 import { CORS_ORIGINS } from "./configs/constant";
 
@@ -24,6 +26,8 @@ const app: Application = express();
 app.use(
   cors({
     origin: CORS_ORIGINS,
+    allowedHeaders: ["Authorization", "Content-Type", "If-None-Match", "X-Request-Id"],
+    exposedHeaders: ["ETag", "Link", "X-Request-Id", "Location"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   }),
@@ -32,6 +36,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(apiResponseMiddleware);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/", (_req: Request, res: Response) => {
@@ -58,20 +63,7 @@ app.use("/api/v1/announcements", announcementRoutes);
 app.use("/api/v1/admin/announcements", adminAnnouncementRoutes);
 app.use("/api/v1/assistant", assistantRoutes);
 
-app.use((_req: Request, res: Response) => {
-  return res.status(404).json({
-    success: false,
-    message: "API route not found",
-  });
-});
-
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Error:", err);
-
-  return res.status(500).json({
-    success: false,
-    message: "Internal server error",
-  });
-});
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 export default app;

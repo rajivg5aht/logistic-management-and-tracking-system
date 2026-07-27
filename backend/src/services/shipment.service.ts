@@ -4,6 +4,7 @@ import {
   ShipmentStats,
   DriverStats,
   ShipmentAnalytics,
+  type ShipmentSort,
 } from "../repositories/shipment.repository";
 import {
   CreateShipmentDTO,
@@ -266,12 +267,14 @@ export class ShipmentService {
     limit: number,
     search?: string,
     status?: ShipmentStatus,
+    sort?: ShipmentSort,
   ): Promise<{ shipments: SafeShipment[]; total: number }> {
     const { shipments, total } = await shipmentRepository.getPaginated(
       page,
       limit,
       search,
       status,
+      sort,
     );
 
     return {

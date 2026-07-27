@@ -23,6 +23,7 @@ import {
   UserRoundCog,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/auth/session";
 import { AuthUser } from "@/lib/api/auth.api";
 import { getInitials, resolveProfileImage } from "@/lib/ui-helpers";
 import { adminGetFleetReportStats } from "@/lib/api/fleetReports.api";
@@ -114,7 +115,7 @@ export default function AdminLayoutClient({ children, user, token }: AdminLayout
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut();
       router.push("/login");
     } catch {
       router.push("/login");

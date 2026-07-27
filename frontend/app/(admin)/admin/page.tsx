@@ -1,7 +1,5 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import type { AuthUser } from "@/lib/api/auth.api";
 import OverviewDashboard from "@/components/admin/OverviewDashboard";
+import { requireRole } from "@/lib/auth/role-guard";
 
 export const metadata = {
   title: "Admin Console Overview - CargoNep",
@@ -9,24 +7,7 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user_admin")?.value;
-  const token = cookieStore.get("token_admin")?.value;
-
-  if (!userCookie || !token) {
-    redirect("/login");
-  }
-
-  let user: AuthUser;
-  try {
-    user = JSON.parse(userCookie) as AuthUser;
-  } catch {
-    redirect("/login");
-  }
-
-  if (user.role !== "admin") {
-    redirect("/dashboard");
-  }
+  const { token } = await requireRole("admin");
 
   return <OverviewDashboard token={token} />;
 }

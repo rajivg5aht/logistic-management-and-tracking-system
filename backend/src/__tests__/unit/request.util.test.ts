@@ -5,6 +5,7 @@ import {
   handleControllerError,
   isObjectId,
   parsePagination,
+  parseCollectionQuery,
 } from "../../utils/request.util";
 
 const responseMock = () => {
@@ -36,6 +37,36 @@ describe("Unit: request utilities", () => {
       page: 1,
       limit: 10,
     });
+    expect(parsePagination({ limit: "999" })).toEqual({ page: 1, limit: 100 });
+  });
+
+  test("allows only endpoint-approved collection sorting", () => {
+    expect(
+      parseCollectionQuery(
+        { page: "2", limit: "30", search: "  Kathmandu  ", sort: "-updatedAt" },
+        {
+          allowedSortFields: ["createdAt", "updatedAt"] as const,
+          defaultSortField: "createdAt",
+          defaultDirection: "desc",
+        },
+      ),
+    ).toEqual({
+      page: 2,
+      limit: 30,
+      search: "Kathmandu",
+      sort: { field: "updatedAt", direction: "desc" },
+    });
+
+    expect(
+      parseCollectionQuery(
+        { sort: "customer" },
+        {
+          allowedSortFields: ["createdAt"] as const,
+          defaultSortField: "createdAt",
+          defaultDirection: "desc",
+        },
+      ).sort,
+    ).toEqual({ field: "createdAt", direction: "desc" });
   });
 
   test("builds exact, rounded, and empty pagination metadata", () => {
