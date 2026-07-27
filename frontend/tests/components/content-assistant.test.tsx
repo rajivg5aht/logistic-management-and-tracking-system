@@ -141,6 +141,22 @@ describe("content, contact, announcements, and assistant UI", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Assistant unavailable");
   });
 
+  test("sends a suggested assistant prompt", async () => {
+    const user = userEvent.setup();
+    render(<AiAssistant token="token" />);
+    await user.click(screen.getByRole("button", { name: "Open AI Assistant" }));
+    await user.click(screen.getByRole("button", { name: "My shipments" }));
+
+    await waitFor(() =>
+      expect(api.sendAssistantMessage).toHaveBeenCalledWith(
+        "token",
+        expect.arrayContaining([
+          { role: "user", content: "Show my recent shipments" },
+        ]),
+      ),
+    );
+  });
+
   test("renders the empty customer announcement state", async () => {
     render(<AnnouncementsFeed token="token" audienceName="customers" />);
     expect(await screen.findByText("No announcements yet")).toBeInTheDocument();

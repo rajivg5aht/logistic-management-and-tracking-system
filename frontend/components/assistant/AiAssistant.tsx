@@ -22,6 +22,7 @@ import {
   type AssistantAction,
   type AssistantCard,
   type AssistantChatMessage,
+  type AssistantSuggestion,
 } from "@/lib/api/assistant.api";
 
 type AiAssistantProps = {
@@ -33,6 +34,7 @@ type DisplayMessage = AssistantChatMessage & {
   id: string;
   cards?: AssistantCard[];
   actions?: AssistantAction[];
+  suggestions?: AssistantSuggestion[];
 };
 
 const WELCOME_MESSAGE: DisplayMessage = {
@@ -42,13 +44,22 @@ const WELCOME_MESSAGE: DisplayMessage = {
     "Hi! I’m your CargoNep logistics assistant. Ask me about booking, tracking, delivery stages, or payments.",
 };
 
+const WELCOME_SUGGESTIONS: AssistantSuggestion[] = [
+  { label: "My shipments", prompt: "Show my recent shipments" },
+  { label: "My payments", prompt: "Show my payment summary" },
+  { label: "Delivery stages", prompt: "Explain the delivery stages" },
+];
+
 export function AiAssistant({
   token,
   placement = "floating",
 }: AiAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<DisplayMessage[]>([
-    WELCOME_MESSAGE,
+    {
+      ...WELCOME_MESSAGE,
+      suggestions: WELCOME_SUGGESTIONS,
+    },
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -65,15 +76,16 @@ export function AiAssistant({
 
   const clearConversation = () => {
     if (sending) return;
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([
+      { ...WELCOME_MESSAGE, suggestions: WELCOME_SUGGESTIONS },
+    ]);
     setInput("");
     setError(null);
     setModel("Mistral Small");
   };
 
-  const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const content = input.trim();
+  const sendContent = async (rawContent: string) => {
+    const content = rawContent.trim();
     if (!content || sending) return;
 
     const userMessage: DisplayMessage = {
@@ -107,6 +119,7 @@ export function AiAssistant({
           content: result.message,
           cards: result.cards,
           actions: result.actions,
+          suggestions: result.suggestions,
         },
       ]);
       setModel(
@@ -123,6 +136,11 @@ export function AiAssistant({
     } finally {
       setSending(false);
     }
+  };
+
+  const sendMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void sendContent(input);
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -223,6 +241,21 @@ export function AiAssistant({
                           >
                             {action.label}
                           </Link>
+                        ))}
+                      </div>
+                    )}
+                    {message.suggestions && message.suggestions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.suggestions.map((suggestion) => (
+                          <button
+                            key={`${message.id}-${suggestion.prompt}`}
+                            type="button"
+                            onClick={() => void sendContent(suggestion.prompt)}
+                            disabled={sending}
+                            className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-left text-xs font-bold text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {suggestion.label}
+                          </button>
                         ))}
                       </div>
                     )}
