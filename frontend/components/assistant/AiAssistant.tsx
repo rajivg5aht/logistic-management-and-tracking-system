@@ -7,7 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import {
+  ArrowUpRight,
   Bot,
   Loader2,
   RotateCcw,
@@ -17,6 +19,8 @@ import {
 } from "lucide-react";
 import {
   sendAssistantMessage,
+  type AssistantAction,
+  type AssistantCard,
   type AssistantChatMessage,
 } from "@/lib/api/assistant.api";
 
@@ -25,7 +29,11 @@ type AiAssistantProps = {
   placement?: "floating" | "navbar";
 };
 
-type DisplayMessage = AssistantChatMessage & { id: string };
+type DisplayMessage = AssistantChatMessage & {
+  id: string;
+  cards?: AssistantCard[];
+  actions?: AssistantAction[];
+};
 
 const WELCOME_MESSAGE: DisplayMessage = {
   id: "welcome",
@@ -97,6 +105,8 @@ export function AiAssistant({
           id: `assistant-${Date.now()}`,
           role: "assistant",
           content: result.message,
+          cards: result.cards,
+          actions: result.actions,
         },
       ]);
       setModel(
@@ -180,9 +190,43 @@ export function AiAssistant({
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Sparkles size={16} />
                   </span>
-                  <p className="max-w-[82%] whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 text-sm leading-6 text-[var(--text)] shadow-sm">
-                    {message.content}
-                  </p>
+                  <div className="max-w-[82%] rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 shadow-sm">
+                    <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
+                      {message.content}
+                    </p>
+                    {message.cards && message.cards.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {message.cards.map((card) => (
+                          <Link
+                            key={`${message.id}-${card.title}`}
+                            href={card.href ?? "#"}
+                            className="block rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]"
+                          >
+                            <span className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--text)]">
+                              {card.title}
+                              {card.href && <ArrowUpRight size={14} aria-hidden="true" />}
+                            </span>
+                            <span className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">
+                              {card.description}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {message.actions && message.actions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.actions.map((action) => (
+                          <Link
+                            key={`${message.id}-${action.href}`}
+                            href={action.href}
+                            className="rounded-lg bg-[var(--accent-soft)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-strong)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--text-on-accent)]"
+                          >
+                            {action.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div key={message.id} className="flex justify-end">
