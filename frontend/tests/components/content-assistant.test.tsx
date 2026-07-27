@@ -55,8 +55,8 @@ describe("content, contact, announcements, and assistant UI", () => {
   test("renders nationwide routes and the coverage registration link", () => {
     render(<Network />);
     expect(screen.getByText("Delivery Network")).toBeInTheDocument();
-    expect(screen.getByText(/Kathmandu/)).toBeInTheDocument();
-    expect(screen.getByText(/Pokhara/)).toBeInTheDocument();
+    expect(screen.getByText(/terrain and weather/i)).toBeInTheDocument();
+    expect(screen.getByText(/conditions of Nepal/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view coverage map/i })).toHaveAttribute(
       "href",
       "/register",
