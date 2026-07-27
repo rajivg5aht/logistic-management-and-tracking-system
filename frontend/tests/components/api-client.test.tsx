@@ -3,6 +3,7 @@ import {
   apiRequest,
   apiResponse,
   buildQueryString,
+  authenticatedRequest,
 } from "@/lib/api/api-client";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -64,5 +65,23 @@ describe("API client contract helpers", () => {
     }));
 
     await expect(apiResponse("/api/v1/example")).rejects.toMatchObject({ status, message });
+  });
+
+  test.each([
+    ["driver-token", "Bearer driver-token"],
+    ["admin-token", "Bearer admin-token"],
+    ["customer-token", "Bearer customer-token"],
+    ["support-token", "Bearer support-token"],
+  ])("attaches the supplied bearer token", async (token, authorization) => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => ({ status: 200, success: true, message: "Success", data: { ok: true } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(authenticatedRequest("/api/v1/example", token)).resolves.toEqual({ ok: true });
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(authorization);
   });
 });
