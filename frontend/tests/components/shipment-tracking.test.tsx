@@ -231,7 +231,7 @@ describe("shipment summaries, route maps, and tracking", () => {
     rerender(
       <LiveMap
         location={{ latitude: 27.7, longitude: 85.3 }}
-        delivery={{ lat: 27.6, lng: 85.4 }}
+        delivery={[27.6, 85.4]}
       />,
     );
     expect(screen.getByText("12 km")).toBeInTheDocument();
@@ -252,7 +252,10 @@ describe("shipment summaries, route maps, and tracking", () => {
             trackingId: "LN-5001",
             latitude: 27.7,
             longitude: 85.3,
-            status: "in-transit",
+            driverName: "Balen Shah",
+            statusLabel: "In transit",
+            isSelected: false,
+            isStale: false,
           },
         ]}
         onSelect={onSelect}
