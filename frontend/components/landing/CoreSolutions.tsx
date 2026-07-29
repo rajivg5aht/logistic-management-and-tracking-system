@@ -28,7 +28,7 @@ const solutions = [
 
 export default function CoreSolutions() {
   return (
-    <section id="solutions" className="section relative">
+    <section id="solutions" className="section relative scroll-mt-24">
       <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
           <h2 className="heading-lg">Our Core Solutions</h2>

@@ -2,12 +2,14 @@
 
 import {
   type FormEvent,
-  type KeyboardEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import {
+  ArrowUpRight,
   Bot,
   Loader2,
   RotateCcw,
@@ -17,7 +19,10 @@ import {
 } from "lucide-react";
 import {
   sendAssistantMessage,
+  type AssistantAction,
+  type AssistantCard,
   type AssistantChatMessage,
+  type AssistantSuggestion,
 } from "@/lib/api/assistant.api";
 
 type AiAssistantProps = {
@@ -25,7 +30,12 @@ type AiAssistantProps = {
   placement?: "floating" | "navbar";
 };
 
-type DisplayMessage = AssistantChatMessage & { id: string };
+type DisplayMessage = AssistantChatMessage & {
+  id: string;
+  cards?: AssistantCard[];
+  actions?: AssistantAction[];
+  suggestions?: AssistantSuggestion[];
+};
 
 const WELCOME_MESSAGE: DisplayMessage = {
   id: "welcome",
@@ -34,13 +44,60 @@ const WELCOME_MESSAGE: DisplayMessage = {
     "Hi! I’m your CargoNep logistics assistant. Ask me about booking, tracking, delivery stages, or payments.",
 };
 
+const WELCOME_SUGGESTIONS: AssistantSuggestion[] = [
+  { label: "My shipments", prompt: "Show my recent shipments" },
+  { label: "My payments", prompt: "Show my payment summary" },
+  { label: "Delivery stages", prompt: "Explain the delivery stages" },
+];
+
+function formatInlineText(value: string): ReactNode[] {
+  return value.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="font-bold text-[var(--text)]">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function AssistantResponse({ content }: { content: string }) {
+  const lines = content.replace(/\r/g, "").split("\n");
+
+  return (
+    <div className="space-y-2 text-sm leading-6 text-[var(--text)]">
+      {lines.map((line, index) => {
+        const text = line.trim();
+        if (!text) return <div key={`space-${index}`} className="h-1" />;
+        if (text.startsWith("# ")) {
+          return (
+            <p key={index} className="pt-1 text-sm font-extrabold text-[var(--text)]">
+              {formatInlineText(text.slice(2))}
+            </p>
+          );
+        }
+        if (text.startsWith("* ")) {
+          return (
+            <p key={index} className="flex gap-2 pl-0.5">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+              <span>{formatInlineText(text.slice(2))}</span>
+            </p>
+          );
+        }
+        return <p key={index}>{formatInlineText(text)}</p>;
+      })}
+    </div>
+  );
+}
+
 export function AiAssistant({
   token,
   placement = "floating",
 }: AiAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<DisplayMessage[]>([
-    WELCOME_MESSAGE,
+    {
+      ...WELCOME_MESSAGE,
+      suggestions: WELCOME_SUGGESTIONS,
+    },
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -57,15 +114,16 @@ export function AiAssistant({
 
   const clearConversation = () => {
     if (sending) return;
-    setMessages([WELCOME_MESSAGE]);
+    setMessages([
+      { ...WELCOME_MESSAGE, suggestions: WELCOME_SUGGESTIONS },
+    ]);
     setInput("");
     setError(null);
     setModel("Mistral Small");
   };
 
-  const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const content = input.trim();
+  const sendContent = async (rawContent: string) => {
+    const content = rawContent.trim();
     if (!content || sending) return;
 
     const userMessage: DisplayMessage = {
@@ -97,6 +155,9 @@ export function AiAssistant({
           id: `assistant-${Date.now()}`,
           role: "assistant",
           content: result.message,
+          cards: result.cards,
+          actions: result.actions,
+          suggestions: result.suggestions,
         },
       ]);
       setModel(
@@ -115,11 +176,9 @@ export function AiAssistant({
     }
   };
 
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      event.currentTarget.form?.requestSubmit();
-    }
+  const sendMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void sendContent(input);
   };
 
   return (
@@ -180,9 +239,56 @@ export function AiAssistant({
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Sparkles size={16} />
                   </span>
-                  <p className="max-w-[82%] whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 text-sm leading-6 text-[var(--text)] shadow-sm">
-                    {message.content}
-                  </p>
+                  <div className="max-w-[82%] rounded-2xl rounded-tl-sm border border-[var(--border)] bg-white px-3.5 py-2.5 shadow-sm">
+                    <AssistantResponse content={message.content} />
+                    {message.cards && message.cards.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {message.cards.map((card) => (
+                          <Link
+                            key={`${message.id}-${card.title}`}
+                            href={card.href ?? "#"}
+                            className="block rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2.5 transition-colors hover:border-[var(--accent)]"
+                          >
+                            <span className="flex items-center justify-between gap-3 text-xs font-bold text-[var(--text)]">
+                              {card.title}
+                              {card.href && <ArrowUpRight size={14} aria-hidden="true" />}
+                            </span>
+                            <span className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">
+                              {card.description}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {message.actions && message.actions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.actions.map((action) => (
+                          <Link
+                            key={`${message.id}-${action.href}`}
+                            href={action.href}
+                            className="rounded-lg bg-[var(--accent-soft)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-strong)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--text-on-accent)]"
+                          >
+                            {action.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {message.suggestions && message.suggestions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.suggestions.map((suggestion) => (
+                          <button
+                            key={`${message.id}-${suggestion.prompt}`}
+                            type="button"
+                            onClick={() => void sendContent(suggestion.prompt)}
+                            disabled={sending}
+                            className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-left text-xs font-bold text-[var(--text-soft)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {suggestion.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div key={message.id} className="flex justify-end">
@@ -220,15 +326,14 @@ export function AiAssistant({
             className="border-t border-[var(--border)] bg-white p-3"
           >
             <div className="flex items-end gap-2">
-              <textarea
+              <input
+                type="text"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleInputKeyDown}
                 disabled={sending}
                 maxLength={2000}
-                rows={1}
                 placeholder="Ask about shipments, tracking, or payments…"
-                className="max-h-28 min-h-10 min-w-0 flex-1 resize-none rounded-xl border border-[var(--border)] bg-white px-3.5 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] disabled:bg-[var(--surface-soft)]"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-white px-3.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)] disabled:bg-[var(--surface-soft)]"
                 aria-label="Message the assistant"
                 suppressHydrationWarning
               />

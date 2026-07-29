@@ -9,7 +9,7 @@ const config = {
 const chat = (request: typeof fetch) =>
   new AssistantService(config, request).chat(
     [{ role: "user", content: "Where is my parcel?" }],
-    "customer",
+    { id: "customer-1", role: "customer" },
   );
 
 describe("Unit: AssistantService response handling", () => {

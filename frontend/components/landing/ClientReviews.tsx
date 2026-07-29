@@ -148,6 +148,7 @@ export default function ClientReviews() {
           <div className="mt-7 flex items-center justify-center gap-3">
             <button
               type="button"
+              suppressHydrationWarning
               aria-label="Previous review"
               onClick={() => selectReview(activeIndex - 1)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)] hover:text-[var(--accent-strong)]"
@@ -159,6 +160,7 @@ export default function ClientReviews() {
                 <button
                   key={review.name}
                   type="button"
+                  suppressHydrationWarning
                   aria-label={`Go to review ${index + 1}`}
                   aria-current={activeIndex === index ? "true" : undefined}
                   onClick={() => selectReview(index)}
@@ -168,6 +170,7 @@ export default function ClientReviews() {
             </div>
             <button
               type="button"
+              suppressHydrationWarning
               aria-label="Next review"
               onClick={() => selectReview(activeIndex + 1)}
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)] hover:text-[var(--accent-strong)]"

@@ -1,10 +1,12 @@
 import type { AssistantMessageDTO } from "../dtos/assistant.dto";
 import { HttpException } from "../exceptions/http-exception";
+import { AssistantContextService } from "./assistant-context.service";
 import {
   MISTRAL_API_KEY,
   MISTRAL_API_URL,
   MISTRAL_MODEL,
 } from "../configs/constant";
+import type { AssistantChatResult, AssistantUser } from "../types/assistant.type";
 
 type AssistantServiceConfig = {
   apiKey: string;
@@ -41,6 +43,7 @@ export class AssistantService {
       model: MISTRAL_MODEL,
     },
     private readonly request: typeof fetch = fetch,
+    private readonly contextService = new AssistantContextService(),
   ) {}
 
   private extractMessage(payload: MistralChatResponse): string {
@@ -61,8 +64,23 @@ export class AssistantService {
 
   async chat(
     messages: AssistantMessageDTO[],
-    userRole: string,
-  ): Promise<{ message: string; model: string }> {
+    user: AssistantUser,
+  ): Promise<AssistantChatResult> {
+    const context = await this.contextService.build(
+      user,
+      messages[messages.length - 1]?.content ?? "",
+    );
+
+    if (context.response) {
+      return {
+        message: context.response,
+        model: "CargoNep data",
+        cards: context.cards,
+        actions: context.actions,
+        suggestions: context.suggestions,
+      };
+    }
+
     if (!this.config.apiKey) {
       throw new HttpException(
         503,
@@ -83,7 +101,7 @@ export class AssistantService {
           messages: [
             {
               role: "system",
-              content: `${SYSTEM_PROMPT}\nCurrent signed-in role: ${userRole}.`,
+              content: `${SYSTEM_PROMPT}\nCurrent signed-in role: ${user.role}.`,
             },
             ...messages,
           ],
@@ -132,6 +150,12 @@ export class AssistantService {
       throw new HttpException(502, "Mistral returned an empty response.");
     }
 
-    return { message, model: this.config.model };
+    return {
+      message,
+      model: this.config.model,
+      cards: context.cards,
+      actions: context.actions,
+      suggestions: context.suggestions,
+    };
   }
 }

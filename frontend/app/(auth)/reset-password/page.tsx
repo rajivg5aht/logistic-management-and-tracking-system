@@ -12,7 +12,7 @@ export default async function ResetPasswordPage({
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[var(--app-bg)] p-4 font-sans sm:p-6 md:p-8">
       <div
-        className="absolute inset-0 scale-105 bg-[url('/cargo_ship_neon.png')] bg-cover bg-center opacity-20 blur-[2px]"
+        className="absolute inset-0 scale-105 bg-[url('/back.png')] bg-cover bg-center opacity-20 blur-[2px]"
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[image:var(--auth-overlay)]" />

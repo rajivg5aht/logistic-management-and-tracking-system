@@ -43,7 +43,11 @@ test("admin can open payment management", async ({ page }) => {
 });
 test("admin can publish an announcement and review fleet reports", async ({ page }) => {
   await page.goto("/admin/inquiries");
-  await page.getByRole("tab", { name: "Announcements" }).click();
+  await page.waitForLoadState("networkidle");
+  const announcementsTab = page.getByRole("tab", { name: "Announcements" });
+  await expect(announcementsTab).toBeVisible();
+  await announcementsTab.click();
+  await expect(announcementsTab).toHaveAttribute("aria-selected", "true");
   await page.getByPlaceholder("Important service update").fill("Monsoon service update");
   await page.getByPlaceholder("Write the announcement recipients will see...").fill(
     "Delivery times may be longer in areas affected by heavy rain.",
