@@ -55,7 +55,7 @@ export const FRONTEND_ORIGIN: string = CORS_ORIGINS[0];
 export const EMAIL_USER: string =
   process.env.EMAIL_USER || "example@gmail.com";
 
-export const EMAIL_PASS: string = process.env.EMAIL_PASS || "password123";
+export const EMAIL_PASS: string = (process.env.EMAIL_PASS || "password123").replace(/\s/g, "");
 
 // Base URL of the frontend, used to build the password reset link
 export const CLIENT_URL: string = process.env.CLIENT_URL || FRONTEND_ORIGIN;

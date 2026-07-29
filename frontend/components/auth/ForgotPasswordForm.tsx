@@ -43,6 +43,7 @@ export function ForgotPasswordForm() {
               placeholder="name@cargonep.com"
               className="form-input"
               required
+              suppressHydrationWarning
             />
             <FieldError errors={state.fieldErrors?.email} />
           </div>
@@ -55,6 +56,7 @@ export function ForgotPasswordForm() {
             type="submit"
             disabled={isPending}
             className="btn-primary mt-2 w-full"
+            suppressHydrationWarning
           >
             {isPending ? "Sending link..." : "Send Reset Link"}
           </button>
