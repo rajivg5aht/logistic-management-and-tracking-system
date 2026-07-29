@@ -27,6 +27,18 @@ export default function Navbar() {
         ? "contact"
         : activeSection;
 
+  const scrollToSection = (id: string) => {
+    if (pathname !== "/") return false;
+
+    const section = document.getElementById(id);
+    if (!section) return false;
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${id}`);
+    setActiveSection(id);
+    return true;
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -90,6 +102,9 @@ export default function Navbar() {
               <li key={item.label}>
                 <Link
                   href={item.href}
+                  onClick={(event) => {
+                    if (scrollToSection(item.id)) event.preventDefault();
+                  }}
                   className={`group/nav relative flex flex-col items-center gap-1.5 py-5 text-sm font-semibold tracking-wide transition-colors duration-300 ${
                     activeId === item.id
                       ? "text-[var(--accent-hover)]"
@@ -139,7 +154,10 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(event) => {
+                    if (scrollToSection(item.id)) event.preventDefault();
+                    setMobileOpen(false);
+                  }}
                   className={`block rounded-xl px-5 py-3.5 text-sm font-semibold transition-colors ${
                     activeId === item.id
                       ? "bg-[var(--accent-soft)] text-[var(--accent-hover)]"
